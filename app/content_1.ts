@@ -8,6 +8,7 @@ export type Content = {
   heroSecondary: string;
   teaserVideoUrl: string;
   heroBadge: string;
+  theatreLabel: string;
   menuInvite: string;
   menuAbout: string;
   menuSchedule: string;
@@ -76,6 +77,7 @@ const RU_CONTENT: Content = {
     'С двумя чемоданами удивительных предметов театр приедет к вам в гости и привезёт настоящую волшебную Хануку в детский сад, школу, студию и даже квартиру.',
   teaserVideoUrl: 'https://www.youtube.com/embed/BKbsaDnkzJA',
   heroBadge: 'Ханукальная история о любви и чуде',
+  theatreLabel: 'Театр «Рыба Кива»',
   menuInvite: 'Пригласить театр',
   menuAbout: 'О спектакле',
   menuSchedule: 'Расписание',
@@ -216,13 +218,14 @@ const RU_CONTENT: Content = {
 
 // === Ивритский контент ===
 const HE_CONTENT: Content = {
-  title: 'זלטה העז',
+  title: 'עזונת זלטה',
   seoSubtitle:
     'הצגה עדינה, שמחה וקצת עצובה על פי סיפורו של יצחק בשביס-זינגר ומשלים יהודיים.\nעל הבמה הקטנה מתעוררות לחיים בובות וצללים, בתים עם אורות בחלונות, ונשמעות מנגינות יהודיות, כינור, גיטרה וקלימבה.',
   heroSecondary:
-    'עם שתי מזוודות מלאות חפצים מופלאים נגיע להתארח אצלכם ונביא חנוכה קסומה לגן הילדים, לבית הספר, לסטודיו ואפילו לדירה.',
+    'עם שתי מזוודות מלאות חפצים מופלאים נגיע להתארח אצלכם ונביא חנוכה קסומה באמת לגן הילדים, לבית הספר, לסטודיו ואפילו לדירה.',
   teaserVideoUrl: 'https://www.youtube.com/embed/bfUlrKhn6UI',
   heroBadge: 'סיפור חנוכה על אהבה וניסים',
+  theatreLabel: 'תיאטרון ״ריבא קיווא״',
   menuInvite: 'להזמין את התיאטרון',
   menuAbout: 'על ההצגה',
   menuSchedule: 'לוח הופעות',
@@ -275,7 +278,7 @@ const HE_CONTENT: Content = {
     },
     {
       q: 'האם אפשר להציג באולם תיאטרון גדול?',
-      a: 'אפשר, כבר הופענו כך, אבל ההצגה הכי חזקה במרחב אינטימי כשהקהל נמצא עד כ-4 מטר מהמסך וניתן להושיב את הילדים קרוב.',
+      a: 'אפשר, כבר הופענו כך, אבל ההצגה הכי חזקה במרחב אינטימי כשהקהל נמצא עד כ-4 מטר מהמסך וניתן להושיב את הילדים קרוב ובשכבות.',
     },
     {
       q: 'האם נדרש ציוד מיוחד בשביל ההצגה?',
@@ -296,12 +299,12 @@ const HE_CONTENT: Content = {
   ],
   teamAuthorTitle: 'מחברת הפרויקט והתסריט',
   teamAuthorName: 'ילנה שמיס',
-  teamDirectorTitle: 'במאית, מעצבת',
+  teamDirectorTitle: 'במאית, מעצבת ובונת אביזרים',
   teamDirectorName: 'סשה לוניאקובה',
   teamActorsTitle: 'השחקנים',
   teamActors: [
-    { name: 'סשה סקוורצובה', role: 'כינור והפעלת בובות' },
-    { name: 'איגור בֶלי', role: 'גיטרה ושירה' },
+    { name: 'סשה סקבורצובה', role: 'כינור והפעלת בובות' },
+    { name: 'איגור ביילי', role: 'גיטרה ושירה' },
     { name: 'ילנה שמיס', role: 'שירה והפעלת בובות' },
   ],
   photoDownloadLabel: 'להוריד',
@@ -370,6 +373,7 @@ const EN_CONTENT: Content = {
     'With two suitcases of wondrous props the theatre will come to your venue and bring a truly magical Hanukkah to a kindergarten, school, studio or even an apartment.',
   teaserVideoUrl: 'https://www.youtube.com/embed/BKbsaDnkzJA',
   heroBadge: 'A Hanukkah story about love and miracles',
+  theatreLabel: 'Ryba Kiva Theatre',
   menuInvite: 'Invite the theatre',
   menuAbout: 'About the show',
   menuSchedule: 'Schedule',

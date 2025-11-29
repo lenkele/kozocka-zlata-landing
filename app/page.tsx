@@ -13,10 +13,13 @@ const whatsappLink =
 // TODO: вставьте сюда реальный телефон в формате 972.... без плюса
 
 const CAROUSEL_PHOTOS = [
-  { src: '/photos/kozocka-1.jpg', alt: 'Кадр спектакля «Козочка Злата» 1' },
-  { src: '/photos/kozocka-2.jpg', alt: 'Кадр спектакля «Козочка Злата» 2' },
-  { src: '/photos/kozocka-3.jpg', alt: 'Кадр спектакля «Козочка Злата» 3' },
-  { src: '/photos/kozocka-4.jpg', alt: 'Кадр спектакля «Козочка Злата» 4' },
+  { src: '/photos/kozocka-1.jpg', alt: 'И вдруг пошел снег...' },
+  { src: '/photos/kozocka-2.jpg', alt: 'Сейчас таких местечек уже не осталось...' },
+  { src: '/photos/kozocka-new-3.jpg', alt: 'Я нищим не подаю!' },
+  { src: '/photos/kozocka-4.jpg', alt: 'Ты любишь меня, а я люблю тебя...' },
+  { src: '/photos/kozocka-5.jpg', alt: 'Отправился в город верхом на осле, и взял с собой петуха и фонарь.' },
+  { src: '/photos/kozocka-6.jpg', alt: 'А это кто еще пришел?' },
+  { src: '/photos/kozocka-7.jpg', alt: 'Дальний путь.' },
 ];
 
 export default function HomePage() {
@@ -42,7 +45,7 @@ export default function HomePage() {
           <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
             <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="text-xs uppercase tracking-[0.2em] text-amber-200/80 whitespace-nowrap">
-                Театр «Рыба Кива»
+                {t.theatreLabel}
               </div>
               <div
                 className={`inline-flex items-center bg-[rgba(0,0,0,0.3)] rounded-full px-3 py-1 text-[0.55rem] uppercase tracking-[0.18em] text-amber-100/85 whitespace-nowrap ${badgeSpacingClass}`}
@@ -50,20 +53,6 @@ export default function HomePage() {
                 <span>{t.heroBadge}</span>
               </div>
             </div>
-            <nav className={`hidden md:flex gap-6 text-sm ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
-              <a href="#about" className="hover:text-amber-200 transition">
-                {t.menuAbout}
-              </a>
-              <a href="#schedule" className="hover:text-amber-200 transition">
-                {t.menuSchedule}
-              </a>
-              <a href="#media" className="hover:text-amber-200 transition">
-                {t.menuMedia}
-              </a>
-              <a href="#team" className="hover:text-amber-200 transition">
-                {t.menuTeam}
-              </a>
-            </nav>
             <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="flex items-center gap-1 text-xs md:text-sm bg-[rgba(0,0,0,0.35)] rounded-full px-2 py-1">
                 <LangButton current={lang} target="ru" onClick={setLang}>
@@ -243,7 +232,7 @@ export default function HomePage() {
             <SectionTitle small>{t.sectionPhotos}</SectionTitle>
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
               {/* TODO: положите реальные фото в /public/photos/... */}
-              {[1, 2, 3, 4, 5, 6].map((n) => (
+              {[1, 2, 4, 5, 6, 7].map((n) => (
                 <a
                   key={n}
                   href={`/photos/kozocka-${n}.jpg`}
