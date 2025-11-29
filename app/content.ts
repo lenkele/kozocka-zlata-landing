@@ -244,7 +244,7 @@ const HE_CONTENT: Content = {
   flyerDownload: 'הורדת פלייר',
   posterDownload: 'הורדת פוסטר',
   photosDownload: 'הורדת חבילת תמונות',
-  posterImage: '/files/poster-kozocka-zlata-he.png',
+  posterImage: '/files/poster-kozocka-zlata-he.jpg',
   posterPdf: '/files/poster-kozocka-zlata-he.pdf',
   flyerPdf: '/files/flyer-kozocka-zlata-he.pdf',
   photosArchive: '/files/photos-kozocka-zlata-he.zip',
