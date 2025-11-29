@@ -1,6 +1,6 @@
 export type Lang = 'ru' | 'he' | 'en';
 
-export type TeamActor = { name: string; role: string };
+export type   TeamActor = { name: string; role: string };
 
 export type Content = {
   title: string;
