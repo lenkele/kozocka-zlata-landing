@@ -8,6 +8,7 @@ export type Content = {
   heroSecondary: string;
   teaserVideoUrl: string;
   heroBadge: string;
+  theatreLabel: string;
   menuInvite: string;
   menuAbout: string;
   menuSchedule: string;
@@ -76,6 +77,7 @@ const RU_CONTENT: Content = {
     'С двумя чемоданами удивительных предметов театр приедет к вам в гости и привезёт настоящую волшебную Хануку в детский сад, школу, студию и даже квартиру.',
   teaserVideoUrl: 'https://www.youtube.com/embed/BKbsaDnkzJA',
   heroBadge: 'Ханукальная история о любви и чуде',
+  theatreLabel: 'Театр «Рыба Кива»',
   menuInvite: 'Пригласить театр',
   menuAbout: 'О спектакле',
   menuSchedule: 'Расписание',
@@ -223,6 +225,7 @@ const HE_CONTENT: Content = {
     'עם שתי מזוודות מלאות חפצים מופלאים נגיע להתארח אצלכם ונביא חנוכה קסומה לגן הילדים, לבית הספר, לסטודיו ואפילו לדירה.',
   teaserVideoUrl: 'https://www.youtube.com/embed/bfUlrKhn6UI',
   heroBadge: 'סיפור חנוכה על אהבה וניסים',
+  theatreLabel: 'תיאטרון ״ריבא קיווא״',
   menuInvite: 'להזמין את התיאטרון',
   menuAbout: 'על ההצגה',
   menuSchedule: 'לוח הופעות',
@@ -370,6 +373,7 @@ const EN_CONTENT: Content = {
     'With two suitcases of wondrous props the theatre will come to your venue and bring a truly magical Hanukkah to a kindergarten, school, studio or even an apartment.',
   teaserVideoUrl: 'https://www.youtube.com/embed/BKbsaDnkzJA',
   heroBadge: 'A Hanukkah story about love and miracles',
+  theatreLabel: 'Ryba Kiva Theatre',
   menuInvite: 'Invite the theatre',
   menuAbout: 'About the show',
   menuSchedule: 'Schedule',
