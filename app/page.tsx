@@ -210,7 +210,7 @@ export default function HomePage() {
               </div>
               <button
                 onClick={scrollToSchedule}
-                className="inline-flex rounded-full bg-amber-600 hover:bg-amber-500 text-xs md:text-sm font-medium px-3 md:px-4 py-2 shadow-md shadow-black/40 transition whitespace-nowrap"
+                className="inline-flex rounded-full bg-amber-600 hover:bg-amber-500 text-xs md:text-sm font-medium px-3 md:px-4 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer"
               >
                 {t.menuSchedule}
               </button>
