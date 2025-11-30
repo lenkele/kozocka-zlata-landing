@@ -37,8 +37,6 @@ type ScheduleDisplayEntry = {
   language: string;
 };
 
-type SchedulePerLang = Record<Lang, ScheduleDisplayEntry[]>;
-
 type ScheduleYaml = {
   schedule: {
     id: string;
@@ -58,8 +56,65 @@ type ScheduleYaml = {
   }[];
 };
 
+// Функция форматирования даты в зависимости от языка
+function formatDate(dateIso: string, lang: Lang): string {
+  const date = new Date(dateIso);
+  
+  const monthNames: Record<Lang, string[]> = {
+    ru: [
+      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+    ],
+    he: [
+      'בינואר', 'בפברואר', 'במרץ', 'באפריל', 'במאי', 'ביוני',
+      'ביולי', 'באוגוסט', 'בספטמבר', 'באוקטובר', 'בנובמבר', 'בדצמבר',
+    ],
+    en: [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ],
+  };
+
+  const day = date.getDate();
+  const month = monthNames[lang][date.getMonth()];
+
+  if (lang === 'he') {
+    return `${day} ${month}`;
+  }
+  
+  return `${day} ${month}`;
+}
+
+// Функция преобразования YAML-данных в формат для отображения
+function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayEntry[] {
+  if (!yamlData?.schedule || !Array.isArray(yamlData.schedule)) {
+    return [];
+  }
+
+  return yamlData.schedule
+    .map((event) => {
+      const entry = event.entries[lang];
+      if (!entry) return null;
+
+      return {
+        id: event.id,
+        dateIso: event.date_iso,
+        date: entry.date_text || formatDate(event.date_iso, lang),
+        time: entry.time,
+        place: entry.place,
+        format: entry.format,
+        language: entry.language,
+      };
+    })
+    .filter((item): item is ScheduleDisplayEntry => item !== null)
+    .sort((a, b) => new Date(a.dateIso).getTime() - new Date(b.dateIso).getTime());
+}
+
 export default function HomePage() {
   const [lang, setLang] = useState<Lang>('ru');
+  const [scheduleData, setScheduleData] = useState<ScheduleDisplayEntry[]>([]);
+  const [scheduleLoading, setScheduleLoading] = useState(true);
+  
   const t = CONTENT[lang];
   const isRTL = lang === 'he';
   const badgeSpacingClass = isRTL ? 'mr-2' : 'ml-2';
@@ -67,6 +122,42 @@ export default function HomePage() {
   const scheduleAlignClass = isRTL ? 'text-right' : 'text-left';
   const whatsappLink =
     BASE_WHATSAPP_URL + encodeURIComponent(WHATSAPP_MESSAGES[lang] ?? WHATSAPP_MESSAGES.ru);
+
+  // Загрузка расписания из YAML при монтировании и смене языка
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadSchedule = async () => {
+      try {
+        const response = await fetch(SCHEDULE_FILE_PATH);
+        if (!response.ok) throw new Error('Failed to load schedule');
+        const text = await response.text();
+        const parsed = yaml.load(text) as ScheduleYaml;
+        const schedule = parseScheduleData(parsed, lang);
+        
+        if (isMounted) {
+          setScheduleData(schedule);
+          setScheduleLoading(false);
+        }
+      } catch (error) {
+        console.error('Error loading schedule:', error);
+        if (isMounted) {
+          // Фолбек на статические данные из content.ts
+          setScheduleData([]);
+          setScheduleLoading(false);
+        }
+      }
+    };
+
+    loadSchedule();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [lang]);
+
+  // Используем динамические данные если загружены, иначе статические
+  const displaySchedule = scheduleData.length > 0 ? scheduleData : t.scheduleRows;
 
   return (
     <div
@@ -217,34 +308,44 @@ export default function HomePage() {
           {/* РАСПИСАНИЕ */}
           <section id="schedule" className="space-y-6">
             <SectionTitle>{t.sectionSchedule}</SectionTitle>
-            <p className="text-sm md:text-base text-amber-50/85">
-              {/* TODO: заполняйте расписание вручную или из CMS позже */}
-              {/* Ниже пример расписания. Для актуальных дат просто обновляйте таблицу в коде или подключите Google-таблицу/CMS позже. */}
-            </p>
-            <div className="overflow-x-auto rounded-2xl border border-amber-100/15 bg-[rgba(0,0,0,0.4)]">
-              <table className="min-w-full text-sm md:text-base">
-                <thead className="bg-[rgba(0,0,0,0.6)] text-amber-100/90">
-                  <tr>
-                    <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleDateLabel}</th>
-                    <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleTimeLabel}</th>
-                    <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.schedulePlaceLabel}</th>
-                    <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleFormatLabel}</th>
-                    <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleLanguageLabel}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-amber-100/10 text-amber-50/90">
-                  {t.scheduleRows.map((row) => (
-                    <tr key={`${row.date}-${row.time}-${row.place}`}>
-                      <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.date}</td>
-                      <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.time}</td>
-                      <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.place}</td>
-                      <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.format}</td>
-                      <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.language}</td>
+            {scheduleLoading ? (
+              <p className="text-sm md:text-base text-amber-50/85 text-center py-8">
+                {lang === 'ru' && 'Загрузка расписания...'}
+                {lang === 'he' && 'טוען לוח הופעות...'}
+                {lang === 'en' && 'Loading schedule...'}
+              </p>
+            ) : displaySchedule.length > 0 ? (
+              <div className="overflow-x-auto rounded-2xl border border-amber-100/15 bg-[rgba(0,0,0,0.4)]">
+                <table className="min-w-full text-sm md:text-base">
+                  <thead className="bg-[rgba(0,0,0,0.6)] text-amber-100/90">
+                    <tr>
+                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleDateLabel}</th>
+                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleTimeLabel}</th>
+                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.schedulePlaceLabel}</th>
+                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleFormatLabel}</th>
+                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleLanguageLabel}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-amber-100/10 text-amber-50/90">
+                    {displaySchedule.map((row) => (
+                      <tr key={row.id || `${row.date}-${row.time}-${row.place}`}>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.date}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.time}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.place}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.format}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.language}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm md:text-base text-amber-50/85 text-center py-8">
+                {lang === 'ru' && 'Расписание пока не заполнено. Следите за обновлениями!'}
+                {lang === 'he' && 'לוח הופעות עדיין לא מלא. עקבו אחרי עדכונים!'}
+                {lang === 'en' && 'Schedule not yet available. Stay tuned!'}
+              </p>
+            )}
           </section>
 
           {/* ВИДЕО И ФОТО */}

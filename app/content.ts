@@ -60,6 +60,7 @@ export type Content = {
   scheduleFormatLabel: string;
   scheduleLanguageLabel: string;
   scheduleRows: {
+    id?: string;
     date: string;
     time: string;
     place: string;
