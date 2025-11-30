@@ -1,0 +1,115 @@
+schedule:
+  - id: jerusalem-school
+    date_iso: 2025-11-28
+    entries:
+      ru:
+        time: "09:00"
+        place: "Иерусалим, школа"
+        format: "Закрытый показ"
+        language: "Иврит"
+      he:
+        time: "09:00"
+        place: "ירושלים, בית ספר"
+        format: "מופע סגור"
+        language: "עברית"
+      en:
+        time: "09:00"
+        place: "Jerusalem, school"
+        format: "Private performance"
+        language: "Hebrew"
+
+  - id: jerusalem-gilo
+    date_iso: 2025-12-09
+    entries:
+      ru:
+        time: "18:00"
+        place: "Иерусалим, Матнас Гило"
+        format: "Закрытый показ"
+        language: "Русский"
+      he:
+        time: "18:00"
+        place: "ירושלים, מתנ\"ס גילה"
+        format: "מופע סגור"
+        language: "רוסית"
+      en:
+        time: "18:00"
+        place: "Jerusalem, Matnas Gilo"
+        format: "Private performance"
+        language: "Russian"
+
+  - id: nahariya
+    date_iso: 2025-12-11
+    entries:
+      ru:
+        time: "17:00"
+        place: "Нагария"
+        format: "Открытый показ"
+        language: "Русский"
+      he:
+        time: "17:00"
+        place: "נהריה"
+        format: "מופע פתוח"
+        language: "רוסית"
+      en:
+        time: "17:00"
+        place: "Nahariya"
+        format: "Public performance"
+        language: "Russian"
+
+  - id: haifa-festival
+    date_iso: 2025-12-18
+    entries:
+      ru:
+        time: "18:00"
+        place: "Хайфа, фестиваль «В Чемодане»"
+        format: "Открытый показ"
+        language: "Иврит"
+      he:
+        time: "18:00"
+        place: "חיפה, פסטיבל \"במזוודה\""
+        format: "מופע פתוח"
+        language: "עברית"
+      en:
+        time: "18:00"
+        place: "Haifa, “In the Suitcase” festival"
+        format: "Public performance"
+        language: "Hebrew"
+
+  - id: haifa-hadar
+    date_iso: 2025-12-19
+    entries:
+      ru:
+        time: "11:00"
+        place: "Хайфа, Матнас Адар"
+        format: "Открытый показ"
+        language: "Русский"
+      he:
+        time: "11:00"
+        place: "חיפה, מתנ\"ס הדר"
+        format: "מופע פתוח"
+        language: "רוסית"
+      en:
+        time: "11:00"
+        place: "Haifa, Matnas Hadar"
+        format: "Public performance"
+        language: "Russian"
+
+  - id: haifa-city
+    date_iso: 2025-12-21
+    entries:
+      ru:
+        time: "17:00"
+        place: "Хайфа"
+        format: "Открытый показ"
+        language: "Иврит"
+      he:
+        time: "17:00"
+        place: "חיפה"
+        format: "מופע פתוח"
+        language: "עברית"
+      en:
+        time: "17:00"
+        place: "Haifa"
+        format: "Public performance"
+        language: "Hebrew"
+

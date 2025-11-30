@@ -1,16 +1,19 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import yaml from 'js-yaml';
+import { useEffect, useState } from 'react';
 
-import { CONTENT, Lang } from './content';
+import { CONTENT, type Lang } from './content';
 
-const whatsappLink =
-  'https://wa.me/972533219998?text=' +
-  encodeURIComponent(
-    'Здравствуйте! Хочу пригласить спектакль «Козочка Злата». Напишите, пожалуйста, какие есть даты и условия.'
-  );
-// TODO: вставьте сюда реальный телефон в формате 972.... без плюса
+const WHATSAPP_MESSAGES: Record<Lang, string> = {
+  ru: 'Здравствуйте! Хочу пригласить спектакль «Козочка Злата». Напишите, пожалуйста, какие есть даты и условия.',
+  he: 'שלום! הייתי רוצה להזמין את ההצגה «זלטה העז». אשמח לדעת אילו תאריכים ותנאים זמינים.',
+  en: 'Hello! I would like to invite “Little Goat Zlata”. Please let me know what dates and conditions are available.',
+};
+
+const BASE_WHATSAPP_URL = 'https://wa.me/972533219998?text=';
+// TODO: замените номер на реальный телефон без плюса при необходимости
 
 const CAROUSEL_PHOTOS = [
   { src: '/photos/kozocka-1.jpg', alt: 'И вдруг пошел снег...' },
@@ -22,6 +25,39 @@ const CAROUSEL_PHOTOS = [
   { src: '/photos/kozocka-7.jpg', alt: 'Дальний путь.' },
 ];
 
+const SCHEDULE_FILE_PATH = '/data/schedule.yaml';
+
+type ScheduleDisplayEntry = {
+  id: string;
+  date: string;
+  dateIso: string;
+  time: string;
+  place: string;
+  format: string;
+  language: string;
+};
+
+type SchedulePerLang = Record<Lang, ScheduleDisplayEntry[]>;
+
+type ScheduleYaml = {
+  schedule: {
+    id: string;
+    date_iso: string;
+    entries: Partial<
+      Record<
+        Lang,
+        {
+          time: string;
+          place: string;
+          format: string;
+          language: string;
+          date_text?: string;
+        }
+      >
+    >;
+  }[];
+};
+
 export default function HomePage() {
   const [lang, setLang] = useState<Lang>('ru');
   const t = CONTENT[lang];
@@ -29,11 +65,13 @@ export default function HomePage() {
   const badgeSpacingClass = isRTL ? 'mr-2' : 'ml-2';
   const textDirectionClass = isRTL ? 'text-right' : '';
   const scheduleAlignClass = isRTL ? 'text-right' : 'text-left';
+  const whatsappLink =
+    BASE_WHATSAPP_URL + encodeURIComponent(WHATSAPP_MESSAGES[lang] ?? WHATSAPP_MESSAGES.ru);
 
   return (
     <div
       dir={isRTL ? 'rtl' : 'ltr'}
-      className="min-h-screen bg-fixed bg-cover bg-center"
+      className="min-h-screen overflow-x-hidden bg-fixed bg-cover bg-center"
       style={{
         backgroundImage:
           "linear-gradient(180deg, rgba(151,170,184,0.70) 0%, rgba(64,86,105,0.85) 100%), url('/images/forest.png')",
