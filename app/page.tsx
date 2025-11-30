@@ -80,6 +80,45 @@ type ScheduleYaml = {
   }[];
 };
 
+// Функция для парсинга текста со ссылками в формате Markdown [текст](url)
+function parseLinksInText(text: string): React.ReactNode {
+  const linkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = linkPattern.exec(text)) !== null) {
+    // Добавляем текст до ссылки
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    
+    // Добавляем ссылку
+    const linkText = match[1];
+    const url = match[2];
+    parts.push(
+      <a
+        key={match.index}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline hover:text-amber-300 transition"
+      >
+        {linkText}
+      </a>
+    );
+    
+    lastIndex = match.index + match[0].length;
+  }
+  
+  // Добавляем оставшийся текст после последней ссылки
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+  
+  return parts.length > 0 ? parts : text;
+}
+
 // Функция форматирования даты в зависимости от языка
 function formatDate(dateIso: string, lang: Lang): string {
   const date = new Date(dateIso);
@@ -375,11 +414,11 @@ export default function HomePage() {
                   <tbody className="divide-y divide-amber-100/10 text-amber-50/90">
                     {displaySchedule.map((row) => (
                       <tr key={row.id || `${row.date}-${row.time}-${row.place}`}>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.date}</td>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.time}</td>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.place}</td>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.format}</td>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{row.language}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.date)}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.time)}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.place)}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.format)}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.language)}</td>
                       </tr>
                     ))}
                   </tbody>

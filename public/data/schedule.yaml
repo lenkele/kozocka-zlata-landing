@@ -61,7 +61,7 @@ schedule:
     entries:
       ru:
         time: "18:00"
-        place: "Хайфа, фестиваль «В Чемодане», информация и билеты: https://eventbuzz.co.il/lp/event/kozochkazlata"
+        place: "Хайфа, фестиваль «В Чемодане», [информация и билеты:](https://eventbuzz.co.il/lp/event/kozochkazlata)"
         format: "Открытый показ"
         language: "Иврит"
       he:
