@@ -159,6 +159,14 @@ export default function HomePage() {
   // Используем динамические данные если загружены, иначе статические
   const displaySchedule = scheduleData.length > 0 ? scheduleData : t.scheduleRows;
 
+  // Функция скролла к расписанию
+  const scrollToSchedule = () => {
+    const scheduleSection = document.getElementById('schedule');
+    if (scheduleSection) {
+      scheduleSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <div
       dir={isRTL ? 'rtl' : 'ltr'}
@@ -182,7 +190,7 @@ export default function HomePage() {
                 <span>{t.heroBadge}</span>
               </div>
             </div>
-            <div className={`flex items-center gap-2 md:gap-3 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink-0`}>
+            <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink-0`}>
               <div className="flex items-center gap-1 text-xs md:text-sm bg-[rgba(0,0,0,0.35)] rounded-full px-2 py-1">
                 <LangButton current={lang} target="ru" onClick={setLang}>
                   Рус
@@ -200,6 +208,12 @@ export default function HomePage() {
                   Eng
                 </LangButton>
               </div>
+              <button
+                onClick={scrollToSchedule}
+                className="inline-flex rounded-full bg-amber-600 hover:bg-amber-500 text-xs md:text-sm font-medium px-3 md:px-4 py-2 shadow-md shadow-black/40 transition whitespace-nowrap"
+              >
+                {t.menuSchedule}
+              </button>
               <a
                 href={whatsappLink}
                 className="inline-flex rounded-full bg-amber-600 hover:bg-amber-500 text-xs md:text-sm font-medium px-3 md:px-4 py-2 shadow-md shadow-black/40 transition whitespace-nowrap"
