@@ -16,7 +16,12 @@ export const metadata: Metadata = {
   title: '"Zlata the Goat" - a puppet and musical performance for Hanukkah',
   description: 'A touching, joyful and slightly bittersweet performance based on a story by Isaac Bashevis Singer and Jewish parables. With puppets, shadows, live music and Hanukkah magic.',
   icons: {
-    icon: '/favicon.png',
+    icon: [
+      { url: '/favicon.png?v=2', sizes: 'any' },
+      { url: '/favicon.png?v=2', type: 'image/png' },
+    ],
+    apple: '/favicon.png?v=2',
+    shortcut: '/favicon.png?v=2',
   },
 };
 
