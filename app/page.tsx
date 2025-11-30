@@ -162,7 +162,7 @@ export default function HomePage() {
   return (
     <div
       dir={isRTL ? 'rtl' : 'ltr'}
-      className="min-h-screen overflow-x-hidden bg-fixed bg-cover bg-center"
+      className="min-h-screen bg-fixed bg-cover bg-center"
       style={{
         backgroundImage:
           "linear-gradient(180deg, rgba(151,170,184,0.70) 0%, rgba(64,86,105,0.85) 100%), url('/images/forest.png')",
@@ -170,7 +170,7 @@ export default function HomePage() {
     >
       {/* полупрозрачный "ледяной" слой уже смешан с лесом выше */}
       <div className={`min-h-screen text-[var(--text-color, #fdf4e3)] ${textDirectionClass}`}>
-        <header className="sticky top-0 z-20 bg-[rgba(32,20,12,0.96)]/95 backdrop-blur-sm border-b border-[rgba(255,255,255,0.1)]">
+        <header className="sticky top-0 z-50 bg-[rgba(32,20,12,0.96)] backdrop-blur-sm border-b border-[rgba(255,255,255,0.1)]">
           <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 md:gap-4">
             <div className={`flex items-center gap-2 md:gap-3 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink min-w-0`}>
               <div className="text-[0.65rem] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-amber-200/80 whitespace-nowrap">
@@ -210,7 +210,7 @@ export default function HomePage() {
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-4 pb-24 pt-10 md:pt-12 space-y-16">
+        <main className="max-w-5xl mx-auto px-4 pb-24 pt-10 md:pt-12 space-y-16 overflow-x-hidden">
           {/* HERO */}
           <section className="grid md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-8 items-start">
             <div className="space-y-5">
