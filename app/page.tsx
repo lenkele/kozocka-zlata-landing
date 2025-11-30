@@ -27,6 +27,30 @@ const CAROUSEL_PHOTOS = [
 
 const SCHEDULE_FILE_PATH = '/data/schedule.yaml';
 
+// Функция определения языка браузера
+function detectBrowserLanguage(): Lang {
+  if (typeof window === 'undefined') return 'ru';
+  
+  // Проверяем сохраненный выбор пользователя
+  const savedLang = localStorage.getItem('preferredLang') as Lang | null;
+  if (savedLang && ['ru', 'he', 'en'].includes(savedLang)) {
+    return savedLang;
+  }
+  
+  // Определяем по языку браузера
+  const browserLang = navigator.language.toLowerCase();
+  
+  if (browserLang.startsWith('he') || browserLang.startsWith('iw')) {
+    return 'he';
+  }
+  if (browserLang.startsWith('ru')) {
+    return 'ru';
+  }
+  
+  // Для английского и всех остальных языков - пока русский по умолчанию
+  return 'ru';
+}
+
 type ScheduleDisplayEntry = {
   id: string;
   date: string;
@@ -111,11 +135,19 @@ function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayE
 }
 
 export default function HomePage() {
-  const [lang, setLang] = useState<Lang>('ru');
+  const [lang, setLang] = useState<Lang>(() => detectBrowserLanguage());
   const [scheduleData, setScheduleData] = useState<ScheduleDisplayEntry[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
   
   const t = CONTENT[lang];
+  
+  // Функция смены языка с сохранением в localStorage
+  const changeLang = (newLang: Lang) => {
+    setLang(newLang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('preferredLang', newLang);
+    }
+  };
   const isRTL = lang === 'he';
   const badgeSpacingClass = isRTL ? 'mr-2' : 'ml-2';
   const textDirectionClass = isRTL ? 'text-right' : '';
@@ -192,16 +224,16 @@ export default function HomePage() {
             </div>
             <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink-0`}>
               <div className="flex items-center gap-1 text-xs md:text-sm bg-[rgba(0,0,0,0.35)] rounded-full px-2 py-1">
-                <LangButton current={lang} target="ru" onClick={setLang}>
+                <LangButton current={lang} target="ru" onClick={changeLang}>
                   Рус
                 </LangButton>
-                <LangButton current={lang} target="he" onClick={setLang}>
+                <LangButton current={lang} target="he" onClick={changeLang}>
                   עִבְ׳
                 </LangButton>
                 <LangButton
                   current={lang}
                   target="en"
-                  onClick={setLang}
+                  onClick={changeLang}
                   disabled
                   title="English version coming soon"
                 >
