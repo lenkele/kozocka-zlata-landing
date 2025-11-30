@@ -706,11 +706,11 @@ function PhotoCarousel({
         </div>
       </div>
       {isZoomed && (
-        <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center px-4">
           <button
             type="button"
             onClick={closeZoom}
-            className={`absolute top-6 ${rtl ? 'left-6' : 'right-6'} text-4xl text-amber-50 hover:text-amber-300 transition`}
+            className={`absolute top-6 ${rtl ? 'left-6' : 'right-6'} text-4xl text-amber-50 hover:text-amber-300 transition z-10`}
             aria-label={labels.close}
           >
             ×
