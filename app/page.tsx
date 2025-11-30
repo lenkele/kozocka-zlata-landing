@@ -80,18 +80,18 @@ export default function HomePage() {
       {/* полупрозрачный "ледяной" слой уже смешан с лесом выше */}
       <div className={`min-h-screen text-[var(--text-color, #fdf4e3)] ${textDirectionClass}`}>
         <header className="sticky top-0 z-20 bg-[rgba(32,20,12,0.96)]/95 backdrop-blur-sm border-b border-[rgba(255,255,255,0.1)]">
-          <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-            <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <div className="text-xs uppercase tracking-[0.2em] text-amber-200/80 whitespace-nowrap">
+          <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 md:gap-4">
+            <div className={`flex items-center gap-2 md:gap-3 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink min-w-0`}>
+              <div className="text-[0.65rem] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-amber-200/80 whitespace-nowrap">
                 {t.theatreLabel}
               </div>
               <div
-                className={`inline-flex items-center bg-[rgba(0,0,0,0.3)] rounded-full px-3 py-1 text-[0.55rem] uppercase tracking-[0.18em] text-amber-100/85 whitespace-nowrap ${badgeSpacingClass}`}
+                className={`inline-flex items-center bg-[rgba(0,0,0,0.3)] rounded-full px-2 md:px-3 py-1 text-[0.5rem] md:text-[0.55rem] uppercase tracking-[0.15em] md:tracking-[0.18em] text-amber-100/85 whitespace-nowrap ${badgeSpacingClass}`}
               >
                 <span>{t.heroBadge}</span>
               </div>
             </div>
-            <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className={`flex items-center gap-2 md:gap-3 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink-0`}>
               <div className="flex items-center gap-1 text-xs md:text-sm bg-[rgba(0,0,0,0.35)] rounded-full px-2 py-1">
                 <LangButton current={lang} target="ru" onClick={setLang}>
                   Рус
@@ -111,7 +111,7 @@ export default function HomePage() {
               </div>
               <a
                 href={whatsappLink}
-                className="inline-flex rounded-full bg-amber-600 hover:bg-amber-500 text-xs md:text-sm font-medium px-4 py-2 shadow-md shadow-black/40 transition"
+                className="inline-flex rounded-full bg-amber-600 hover:bg-amber-500 text-xs md:text-sm font-medium px-3 md:px-4 py-2 shadow-md shadow-black/40 transition whitespace-nowrap"
               >
                 {t.menuInvite}
               </a>
@@ -149,7 +149,7 @@ export default function HomePage() {
 
               <div className="flex flex-wrap items-center gap-4" />
 
-              <div className="grid grid-cols-3 gap-4 text-xs md:text-sm text-amber-100/90">
+              <div className="grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm text-amber-100/90">
                 <InfoBadge label={t.ageLabel} value={t.infoAgeValue} />
                 <InfoBadge label={t.durationLabel} value={t.infoDurationValue} />
                 <InfoBadge label={t.formatLabel} value={t.infoFormatValue} />
@@ -433,8 +433,8 @@ function SectionTitle({
 
 function InfoBadge({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-[rgba(0,0,0,0.4)] border border-amber-100/15 rounded-2xl px-3 py-2">
-      <div className="text-[0.65rem] uppercase tracking-[0.18em] text-amber-100/70 mb-1">
+    <div className="bg-[rgba(0,0,0,0.4)] border border-amber-100/15 rounded-2xl px-2 md:px-3 py-2">
+      <div className="text-[0.6rem] md:text-[0.65rem] uppercase tracking-[0.08em] md:tracking-[0.18em] text-amber-100/70 mb-1">
         {label}
       </div>
       <div className="text-xs md:text-sm text-amber-50/90">{value}</div>
