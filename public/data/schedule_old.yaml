@@ -4,60 +4,57 @@ schedule:
     entries:
       ru:
         time: "09:00"
-        place: "Иерусалим, начальная школа в колледже Давида Елина, ул. Сдерот hЕрцль 76"
+        place: "Иерусалим, школа"
         format: "Закрытый показ"
         language: "Иврит"
       he:
         time: "09:00"
-        place: "ירושלים, בית הספר במכללה ע\"ש דוד ילין, שדרות הרצל 76"
+        place: "ירושלים, בית ספר"
         format: "מופע סגור"
         language: "עברית"
       en:
         time: "09:00"
-        place: "Jerusalem, David Yellin College, Sderot Herzl 76"
+        place: "Jerusalem, school"
         format: "Private performance"
         language: "Hebrew"
-
 
   - id: jerusalem-gilo
     date_iso: 2025-12-09
     entries:
       ru:
         time: "18:00"
-        place: "Иерусалим, Матнас Гило, ул. Вардинон 14, заказ билетов по тел.: 052 482 5016"
+        place: "Иерусалим, Матнас Гило, Вардинон 14, заказ билетов по тел: 052 482 5016"
         format: "Открытый показ"
         language: "Русский"
       he:
         time: "18:00"
-        place: "ירושלים, מתנ\"ס גילה, ורדינון 14, הזמנת כרטיסים בטלפון 052 482 5016"
-        format: "מופע פתוח"
+        place: "ירושלים, מתנ\"ס גילה"
+        format: "מופע סגור"
         language: "רוסית"
       en:
         time: "18:00"
-        place: "Jerusalem, Matnas Gilo, Vardinon St 14, order tickets by phone 052 482 5016"
-        format: "Public performance"
+        place: "Jerusalem, Matnas Gilo"
+        format: "Private performance"
         language: "Russian"
-
 
   - id: nahariya
     date_iso: 2025-12-11
     entries:
       ru:
         time: "17:00"
-        place: "Нагария, клуб «Оле», ул. Керен hАесод 1, билеты на месте"
+        place: "Нагария"
         format: "Открытый показ"
         language: "Русский"
       he:
         time: "17:00"
-        place: "נהריה, מועדון \"עולה\", קרן היסוד 1, כרטיסים במקום"
+        place: "נהריה"
         format: "מופע פתוח"
         language: "רוסית"
       en:
         time: "17:00"
-        place: "Nahariya, Club “Ole”, Keren HaYesod St 1, tickets are sold on site"
+        place: "Nahariya"
         format: "Public performance"
         language: "Russian"
-
 
   - id: haifa-festival
     date_iso: 2025-12-18
@@ -69,56 +66,50 @@ schedule:
         language: "Иврит"
       he:
         time: "18:00"
-        place: "חיפה, פסטיבל \"במזוודה\", [פרטים וכרטיסים:](https://eventbuzz.co.il/lp/event/kozochkazlata)"
+        place: "חיפה, פסטיבל \"במזוודה\""
         format: "מופע פתוח"
         language: "עברית"
       en:
         time: "18:00"
-        place: "Haifa, “In the Suitcase” festival, [details and tickets:](https://eventbuzz.co.il/lp/event/kozochkazlata)"
+        place: "Haifa, “In the Suitcase” festival"
         format: "Public performance"
         language: "Hebrew"
-
 
   - id: haifa-hadar
     date_iso: 2025-12-19
     entries:
       ru:
         time: "11:00"
-        place: "Хайфа, Матнас Адар, ул. Иерушалаим 29, билеты на месте"
+        place: "Хайфа, Матнас Адар"
         format: "Открытый показ"
         language: "Русский"
       he:
         time: "11:00"
-        place: "חיפה, מתנ\"ס הדר, ירושלים 29, כרטיסים במקום"
+        place: "חיפה, מתנ\"ס הדר"
         format: "מופע פתוח"
         language: "רוסית"
       en:
         time: "11:00"
-        place: "Haifa, Matnas Hadar, Yerushalayim St 29, tickets are sold on site"
+        place: "Haifa, Matnas Hadar"
         format: "Public performance"
         language: "Russian"
-
 
   - id: haifa-city
     date_iso: 2025-12-21
     entries:
       ru:
         time: "17:00"
-        place: "Хайфа, Мерказ Хадарим, ул. Кирьят Сефер 25"
+        place: "Хайфа"
         format: "Открытый показ"
         language: "Иврит"
       he:
         time: "17:00"
-        place: "חיפה, מרכז חדרים לתרבות יהודית ישראלית, קרית ספר 25"
+        place: "חיפה"
         format: "מופע פתוח"
         language: "עברית"
       en:
         time: "17:00"
-        place: "Haifa, Merkaz Hadarim, Kiryat Sefer St 25"
+        place: "Haifa"
         format: "Public performance"
         language: "Hebrew"
-
-
-
-
 
