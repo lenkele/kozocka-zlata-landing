@@ -4,7 +4,7 @@ schedule:
     entries:
       ru:
         time: "09:00"
-        place: "Иерусалим, начальная школа в колледже Давида Елина, ул. Сдерот hЕрцль 76"
+        place: "Иерусалим, начальная школа в колледже Давида Елина, Sderot Herzl 76"
         format: "Закрытый показ"
         language: "Иврит"
       he:
@@ -24,7 +24,7 @@ schedule:
     entries:
       ru:
         time: "18:00"
-        place: "Иерусалим, Матнас Гило, ул. Вардинон 14, заказ билетов по тел.: 052-482-5016"
+        place: "Иерусалим, Матнас Гило, Vardinon St 14, заказ билетов по тел.: 052-482-5016"
         format: "Открытый показ"
         language: "Русский"
       he:
@@ -44,7 +44,7 @@ schedule:
     entries:
       ru:
         time: "17:00"
-        place: "Нагария, клуб «Оле», ул. Керен hАесод 1, билеты на месте"
+        place: "Нагария, клуб «Оле», Keren HaYesod St 1, билеты на месте"
         format: "Открытый показ"
         language: "Русский"
       he:
@@ -64,7 +64,7 @@ schedule:
     entries:
       ru:
         time: "18:00"
-        place: "Ашкелон, арт-студия «Еврейское местечко», ул. hАшомер hАцаир 10/5, [билеты](https://forms.gle/6Wp5qWRpCzHtvqee6)"
+        place: "Ашкелон, арт-студия «Еврейское местечко», HaShomer HaTsa'ir St 10/5, [билеты](https://forms.gle/6Wp5qWRpCzHtvqee6)"
         format: "Открытый показ"
         language: "Русский"
       he:
@@ -104,7 +104,7 @@ schedule:
     entries:
       ru:
         time: "11:00"
-        place: "Хайфа, Матнас Адар, ул. Иерушалаим 29, билеты на месте"
+        place: "Хайфа, Матнас Адар, Yerushalayim St 29, билеты на месте"
         format: "Открытый показ"
         language: "Русский"
       he:
@@ -124,7 +124,7 @@ schedule:
     entries:
       ru:
         time: "17:00"
-        place: "Хайфа, Мерказ Хадарим, ул. Кирьят Сефер 25"
+        place: "Хайфа, Мерказ Хадарим, Kiryat Sefer St 25"
         format: "Открытый показ"
         language: "Иврит"
       he:
