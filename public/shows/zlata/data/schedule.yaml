@@ -24,12 +24,12 @@ schedule:
     entries:
       ru:
         time: "18:00"
-        place: "Иерусалим, Матнас Гило, ул. Вардинон 14, заказ билетов по тел.: 052 482 5016"
+        place: "Иерусалим, Матнас Гило, ул. Вардинон 14, заказ билетов по тел.: 052-482-5016"
         format: "Открытый показ"
         language: "Русский"
       he:
         time: "18:00"
-        place: "ירושלים, מתנ\"ס גילה, ורדינון 14, הזמנת כרטיסים בטלפון 052 482 5016"
+        place: "ירושלים, מתנ\"ס גילה, ורדינון 14, הזמנת כרטיסים בטלפון 052-482-5016"
         format: "מופע פתוח"
         language: "רוסית"
       en:
@@ -57,6 +57,26 @@ schedule:
         place: "Nahariya, Club “Ole”, Keren HaYesod St 1, tickets are sold on site"
         format: "Public performance"
         language: "Russian"
+		
+		
+  - id: 251213_ashkelon
+    date_iso: 2025-12-13
+    entries:
+      ru:
+        time: "18:00"
+        place: "Ашкелон, арт-студия «Еврейское местечко», ул. hАшомер hАцаир 10/5, [билеты](https://forms.gle/6Wp5qWRpCzHtvqee6)"
+        format: "Открытый показ"
+        language: "Русский"
+      he:
+        time: "18:00"
+        place: "אשקלון, ארט-סטודיו \"שטעטל\", השומר הצעיר 10/5, [כרטיסים](https://forms.gle/6Wp5qWRpCzHtvqee6)"
+        format: "מופע פתוח"
+        language: "רוסית"
+      en:
+        time: "18:00"
+        place: "Ashkelon, art studio “Shtetl”, HaShomer HaTsa'ir St 10/5, [tickets](https://forms.gle/6Wp5qWRpCzHtvqee6)"
+        format: "Public performance"
+        language: "Russian"
 
 
   - id: haifa-festival
@@ -64,17 +84,17 @@ schedule:
     entries:
       ru:
         time: "18:00"
-        place: "Хайфа, фестиваль «В Чемодане», [информация и билеты:](https://eventbuzz.co.il/lp/event/kozochkazlata)"
+        place: "Хайфа, фестиваль «В Чемодане», [информация и билеты](https://eventbuzz.co.il/lp/event/kozochkazlata)"
         format: "Открытый показ"
         language: "Иврит"
       he:
         time: "18:00"
-        place: "חיפה, פסטיבל \"במזוודה\", [פרטים וכרטיסים:](https://eventbuzz.co.il/lp/event/kozochkazlata)"
+        place: "חיפה, פסטיבל \"במזוודה\", [פרטים וכרטיסים](https://eventbuzz.co.il/lp/event/kozochkazlata)"
         format: "מופע פתוח"
         language: "עברית"
       en:
         time: "18:00"
-        place: "Haifa, “In the Suitcase” festival, [details and tickets:](https://eventbuzz.co.il/lp/event/kozochkazlata)"
+        place: "Haifa, “In the Suitcase” festival, [details and tickets](https://eventbuzz.co.il/lp/event/kozochkazlata)"
         format: "Public performance"
         language: "Hebrew"
 
@@ -117,7 +137,6 @@ schedule:
         place: "Haifa, Merkaz Hadarim, Kiryat Sefer St 25"
         format: "Public performance"
         language: "Hebrew"
-
 
 
 
