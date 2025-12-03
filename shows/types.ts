@@ -95,7 +95,8 @@ export type ShowConfig = {
     text: string;
   };
   textColor?: string; // Цвет основного текста (по умолчанию светлый)
-  cardBg?: string; // Цвет фона карточек
+  cardBg?: string; // Цвет фона светлых карточек
+  darkCardBg?: string; // Цвет фона темных карточек
   headerBg?: string; // Цвет хедера
   headingColor?: string; // Цвет заголовков на карточках
 };

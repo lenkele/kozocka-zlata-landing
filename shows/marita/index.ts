@@ -48,7 +48,7 @@ const GALLERY_PHOTOS: GalleryPhoto[] = [
 export const MARITA_SHOW: ShowConfig = {
   slug: 'marita',
   backgroundStyle:
-    `linear-gradient(rgba(220,206,230,0.92), rgba(220,206,230,0.92)), url('${IMAGES_BASE}/forest.png')`,
+    `linear-gradient(rgba(215,217,224,0.5), rgba(215,217,224,0.5)), url('${IMAGES_BASE}/forest.png')`,
   scheduleFilePath: `${DATA_BASE}/schedule.yaml`,
   carouselPhotos: CAROUSEL_PHOTOS,
   galleryPhotos: GALLERY_PHOTOS,
@@ -62,7 +62,8 @@ export const MARITA_SHOW: ShowConfig = {
     text: 'text-white',
   },
   textColor: 'text-[#3A2A4A]', // Тёмный текст по макету
-  cardBg: 'bg-[#F6EEF9]/95', // Цвет карточек
+  cardBg: 'bg-[#F6EEF9]/95', // Цвет светлых карточек
+  darkCardBg: 'bg-[rgba(138,132,147,0.95)]', // Темно-фиолетовые карточки (из основного текста макета)
   headerBg: 'bg-[#2C1E30]', // Цвет хедера
   headingColor: 'text-[#4A3C57]', // Цвет заголовков
 };

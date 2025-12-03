@@ -53,6 +53,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   const buttonText = show.buttonColors?.text ?? 'text-white';
   const textColor = show.textColor ?? 'text-amber-50';
   const cardBg = show.cardBg ?? 'bg-[rgba(0,0,0,0.35)]';
+  const darkCardBg = show.darkCardBg ?? 'bg-[rgba(0,0,0,0.35)]';
   const headerBg = show.headerBg ?? 'bg-[rgba(32,20,12,0.96)]';
   const headingColor = show.headingColor ?? 'text-amber-100';
 
@@ -181,7 +182,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                 </div>
               </div>
 
-              <p className="text-sm md:text-base text-amber-100/80 leading-relaxed bg-[rgba(0,0,0,0.35)] rounded-xl px-4 py-3 border border-amber-100/10">
+              <p className={`text-sm md:text-base text-amber-100/80 leading-relaxed ${darkCardBg} rounded-xl px-4 py-3 border border-amber-100/10`}>
                 {t.seoSubtitle.split('\n').map((line, idx, arr) => (
                   <span key={idx}>
                     {line}
@@ -189,7 +190,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                   </span>
                 ))}
               </p>
-              <p className="text-sm md:text-base text-amber-100/80 leading-relaxed bg-[rgba(0,0,0,0.35)] rounded-xl px-4 py-3 border border-amber-100/10">
+              <p className={`text-sm md:text-base text-amber-100/80 leading-relaxed ${darkCardBg} rounded-xl px-4 py-3 border border-amber-100/10`}>
                 {t.heroSecondary.split('\n').map((line, idx, arr) => (
                   <span key={idx}>
                     {line}
@@ -199,14 +200,14 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
               </p>
 
               <div className="grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm text-amber-100/90">
-                <InfoBadge label={t.ageLabel} value={t.infoAgeValue} />
-                <InfoBadge label={t.durationLabel} value={t.infoDurationValue} />
-                <InfoBadge label={t.formatLabel} value={t.infoFormatValue} />
+                <InfoBadge label={t.ageLabel} value={t.infoAgeValue} cardBg={darkCardBg} />
+                <InfoBadge label={t.durationLabel} value={t.infoDurationValue} cardBg={darkCardBg} />
+                <InfoBadge label={t.formatLabel} value={t.infoFormatValue} cardBg={darkCardBg} />
               </div>
             </div>
 
             <div className="flex flex-col items-center gap-4">
-              <div className="rounded-2xl overflow-hidden border border-amber-100/20 shadow-[0_18px_45px_rgba(0,0,0,0.75)] bg-[rgba(0,0,0,0.4)]">
+              <div className={`rounded-2xl overflow-hidden border border-amber-100/20 shadow-[0_18px_45px_rgba(0,0,0,0.75)] ${darkCardBg}`}>
                 <Image src={t.posterImage} alt={`Афиша спектакля «${t.title}»`} width={640} height={960} className="w-full max-w-xs md:max-w-sm object-cover" />
               </div>
               <a href={t.posterPdf} className="text-xs md:text-sm underline-offset-4 hover:underline text-amber-100/90" download>
@@ -232,6 +233,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                   }}
                   rtl={isRTL}
                   buttonColors={show.buttonColors}
+                  darkCardBg={darkCardBg}
                 />
               </aside>
               </div>
@@ -260,7 +262,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                 {lang === 'en' && 'Loading schedule...'}
               </p>
             ) : displaySchedule.length > 0 ? (
-              <div className="overflow-x-auto rounded-2xl border border-amber-100/15 bg-[rgba(0,0,0,0.4)]">
+              <div className={`overflow-x-auto rounded-2xl border border-amber-100/15 ${darkCardBg}`}>
                 <table className="min-w-full text-sm md:text-base">
                   <thead className="bg-[rgba(0,0,0,0.6)] text-amber-100/90">
                     <tr>
@@ -317,7 +319,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
 
           <section id="team" className="space-y-6">
             <SectionTitle>{t.sectionTeam}</SectionTitle>
-            <div className={`space-y-5 text-sm md:text-base text-amber-50/90 leading-relaxed	bg-[rgba(0,0,0,0.35)] border border-amber-100/15 rounded-2xl p-5 ${textDirectionClass}`}>
+            <div className={`space-y-5 text-sm md:text-base text-amber-50/90 leading-relaxed ${darkCardBg} border border-amber-100/15 rounded-2xl p-5 ${textDirectionClass}`}>
               <div>
                 <p className="text-xs uppercase tracking-[0.25em] text-amber-100/70">{t.teamAuthorTitle}</p>
                 <p className="text-lg text-amber-50 mt-1">{t.teamAuthorName}</p>
@@ -355,7 +357,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
             <SectionTitle>{t.faqTitle}</SectionTitle>
             <div className="space-y-3">
               {t.faqItems.map((item) => (
-                <details key={item.q} className="group	bg-[rgba(0,0,0,0.4)] border border-amber-100/15 rounded-2xl px-4 py-3">
+                <details key={item.q} className={`group ${darkCardBg} border border-amber-100/15 rounded-2xl px-4 py-3`}>
                   <summary className="cursor-pointer text-sm md:text-base font-medium text-amber-100 list-none flex items-center justify-between gap-3">
                     <span>{item.q}</span>
                     <span className="text-xs opacity-60 group-open:rotate-90 transition">❯</span>
@@ -433,9 +435,10 @@ function SectionTitle({ children, small, color }: { children: React.ReactNode; s
   );
 }
 
-function InfoBadge({ label, value }: { label: string; value: string }) {
+function InfoBadge({ label, value, cardBg }: { label: string; value: string; cardBg?: string }) {
+  const bg = cardBg ?? 'bg-[rgba(0,0,0,0.4)]';
   return (
-    <div className="bg-[rgba(0,0,0,0.4)] border border-amber-100/15 rounded-2xl px-2 md:px-3 py-2">
+    <div className={`${bg} border border-amber-100/15 rounded-2xl px-2 md:px-3 py-2`}>
       <div className="text-[0.6rem] md:text-[0.65rem] uppercase tracking-[0.08em] md:tracking-[0.18em] text-amber-100/70 mb-1">{label}</div>
       <div className="text-xs md:text-sm text-amber-50/90">{value}</div>
     </div>
@@ -447,6 +450,7 @@ function PhotoCarousel({
   labels,
   rtl,
   buttonColors,
+  darkCardBg,
 }: {
   photos: { src: string; alt: string }[];
   labels: {
@@ -462,10 +466,12 @@ function PhotoCarousel({
     hover: string;
     text: string;
   };
+  darkCardBg?: string;
 }) {
   const buttonBg = buttonColors?.bg ?? 'bg-amber-600';
   const buttonHover = buttonColors?.hover ?? 'hover:bg-amber-500';
   const buttonText = buttonColors?.text ?? 'text-white';
+  const bg = darkCardBg ?? 'bg-[rgba(0,0,0,0.45)]';
   const [current, setCurrent] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   if (photos.length === 0) {
@@ -483,7 +489,7 @@ function PhotoCarousel({
 
   return (
     <>
-      <div className="bg-[rgba(0,0,0,0.45)] border border-amber-100/20 rounded-2xl px-4 py-4 flex flex-col gap-3">
+      <div className={`${bg} border border-[rgba(0,0,0,0.15)] rounded-2xl px-4 py-4 flex flex-col gap-3`}>
         <div className="relative overflow-hidden rounded-2xl border border-amber-100/20 min-h-[18rem] bg-black/50 flex items-center justify-center">
           <Image
             src={photos[current].src}
