@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Структура проекта
 
-## Getting Started
+- `public/shows/<slug>/files` — pdf/png/zip материалы спектакля
+- `public/shows/<slug>/photos` — изображения для галереи и карусели
+- `public/shows/<slug>/images` — фоновые изображения
+- `public/shows/<slug>/data` — YAML-расписание (используется на клиенте)
+- `shows/<slug>` — конфиг спектакля: тексты на трёх языках и ссылки на ассеты
+- `components/ShowLandingClient.tsx` — универсальный клиентский компонент страницы
+- `app/[show]/page.tsx` — рендерит страницу для конкретного `slug`
 
-First, run the development server:
+## Запуск
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Доступные страницы:
+- `http://localhost:3000/zlata`
+- `http://localhost:3000/marita`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Корневая `/` редиректит на спектакль по умолчанию (`DEFAULT_SHOW_SLUG` в `shows/index.ts`).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Домены и middleware
 
-## Learn More
+В `middleware.ts` заведён маппинг доменов на slug:
 
-To learn more about Next.js, take a look at the following resources:
+```ts
+const HOST_TO_SHOW = {
+  'www.ryba-kiva-zlata.com': 'zlata',
+  'www.ryba-kiva-marita.com': 'marita',
+  // ...
+};
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+При запросе на конкретный домен middleware делает rewrite на нужный маршрут (`/zlata` или `/marita`). Для локальной разработки используются `localhost` и `127.0.0.1`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Чтобы добавить новый домен:
+1. Привяжи его в панели хостинга (Vercel: Project Settings → Domains).
+2. Добавь домен в `HOST_TO_SHOW`.
+3. Убедись, что в `public/shows/<slug>` лежат нужные ассеты.
 
-## Deploy on Vercel
+## Добавление нового спектакля
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Создай `public/shows/<новый_slug>/{files,photos,images,data}` и положи туда контент.
+2. Добавь `shows/<новый_slug>/content.ts` (тексты на трёх языках) и `shows/<новый_slug>/index.ts` (описание ассетов).
+3. Экспортируй конфиг в `shows/index.ts`, обнови `ShowSlug`.
+4. При необходимости расширь `HOST_TO_SHOW` новым доменом.

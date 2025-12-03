@@ -1,0 +1,124 @@
+schedule:
+  - id: jerusalem-school
+    date_iso: 2025-11-28
+    entries:
+      ru:
+        time: "09:00"
+        place: "Иерусалим, начальная школа в колледже Давида Елина, ул. Сдерот hЕрцль 76"
+        format: "Закрытый показ"
+        language: "Иврит"
+      he:
+        time: "09:00"
+        place: "ירושלים, בית הספר במכללה ע\"ש דוד ילין, שדרות הרצל 76"
+        format: "מופע סגור"
+        language: "עברית"
+      en:
+        time: "09:00"
+        place: "Jerusalem, David Yellin College, Sderot Herzl 76"
+        format: "Private performance"
+        language: "Hebrew"
+
+
+  - id: jerusalem-gilo
+    date_iso: 2025-12-09
+    entries:
+      ru:
+        time: "18:00"
+        place: "Иерусалим, Матнас Гило, ул. Вардинон 14, заказ билетов по тел.: 052 482 5016"
+        format: "Открытый показ"
+        language: "Русский"
+      he:
+        time: "18:00"
+        place: "ירושלים, מתנ\"ס גילה, ורדינון 14, הזמנת כרטיסים בטלפון 052 482 5016"
+        format: "מופע פתוח"
+        language: "רוסית"
+      en:
+        time: "18:00"
+        place: "Jerusalem, Matnas Gilo, Vardinon St 14, order tickets by phone 052 482 5016"
+        format: "Public performance"
+        language: "Russian"
+
+
+  - id: nahariya
+    date_iso: 2025-12-11
+    entries:
+      ru:
+        time: "17:00"
+        place: "Нагария, клуб «Оле», ул. Керен hАесод 1, билеты на месте"
+        format: "Открытый показ"
+        language: "Русский"
+      he:
+        time: "17:00"
+        place: "נהריה, מועדון \"עולה\", קרן היסוד 1, כרטיסים במקום"
+        format: "מופע פתוח"
+        language: "רוסית"
+      en:
+        time: "17:00"
+        place: "Nahariya, Club “Ole”, Keren HaYesod St 1, tickets are sold on site"
+        format: "Public performance"
+        language: "Russian"
+
+
+  - id: haifa-festival
+    date_iso: 2025-12-18
+    entries:
+      ru:
+        time: "18:00"
+        place: "Хайфа, фестиваль «В Чемодане», [информация и билеты:](https://eventbuzz.co.il/lp/event/kozochkazlata)"
+        format: "Открытый показ"
+        language: "Иврит"
+      he:
+        time: "18:00"
+        place: "חיפה, פסטיבל \"במזוודה\", [פרטים וכרטיסים:](https://eventbuzz.co.il/lp/event/kozochkazlata)"
+        format: "מופע פתוח"
+        language: "עברית"
+      en:
+        time: "18:00"
+        place: "Haifa, “In the Suitcase” festival, [details and tickets:](https://eventbuzz.co.il/lp/event/kozochkazlata)"
+        format: "Public performance"
+        language: "Hebrew"
+
+
+  - id: haifa-hadar
+    date_iso: 2025-12-19
+    entries:
+      ru:
+        time: "11:00"
+        place: "Хайфа, Матнас Адар, ул. Иерушалаим 29, билеты на месте"
+        format: "Открытый показ"
+        language: "Русский"
+      he:
+        time: "11:00"
+        place: "חיפה, מתנ\"ס הדר, ירושלים 29, כרטיסים במקום"
+        format: "מופע פתוח"
+        language: "רוסית"
+      en:
+        time: "11:00"
+        place: "Haifa, Matnas Hadar, Yerushalayim St 29, tickets are sold on site"
+        format: "Public performance"
+        language: "Russian"
+
+
+  - id: haifa-city
+    date_iso: 2025-12-21
+    entries:
+      ru:
+        time: "17:00"
+        place: "Хайфа, Мерказ Хадарим, ул. Кирьят Сефер 25"
+        format: "Открытый показ"
+        language: "Иврит"
+      he:
+        time: "17:00"
+        place: "חיפה, מרכז חדרים לתרבות יהודית ישראלית, קרית ספר 25"
+        format: "מופע פתוח"
+        language: "עברית"
+      en:
+        time: "17:00"
+        place: "Haifa, Merkaz Hadarim, Kiryat Sefer St 25"
+        format: "Public performance"
+        language: "Hebrew"
+
+
+
+
+

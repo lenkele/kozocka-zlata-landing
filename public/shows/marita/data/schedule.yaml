@@ -1,0 +1,13 @@
+schedule:
+  - id: jerusalem-school
+    date_iso: 2025-11-28
+    entries:
+      ru:
+        time: "09:00"
+        place: "Иерусалим, начальная школа в колледже Давида Елина, ул. Сдерот hЕрцль 76"
+        format: "Закрытый показ"
+        language: "Русский"
+
+
+
+
