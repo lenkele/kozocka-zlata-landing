@@ -231,6 +231,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                     close: t.carouselCloseLabel,
                   }}
                   rtl={isRTL}
+                  buttonColors={show.buttonColors}
                 />
               </aside>
               </div>
@@ -445,6 +446,7 @@ function PhotoCarousel({
   photos,
   labels,
   rtl,
+  buttonColors,
 }: {
   photos: { src: string; alt: string }[];
   labels: {
@@ -455,7 +457,15 @@ function PhotoCarousel({
     close: string;
   };
   rtl?: boolean;
+  buttonColors?: {
+    bg: string;
+    hover: string;
+    text: string;
+  };
 }) {
+  const buttonBg = buttonColors?.bg ?? 'bg-amber-600';
+  const buttonHover = buttonColors?.hover ?? 'hover:bg-amber-500';
+  const buttonText = buttonColors?.text ?? 'text-white';
   const [current, setCurrent] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   if (photos.length === 0) {
