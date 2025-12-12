@@ -47,8 +47,10 @@ const GALLERY_PHOTOS: GalleryPhoto[] = [
 
 export const MARITA_SHOW: ShowConfig = {
   slug: 'marita',
+  pageTitle: '"Колдовство Мариты" - кукольный мюзикл от театра "Рыба Кива"',
+  pageDescription: 'Кукольный мюзикл "Колдовство Мариты" от театра "Рыба Кива". Музыкальный спектакль с куклами для всей семьи.',
   backgroundStyle:
-    `linear-gradient(rgba(215,217,224,0.5), rgba(215,217,224,0.5)), url('${IMAGES_BASE}/forest.png')`,
+    `linear-gradient(rgba(181,168,154,0.6), rgba(181,168,154,0.6)), url('${IMAGES_BASE}/forest.png')`,
   scheduleFilePath: `${DATA_BASE}/schedule.yaml`,
   carouselPhotos: CAROUSEL_PHOTOS,
   galleryPhotos: GALLERY_PHOTOS,
@@ -57,14 +59,14 @@ export const MARITA_SHOW: ShowConfig = {
   content: MARITA_CONTENT,
   availableLanguages: ['ru'], // Только русский язык для этого спектакля
   buttonColors: {
-    bg: 'bg-[#C33B4E]',
-    hover: 'hover:bg-[#A53042]',
+    bg: 'bg-[#4A6B9D]',
+    hover: 'hover:bg-[#3D5A85]',
     text: 'text-white',
   },
-  textColor: 'text-[#3A2A4A]', // Тёмный текст по макету
-  cardBg: 'bg-[#F6EEF9]/95', // Цвет светлых карточек
-  darkCardBg: 'bg-[rgba(138,132,147,0.95)]', // Темно-фиолетовые карточки (из основного текста макета)
-  headerBg: 'bg-[#2C1E30]', // Цвет хедера
-  headingColor: 'text-[#4A3C57]', // Цвет заголовков
+  textColor: 'text-[#3A3530]', // Тёмно-коричневый текст
+  cardBg: 'bg-[#F2E8DE]/95', // Тёплый кремовый
+  darkCardBg: 'bg-[rgba(74,93,122,0.95)]', // Приглушённый синий из платья
+  headerBg: 'bg-[#3A3530]', // Тёмно-коричневый хедер
+  headingColor: 'text-[#4A6B9D]', // Синий из платья
 };
 

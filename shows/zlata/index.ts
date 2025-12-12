@@ -36,6 +36,8 @@ const GALLERY_PHOTOS: GalleryPhoto[] = [
 
 export const ZLATA_SHOW: ShowConfig = {
   slug: 'zlata',
+  pageTitle: '"Козочка Злата" - кукольный мюзикл от театра "Рыба Кива"',
+  pageDescription: 'Трогательный, радостный и чуть-чуть грустный спектакль по мотивам рассказа Исаака Зингера и еврейских притч. С куклами, тенями, живой музыкой и ханукальным волшебством.',
   backgroundStyle:
     "linear-gradient(180deg, rgba(151,170,184,0.70) 0%, rgba(64,86,105,0.85) 100%), " +
     `url('${IMAGES_BASE}/forest.png')`,

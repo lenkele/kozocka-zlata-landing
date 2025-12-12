@@ -81,6 +81,8 @@ export type GalleryPhoto = { src: string; alt?: string };
 
 export type ShowConfig = {
   slug: ShowSlug;
+  pageTitle: string; // Title для вкладки браузера
+  pageDescription?: string; // SEO описание
   backgroundStyle: string;
   scheduleFilePath: string;
   carouselPhotos: CarouselPhoto[];
