@@ -88,35 +88,15 @@ schedule:
         format: "Открытый показ"
         language: "Иврит"
       he:
-        time: "18:00"
+        time: "17:00"
         place: "חיפה, פסטיבל \"במזוודה\", [פרטים וכרטיסים](https://eventbuzz.co.il/lp/event/kozochkazlata)"
         format: "מופע פתוח"
         language: "עברית"
       en:
-        time: "18:00"
+        time: "17:00"
         place: "Haifa, “In the Suitcase” festival, [details and tickets](https://eventbuzz.co.il/lp/event/kozochkazlata)"
         format: "Public performance"
         language: "Hebrew"
-
-
-  - id: haifa-hadar
-    date_iso: 2025-12-19
-    entries:
-      ru:
-        time: "11:00"
-        place: "Хайфа, Матнас Адар, Yerushalayim St 29, билеты на месте"
-        format: "Открытый показ"
-        language: "Русский"
-      he:
-        time: "11:00"
-        place: "חיפה, מתנ\"ס הדר, ירושלים 29, כרטיסים במקום"
-        format: "מופע פתוח"
-        language: "רוסית"
-      en:
-        time: "11:00"
-        place: "Haifa, Matnas Hadar, Yerushalayim St 29, tickets are sold on site"
-        format: "Public performance"
-        language: "Russian"
 
 
   - id: haifa-city
@@ -137,6 +117,27 @@ schedule:
         place: "Haifa, Merkaz Hadarim, Kiryat Sefer St 25"
         format: "Public performance"
         language: "Hebrew"
+        
+        
+  
+  - id: haifa-hadar
+    date_iso: 2026-01-02
+    entries:
+      ru:
+        time: "11:00"
+        place: "Хайфа, Матнас Адар, Yerushalayim St 29, билеты на месте"
+        format: "Открытый показ"
+        language: "Русский"
+      he:
+        time: "11:00"
+        place: "חיפה, מתנ\"ס הדר, ירושלים 29, כרטיסים במקום"
+        format: "מופע פתוח"
+        language: "רוסית"
+      en:
+        time: "11:00"
+        place: "Haifa, Matnas Hadar, Yerushalayim St 29, tickets are sold on site"
+        format: "Public performance"
+        language: "Russian"
 
 
 
