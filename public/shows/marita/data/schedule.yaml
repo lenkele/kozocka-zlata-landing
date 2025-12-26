@@ -1,13 +1,40 @@
 schedule:
-  - id: jerusalem-school
-    date_iso: 2025-11-28
+  - id: Hiperion
+    date_iso: 2026-01-06
     entries:
       ru:
-        time: "09:00"
-        place: "Иерусалим, начальная школа в колледже Давида Елина, ул. Сдерот hЕрцль 76"
-        format: "Закрытый показ"
+        time: "15:00"
+        place: "Гиперион, Большой Трёхсвятительский переулок 2/1 [билеты](https://ticketscloud.com/v1/widgets/common?token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNWRmZDVmYzRhN2U0YTYwNzdlZGEyNjkzIn0.i2brzZv93gjRFBvYzSaw-XjpyqUcatY3BKwbevsnNCQ&event=693d86b4de1a06074805fccc&s=1&r=1&org=5dfd5fc4a7e4a6077eda2693&city=524901&category=592841f8515e35002dead925&tags=592841f8515e35002dead927%2C%D0%A2%D0%B5%D0%B0%D1%82%D1%80&lang=ru)"
+        format: "Открытый показ"
         language: "Русский"
-
+        
+    - id: Tarusa
+    date_iso: 2026-01-09
+    entries:
+      ru:
+        time: "15:00"
+        place: "Таруса, ул. Ленина, 6. 2 этаж"
+        format: "Открытый показ"
+        language: "Русский"
+        
+    - id: Dolina
+    date_iso: 2026-01-10
+    entries:
+      ru:
+        time: "17:00"
+        place: "Крылатая Долина, ул. Лобачевского 51к1 [билеты](https://moscow.qtickets.events/204974-koldovstvo-marity)"
+        format: "Открытый показ"
+        language: "Русский"
+        
+    - id: Skazka
+    date_iso: 2026-01-11
+    entries:
+      ru:
+        time: "17:00"
+        place: "Новоясеневский пр-т, 24 к4, 4 этаж, лофт "Крылья" [билеты](https://qtickets.ru/event/206597)"
+        format: "Открытый показ"
+        language: "Русский"        
+ 
 
 
 
