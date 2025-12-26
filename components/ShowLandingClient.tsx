@@ -132,7 +132,12 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
         <header className={`sticky top-0 z-50 ${headerBg} backdrop-blur-sm border-b border-[rgba(255,255,255,0.1)]`}>
           <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 md:gap-4">
             <div className={`flex items-center gap-2 md:gap-3 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink min-w-0`}>
-              <div className="text-[0.65rem] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-amber-200/80 whitespace-nowrap">{t.theatreLabel}</div>
+              <div className="flex flex-col gap-0.5">
+                <div className="text-[0.65rem] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-amber-200/80 whitespace-nowrap">{t.theatreLabel}</div>
+                {t.theatreSubtitle && (
+                  <div className="text-[0.55rem] md:text-[0.6rem] tracking-wide text-amber-200/80">{t.theatreSubtitle}</div>
+                )}
+              </div>
               <div
                 className={`inline-flex items-center bg-[rgba(0,0,0,0.3)] rounded-full px-2 md:px-3 py-1 text-[0.5rem] md:text-[0.55rem] uppercase tracking-[0.15em] md:tracking-[0.18em] text-amber-100/85 whitespace-nowrap ${badgeSpacingClass}`}
               >

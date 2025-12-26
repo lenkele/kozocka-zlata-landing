@@ -9,6 +9,7 @@ export type Content = {
   teaserVideoUrl: string;
   heroBadge: string;
   theatreLabel: string;
+  theatreSubtitle?: string;
   menuInvite: string;
   menuAbout: string;
   menuSchedule: string;
