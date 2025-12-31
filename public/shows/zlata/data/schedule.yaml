@@ -124,12 +124,12 @@ schedule:
     date_iso: 2026-01-02
     entries:
       ru:
-        time: "11:00"
+        time: "13:00"
         place: "Хайфа, Матнас Адар, Yerushalayim St 29, билеты на месте"
         format: "Открытый показ"
         language: "Русский"
       he:
-        time: "11:00"
+        time: "13:00"
         place: "חיפה, מתנ\"ס הדר, ירושלים 29, כרטיסים במקום"
         format: "מופע פתוח"
         language: "רוסית"
