@@ -13,7 +13,7 @@ schedule:
     entries:
       ru:
         time: "18:00"
-        place: 'Таруса, ул. Ленина, 6. 2 этаж' [билеты]((https://tarusalist.tb.ru/teatr2)'
+        place: 'Таруса, ул. Ленина, 6. 2 этаж [билеты]((https://tarusalist.tb.ru/teatr2)'
         format: "Открытый показ"
         language: "Русский"
         
