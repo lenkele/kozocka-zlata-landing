@@ -12,8 +12,8 @@ schedule:
     date_iso: 2026-01-09
     entries:
       ru:
-        time: "15:00"
-        place: 'Таруса, ул. Ленина, 6. 2 этаж'
+        time: "18:00"
+        place: 'Таруса, ул. Ленина, 6. 2 этаж' [билеты]((https://tarusalist.tb.ru/teatr2)'
         format: "Открытый показ"
         language: "Русский"
         
