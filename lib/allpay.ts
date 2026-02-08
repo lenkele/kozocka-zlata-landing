@@ -7,7 +7,37 @@ function isScalar(value: unknown): value is Scalar {
 }
 
 function normalizeScalar(value: Scalar): string {
-  return typeof value === 'string' ? value.trim() : String(value);
+  return typeof value === 'string' ? value : String(value);
+}
+
+function collectChunksFromArray(
+  value: unknown[],
+  includeEmpty = false,
+  keyOrder: 'sorted' | 'insertion' = 'sorted'
+): string[] {
+  const chunks: string[] = [];
+
+  for (const item of value) {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      continue;
+    }
+
+    const itemRecord = item as Record<string, unknown>;
+    const itemKeys =
+      keyOrder === 'sorted' ? Object.keys(itemRecord).sort((a, b) => a.localeCompare(b)) : Object.keys(itemRecord);
+
+    for (const itemKey of itemKeys) {
+      const itemValue = itemRecord[itemKey];
+      if (!isScalar(itemValue)) continue;
+
+      const normalized = normalizeScalar(itemValue);
+      if (!includeEmpty && normalized === '') continue;
+
+      chunks.push(normalized);
+    }
+  }
+
+  return chunks;
 }
 
 export function buildAllpaySignature(
@@ -30,6 +60,11 @@ export function buildAllpaySignature(
     if (key === 'sign') continue;
 
     const value = payload[key];
+    if (Array.isArray(value)) {
+      values.push(...collectChunksFromArray(value, includeEmpty, keyOrder));
+      continue;
+    }
+
     if (!isScalar(value)) continue;
 
     const normalized = normalizeScalar(value);
