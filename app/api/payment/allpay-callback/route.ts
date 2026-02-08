@@ -53,9 +53,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: 'invalid_payload' }, { status: 400 });
   }
 
-  const webhookSecret = process.env.ALLPAY_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    console.error('[allpay-callback] missing ALLPAY_WEBHOOK_SECRET');
+  const secrets = [
+    { name: 'ALLPAY_WEBHOOK_SECRET', value: process.env.ALLPAY_WEBHOOK_SECRET },
+    { name: 'ALLPAY_API_KEY', value: process.env.ALLPAY_API_KEY },
+  ].filter((entry): entry is { name: string; value: string } => Boolean(entry.value));
+
+  if (secrets.length === 0) {
+    console.error('[allpay-callback] missing secrets (ALLPAY_WEBHOOK_SECRET / ALLPAY_API_KEY)');
     return NextResponse.json({ ok: false, reason: 'server_not_configured' }, { status: 500 });
   }
 
@@ -65,29 +69,51 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: 'missing_sign' }, { status: 400 });
   }
 
-  const primaryExpectedSign = getAllpaySignature(payload, webhookSecret).toLowerCase();
-  const candidateMap = getAllpaySignatureCandidates(payload, webhookSecret);
-  const matchedCandidate = Object.entries(candidateMap).find(([, candidate]) =>
-    secureSignatureMatch(incomingSign, candidate.toLowerCase())
-  );
+  let isValid = false;
+  let matchedSecretName = '';
+  let matchedCandidateName = '';
+  let fallbackExpectedSign = '';
 
-  const isValid = secureSignatureMatch(incomingSign, primaryExpectedSign) || Boolean(matchedCandidate);
+  for (const secretEntry of secrets) {
+    const primaryExpectedSign = getAllpaySignature(payload, secretEntry.value).toLowerCase();
+    const candidateMap = getAllpaySignatureCandidates(payload, secretEntry.value);
+    const matchedCandidate = Object.entries(candidateMap).find(([, candidate]) =>
+      secureSignatureMatch(incomingSign, candidate.toLowerCase())
+    );
+
+    if (secureSignatureMatch(incomingSign, primaryExpectedSign)) {
+      isValid = true;
+      matchedSecretName = secretEntry.name;
+      matchedCandidateName = 'primary_values_colon_sorted';
+      break;
+    }
+
+    if (matchedCandidate) {
+      isValid = true;
+      matchedSecretName = secretEntry.name;
+      matchedCandidateName = matchedCandidate[0];
+      break;
+    }
+
+    if (!fallbackExpectedSign) {
+      fallbackExpectedSign = primaryExpectedSign;
+    }
+  }
 
   if (!isValid) {
     console.error('[allpay-callback] signature mismatch', {
       orderId: payload.order_id,
       incomingSign,
-      expectedSign: primaryExpectedSign,
+      expectedSign: fallbackExpectedSign,
     });
     return NextResponse.json({ ok: false, reason: 'invalid_sign' }, { status: 401 });
   }
 
-  if (matchedCandidate) {
-    console.log('[allpay-callback] matched signature candidate', {
-      orderId: payload.order_id,
-      candidate: matchedCandidate[0],
-    });
-  }
+  console.log('[allpay-callback] matched signature candidate', {
+    orderId: payload.order_id,
+    secret: matchedSecretName,
+    candidate: matchedCandidateName,
+  });
 
   const orderId = toSafeString(payload.order_id);
   const paymentId = toSafeString(payload.payment_id);

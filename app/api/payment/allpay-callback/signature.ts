@@ -34,7 +34,8 @@ export function secureSignatureMatch(a: string, b: string): boolean {
 function collectValues(
   payload: Record<string, unknown>,
   keys: string[],
-  skipKeys: string[] = ['sign']
+  skipKeys: string[] = ['sign'],
+  includeEmpty = false
 ): string[] {
   const values: string[] = [];
 
@@ -45,7 +46,7 @@ function collectValues(
     if (!isScalar(value)) continue;
 
     const normalized = normalizeScalar(value);
-    if (!normalized) continue;
+    if (!includeEmpty && !normalized) continue;
 
     values.push(normalized);
   }
@@ -56,7 +57,8 @@ function collectValues(
 function collectPairs(
   payload: Record<string, unknown>,
   keys: string[],
-  skipKeys: string[] = ['sign']
+  skipKeys: string[] = ['sign'],
+  includeEmpty = false
 ): string[] {
   const pairs: string[] = [];
 
@@ -67,7 +69,7 @@ function collectPairs(
     if (!isScalar(value)) continue;
 
     const normalized = normalizeScalar(value);
-    if (!normalized) continue;
+    if (!includeEmpty && !normalized) continue;
 
     pairs.push(`${key}=${normalized}`);
   }
@@ -90,6 +92,11 @@ export function getAllpaySignatureCandidates(
   const insertionValues = collectValues(payload, insertionKeys, skipKeys);
   const sortedPairs = collectPairs(payload, sortedKeys, skipKeys);
   const insertionPairs = collectPairs(payload, insertionKeys, skipKeys);
+  const sortedValuesWithEmpty = collectValues(payload, sortedKeys, skipKeys, true);
+  const insertionValuesWithEmpty = collectValues(payload, insertionKeys, skipKeys, true);
+  const sortedPairsWithEmpty = collectPairs(payload, sortedKeys, skipKeys, true);
+  const insertionPairsWithEmpty = collectPairs(payload, insertionKeys, skipKeys, true);
+  const compactJson = JSON.stringify(payload);
 
   return {
     values_colon_sorted: hash(`${sortedValues.join(':')}:${secret}`),
@@ -98,5 +105,14 @@ export function getAllpaySignatureCandidates(
     values_plain_insertion: hash(`${insertionValues.join('')}${secret}`),
     pairs_amp_sorted: hash(`${sortedPairs.join('&')}&secret_key=${secret}`),
     pairs_amp_insertion: hash(`${insertionPairs.join('&')}&secret_key=${secret}`),
+    values_colon_sorted_with_empty: hash(`${sortedValuesWithEmpty.join(':')}:${secret}`),
+    values_plain_sorted_with_empty: hash(`${sortedValuesWithEmpty.join('')}${secret}`),
+    values_colon_insertion_with_empty: hash(`${insertionValuesWithEmpty.join(':')}:${secret}`),
+    values_plain_insertion_with_empty: hash(`${insertionValuesWithEmpty.join('')}${secret}`),
+    pairs_amp_sorted_with_empty: hash(`${sortedPairsWithEmpty.join('&')}&secret_key=${secret}`),
+    pairs_amp_insertion_with_empty: hash(`${insertionPairsWithEmpty.join('&')}&secret_key=${secret}`),
+    raw_json_plus_secret: hash(`${compactJson}${secret}`),
+    raw_json_colon_secret: hash(`${compactJson}:${secret}`),
+    secret_plus_raw_json: hash(`${secret}${compactJson}`),
   };
 }
