@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getAllpaySignature, secureSignatureMatch } from './signature';
+import { getAllpaySignature, getAllpaySignatureCandidates, secureSignatureMatch } from './signature';
 
 type CallbackPayload = Record<string, unknown> & {
   sign?: unknown;
@@ -65,14 +65,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: 'missing_sign' }, { status: 400 });
   }
 
-  const expectedSign = getAllpaySignature(payload, webhookSecret).toLowerCase();
-  if (!secureSignatureMatch(incomingSign, expectedSign)) {
+  const primaryExpectedSign = getAllpaySignature(payload, webhookSecret).toLowerCase();
+  const candidateMap = getAllpaySignatureCandidates(payload, webhookSecret);
+  const matchedCandidate = Object.entries(candidateMap).find(([, candidate]) =>
+    secureSignatureMatch(incomingSign, candidate.toLowerCase())
+  );
+
+  const isValid = secureSignatureMatch(incomingSign, primaryExpectedSign) || Boolean(matchedCandidate);
+
+  if (!isValid) {
     console.error('[allpay-callback] signature mismatch', {
       orderId: payload.order_id,
       incomingSign,
-      expectedSign,
+      expectedSign: primaryExpectedSign,
     });
     return NextResponse.json({ ok: false, reason: 'invalid_sign' }, { status: 401 });
+  }
+
+  if (matchedCandidate) {
+    console.log('[allpay-callback] matched signature candidate', {
+      orderId: payload.order_id,
+      candidate: matchedCandidate[0],
+    });
   }
 
   const orderId = toSafeString(payload.order_id);
