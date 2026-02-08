@@ -46,3 +46,5 @@ const HOST_TO_SHOW = {
 2. Добавь `shows/<новый_slug>/content.ts` (тексты на трёх языках) и `shows/<новый_slug>/index.ts` (описание ассетов).
 3. Экспортируй конфиг в `shows/index.ts`, обнови `ShowSlug`.
 4. При необходимости расширь `HOST_TO_SHOW` новым доменом.
+
+5. deploy test
