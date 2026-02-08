@@ -36,7 +36,7 @@ export function getAllpaySignature(
     values.push(normalized);
   }
 
-  const base = `${values.join('')}${secret}`;
+  const base = `${values.join(':')}:${secret}`;
   return crypto.createHash('sha256').update(base).digest('hex');
 }
 
