@@ -19,6 +19,20 @@ type UpdateOrderInput = {
   raw?: Record<string, unknown>;
 };
 
+export type StoredOrder = {
+  order_id: string;
+  show_slug: string;
+  event_id: string | null;
+  qty: number;
+  buyer_name: string | null;
+  buyer_email: string;
+  amount: number | null;
+  currency: string | null;
+  status: string;
+  paid_at: string | null;
+  allpay_payment_id: string | null;
+};
+
 function getConfig() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -42,6 +56,19 @@ async function supabaseRequest(path: string, init: RequestInit): Promise<Respons
       ...(init.headers ?? {}),
     },
   });
+}
+
+async function getOrderByOrderId(orderId: string): Promise<StoredOrder | null> {
+  const response = await supabaseRequest(
+    `/orders?order_id=eq.${encodeURIComponent(orderId)}&select=order_id,show_slug,event_id,qty,buyer_name,buyer_email,amount,currency,status,paid_at,allpay_payment_id&limit=1`,
+    { method: 'GET' }
+  );
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`[ordersStore] get order failed: ${response.status} ${text}`);
+  }
+  const rows = text ? (JSON.parse(text) as StoredOrder[]) : [];
+  return rows[0] ?? null;
 }
 
 async function patchOrder(
@@ -103,16 +130,49 @@ export async function markOrderFailed(input: UpdateOrderInput): Promise<void> {
 }
 
 export async function markOrderPaid(input: UpdateOrderInput): Promise<void> {
-  await patchOrder(
-    input.orderId,
+  await patchOrder(input.orderId, {
+    status: 'paid',
+    allpay_payment_id: input.paymentId ?? null,
+    amount: input.amount ?? null,
+    currency: input.currency ?? 'ILS',
+    paid_at: new Date().toISOString(),
+    allpay_raw: input.raw ?? null,
+  }, 'paid');
+}
+
+export async function markOrderPaidOnce(input: UpdateOrderInput): Promise<{ updated: boolean; order: StoredOrder }> {
+  const response = await supabaseRequest(
+    `/orders?order_id=eq.${encodeURIComponent(input.orderId)}&status=neq.paid`,
     {
-      status: 'paid',
-      allpay_payment_id: input.paymentId ?? null,
-      amount: input.amount ?? null,
-      currency: input.currency ?? 'ILS',
-      paid_at: new Date().toISOString(),
-      allpay_raw: input.raw ?? null,
-    },
-    'paid'
+      method: 'PATCH',
+      headers: {
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({
+        status: 'paid',
+        allpay_payment_id: input.paymentId ?? null,
+        amount: input.amount ?? null,
+        currency: input.currency ?? 'ILS',
+        paid_at: new Date().toISOString(),
+        allpay_raw: input.raw ?? null,
+      }),
+    }
   );
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`[ordersStore] paid update failed: ${response.status} ${text}`);
+  }
+
+  const rows = text ? (JSON.parse(text) as StoredOrder[]) : [];
+  if (rows.length > 0) {
+    return { updated: true, order: rows[0] };
+  }
+
+  const existing = await getOrderByOrderId(input.orderId);
+  if (!existing) {
+    throw new Error(`[ordersStore] order not found for paid: ${input.orderId}`);
+  }
+
+  return { updated: false, order: existing };
 }
