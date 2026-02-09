@@ -8,6 +8,7 @@ export type TicketArtifacts = {
   qrImageUrl: string;
   pdfBase64: string;
   pdfFilename: string;
+  qrFilename: string;
 };
 
 function escapePdfText(input: string): string {
@@ -39,7 +40,8 @@ function toPdfAscii(input: string): string {
 }
 
 function buildSimplePdf(lines: string[]): Uint8Array {
-  const contentLines = lines.map((line, idx) => {
+  const wrappedLines = lines.flatMap((line) => wrapPdfLine(line));
+  const contentLines = wrappedLines.map((line, idx) => {
     const y = 790 - idx * 22;
     return `BT /F1 12 Tf 40 ${y} Td (${escapePdfText(line)}) Tj ET`;
   });
@@ -74,6 +76,21 @@ function buildSimplePdf(lines: string[]): Uint8Array {
   return Uint8Array.from(Buffer.from(pdf, 'utf8'));
 }
 
+function wrapPdfLine(input: string, max = 78): string[] {
+  if (input.length <= max) return [input];
+  const parts: string[] = [];
+  let rest = input;
+  while (rest.length > max) {
+    const chunk = rest.slice(0, max);
+    const lastSpace = chunk.lastIndexOf(' ');
+    const cut = lastSpace > 30 ? lastSpace : max;
+    parts.push(rest.slice(0, cut));
+    rest = rest.slice(cut).trimStart();
+  }
+  if (rest) parts.push(rest);
+  return parts;
+}
+
 export function buildTicketArtifacts(order: StoredOrder): TicketArtifacts {
   const baseUrl = process.env.APP_BASE_URL ?? 'https://kozocka-zlata-landing-coral.vercel.app';
   const ticketCode = crypto.createHash('sha256').update(order.order_id).digest('hex').slice(0, 12).toUpperCase();
@@ -95,8 +112,7 @@ export function buildTicketArtifacts(order: StoredOrder): TicketArtifacts {
     `Qty: ${String(order.qty)}`,
     `Amount: ${amountLabel}`,
     '',
-    `Verify URL: ${verifyUrl}`,
-    `QR URL: ${qrImageUrl}`,
+    'Use QR from the email to validate this ticket.',
   ];
 
   const pdfBytes = buildSimplePdf(pdfLines);
@@ -107,5 +123,6 @@ export function buildTicketArtifacts(order: StoredOrder): TicketArtifacts {
     qrImageUrl,
     pdfBase64: Buffer.from(pdfBytes).toString('base64'),
     pdfFilename: `ticket-${order.order_id}.pdf`,
+    qrFilename: `ticket-${order.order_id}-qr.png`,
   };
 }

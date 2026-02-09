@@ -5,6 +5,17 @@ type SendTicketEmailResult = {
   id?: string;
 };
 
+async function fetchBase64Attachment(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const bytes = await response.arrayBuffer();
+    return Buffer.from(bytes).toString('base64');
+  } catch {
+    return null;
+  }
+}
+
 export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM ?? 'onboarding@resend.dev';
@@ -35,6 +46,23 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<p>Во вложении — PDF-билет.</p>`,
   ].join('');
 
+  const qrPngBase64 = await fetchBase64Attachment(ticket.qrImageUrl);
+  const attachments: Array<{ filename: string; content: string; type: string }> = [
+    {
+      filename: ticket.pdfFilename,
+      content: ticket.pdfBase64,
+      type: 'application/pdf',
+    },
+  ];
+
+  if (qrPngBase64) {
+    attachments.push({
+      filename: ticket.qrFilename,
+      content: qrPngBase64,
+      type: 'image/png',
+    });
+  }
+
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -46,13 +74,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
       to: [order.buyer_email],
       subject,
       html,
-      attachments: [
-        {
-          filename: ticket.pdfFilename,
-          content: ticket.pdfBase64,
-          type: 'application/pdf',
-        },
-      ],
+      attachments,
     }),
   });
 
