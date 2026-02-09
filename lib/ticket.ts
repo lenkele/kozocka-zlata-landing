@@ -14,6 +14,30 @@ function escapePdfText(input: string): string {
   return input.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
 }
 
+function transliterateCyrillic(input: string): string {
+  const map: Record<string, string> = {
+    А: 'A', а: 'a', Б: 'B', б: 'b', В: 'V', в: 'v', Г: 'G', г: 'g',
+    Д: 'D', д: 'd', Е: 'E', е: 'e', Ё: 'E', ё: 'e', Ж: 'Zh', ж: 'zh',
+    З: 'Z', з: 'z', И: 'I', и: 'i', Й: 'Y', й: 'y', К: 'K', к: 'k',
+    Л: 'L', л: 'l', М: 'M', м: 'm', Н: 'N', н: 'n', О: 'O', о: 'o',
+    П: 'P', п: 'p', Р: 'R', р: 'r', С: 'S', с: 's', Т: 'T', т: 't',
+    У: 'U', у: 'u', Ф: 'F', ф: 'f', Х: 'Kh', х: 'kh', Ц: 'Ts', ц: 'ts',
+    Ч: 'Ch', ч: 'ch', Ш: 'Sh', ш: 'sh', Щ: 'Sch', щ: 'sch',
+    Ъ: '', ъ: '', Ы: 'Y', ы: 'y', Ь: '', ь: '', Э: 'E', э: 'e',
+    Ю: 'Yu', ю: 'yu', Я: 'Ya', я: 'ya',
+  };
+
+  return Array.from(input).map((char) => map[char] ?? char).join('');
+}
+
+function toPdfAscii(input: string): string {
+  const transliterated = transliterateCyrillic(input);
+  return transliterated
+    .replace(/[^\x20-\x7E]/g, '?')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function buildSimplePdf(lines: string[]): Uint8Array {
   const contentLines = lines.map((line, idx) => {
     const y = 790 - idx * 22;
@@ -57,6 +81,7 @@ export function buildTicketArtifacts(order: StoredOrder): TicketArtifacts {
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(verifyUrl)}`;
   const amountLabel = order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
   const buyerName = order.buyer_name || 'Viewer';
+  const buyerNamePdf = toPdfAscii(buyerName);
 
   const pdfLines = [
     'RYBA KIVA - TICKET',
@@ -65,7 +90,7 @@ export function buildTicketArtifacts(order: StoredOrder): TicketArtifacts {
     `Order: ${order.order_id}`,
     `Show: ${order.show_slug}`,
     `Event: ${order.event_id || '-'}`,
-    `Name: ${buyerName}`,
+    `Name: ${buyerNamePdf}`,
     `Email: ${order.buyer_email}`,
     `Qty: ${String(order.qty)}`,
     `Amount: ${amountLabel}`,
