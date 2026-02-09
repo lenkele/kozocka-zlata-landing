@@ -44,6 +44,14 @@ function getConfig() {
   return { supabaseUrl, serviceRoleKey };
 }
 
+function normalizePaymentId(paymentId: string | undefined): string | null {
+  if (!paymentId) return null;
+  const trimmed = paymentId.trim();
+  if (!trimmed) return null;
+  if (trimmed.toUpperCase() === 'EMPTY') return null;
+  return trimmed;
+}
+
 async function supabaseRequest(path: string, init: RequestInit): Promise<Response> {
   const { supabaseUrl, serviceRoleKey } = getConfig();
 
@@ -122,7 +130,7 @@ export async function markOrderFailed(input: UpdateOrderInput): Promise<void> {
     input.orderId,
     {
       status: 'failed',
-      allpay_payment_id: input.paymentId ?? null,
+      allpay_payment_id: normalizePaymentId(input.paymentId),
       allpay_raw: input.raw ?? null,
     },
     'failed'
@@ -132,7 +140,7 @@ export async function markOrderFailed(input: UpdateOrderInput): Promise<void> {
 export async function markOrderPaid(input: UpdateOrderInput): Promise<void> {
   await patchOrder(input.orderId, {
     status: 'paid',
-    allpay_payment_id: input.paymentId ?? null,
+    allpay_payment_id: normalizePaymentId(input.paymentId),
     amount: input.amount ?? null,
     currency: input.currency ?? 'ILS',
     paid_at: new Date().toISOString(),
@@ -150,7 +158,7 @@ export async function markOrderPaidOnce(input: UpdateOrderInput): Promise<{ upda
       },
       body: JSON.stringify({
         status: 'paid',
-        allpay_payment_id: input.paymentId ?? null,
+        allpay_payment_id: normalizePaymentId(input.paymentId),
         amount: input.amount ?? null,
         currency: input.currency ?? 'ILS',
         paid_at: new Date().toISOString(),
