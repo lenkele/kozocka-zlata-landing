@@ -1,4 +1,9 @@
 import crypto from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
+import fontkit from '@pdf-lib/fontkit';
+import { PDFDocument, type PDFFont, type PDFPage, rgb } from 'pdf-lib';
 
 import type { StoredOrder } from './ordersStore';
 
@@ -8,114 +13,200 @@ export type TicketArtifacts = {
   qrImageUrl: string;
   pdfBase64: string;
   pdfFilename: string;
-  qrFilename: string;
 };
 
-function escapePdfText(input: string): string {
-  return input.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
-}
+const PAGE_WIDTH = 595;
+const PAGE_HEIGHT = 842;
+const LEFT_X = 40;
+const RIGHT_X = 390;
+const CONTENT_WIDTH = RIGHT_X - LEFT_X;
+const FONT_SIZE = 12;
+const LINE_GAP = 18;
 
-function transliterateCyrillic(input: string): string {
-  const map: Record<string, string> = {
-    А: 'A', а: 'a', Б: 'B', б: 'b', В: 'V', в: 'v', Г: 'G', г: 'g',
-    Д: 'D', д: 'd', Е: 'E', е: 'e', Ё: 'E', ё: 'e', Ж: 'Zh', ж: 'zh',
-    З: 'Z', з: 'z', И: 'I', и: 'i', Й: 'Y', й: 'y', К: 'K', к: 'k',
-    Л: 'L', л: 'l', М: 'M', м: 'm', Н: 'N', н: 'n', О: 'O', о: 'o',
-    П: 'P', п: 'p', Р: 'R', р: 'r', С: 'S', с: 's', Т: 'T', т: 't',
-    У: 'U', у: 'u', Ф: 'F', ф: 'f', Х: 'Kh', х: 'kh', Ц: 'Ts', ц: 'ts',
-    Ч: 'Ch', ч: 'ch', Ш: 'Sh', ш: 'sh', Щ: 'Sch', щ: 'sch',
-    Ъ: '', ъ: '', Ы: 'Y', ы: 'y', Ь: '', ь: '', Э: 'E', э: 'e',
-    Ю: 'Yu', ю: 'yu', Я: 'Ya', я: 'ya',
-  };
+const FONT_CANDIDATES = [
+  path.join(process.cwd(), 'assets', 'fonts', 'DejaVuSans.ttf'),
+  path.join(process.cwd(), 'DejaVuSans.ttf'),
+];
 
-  return Array.from(input).map((char) => map[char] ?? char).join('');
-}
-
-function toPdfAscii(input: string): string {
-  const transliterated = transliterateCyrillic(input);
-  return transliterated
-    .replace(/[^\x20-\x7E]/g, '?')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function buildSimplePdf(lines: string[]): Uint8Array {
-  const wrappedLines = lines.flatMap((line) => wrapPdfLine(line));
-  const contentLines = wrappedLines.map((line, idx) => {
-    const y = 790 - idx * 22;
-    return `BT /F1 12 Tf 40 ${y} Td (${escapePdfText(line)}) Tj ET`;
-  });
-
-  const stream = contentLines.join('\n');
-
-  const objects: string[] = [];
-  objects.push('1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj');
-  objects.push('2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj');
-  objects.push(
-    '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj'
-  );
-  objects.push('4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj');
-  objects.push(`5 0 obj << /Length ${Buffer.byteLength(stream, 'utf8')} >> stream\n${stream}\nendstream endobj`);
-
-  let pdf = '%PDF-1.4\n';
-  const offsets: number[] = [0];
-
-  for (const obj of objects) {
-    offsets.push(Buffer.byteLength(pdf, 'utf8'));
-    pdf += `${obj}\n`;
+async function loadUnicodeFont(): Promise<Uint8Array> {
+  for (const filePath of FONT_CANDIDATES) {
+    try {
+      return await readFile(filePath);
+    } catch {
+      // try next location
+    }
   }
 
-  const xrefStart = Buffer.byteLength(pdf, 'utf8');
-  pdf += `xref\n0 ${objects.length + 1}\n`;
-  pdf += '0000000000 65535 f \n';
-  for (let i = 1; i <= objects.length; i += 1) {
-    pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
-  }
-  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
-
-  return Uint8Array.from(Buffer.from(pdf, 'utf8'));
+  throw new Error('DejaVuSans.ttf not found (assets/fonts/DejaVuSans.ttf or project root)');
 }
 
-function wrapPdfLine(input: string, max = 78): string[] {
-  if (input.length <= max) return [input];
-  const parts: string[] = [];
-  let rest = input;
-  while (rest.length > max) {
-    const chunk = rest.slice(0, max);
-    const lastSpace = chunk.lastIndexOf(' ');
-    const cut = lastSpace > 30 ? lastSpace : max;
-    parts.push(rest.slice(0, cut));
-    rest = rest.slice(cut).trimStart();
+function wrapText(font: PDFFont, text: string, size: number, maxWidth: number): string[] {
+  if (!text) return [''];
+
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let current = '';
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    const width = font.widthOfTextAtSize(candidate, size);
+    if (width <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+    if (current) lines.push(current);
+
+    // If a single token is longer than the line width, hard-wrap by characters.
+    if (font.widthOfTextAtSize(word, size) > maxWidth) {
+      let chunk = '';
+      for (const ch of word) {
+        const chunkCandidate = `${chunk}${ch}`;
+        if (font.widthOfTextAtSize(chunkCandidate, size) <= maxWidth) {
+          chunk = chunkCandidate;
+          continue;
+        }
+        if (chunk) lines.push(chunk);
+        chunk = ch;
+      }
+      current = chunk;
+      continue;
+    }
+
+    current = word;
   }
-  if (rest) parts.push(rest);
-  return parts;
+
+  if (current) lines.push(current);
+  return lines.length > 0 ? lines : [''];
 }
 
-export function buildTicketArtifacts(order: StoredOrder): TicketArtifacts {
+function drawWrappedLine(
+  page: PDFPage,
+  font: PDFFont,
+  text: string,
+  y: number,
+  options: { size?: number; rtl?: boolean; color?: ReturnType<typeof rgb> } = {}
+): number {
+  const size = options.size ?? FONT_SIZE;
+  const maxWidth = CONTENT_WIDTH;
+  const lines = wrapText(font, text, size, maxWidth);
+
+  for (const line of lines) {
+    const width = font.widthOfTextAtSize(line, size);
+    const x = options.rtl ? Math.max(LEFT_X, RIGHT_X - width) : LEFT_X;
+    page.drawText(line, {
+      x,
+      y,
+      size,
+      font,
+      color: options.color ?? rgb(0.1, 0.1, 0.1),
+    });
+    y -= LINE_GAP;
+  }
+
+  return y;
+}
+
+async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
+  try {
+    const response = await fetch(qrImageUrl);
+    if (!response.ok) return null;
+    const bytes = await response.arrayBuffer();
+    return await pdfDoc.embedPng(bytes);
+  } catch {
+    return null;
+  }
+}
+
+function amountLabel(order: StoredOrder): string {
+  return order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
+}
+
+export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketArtifacts> {
   const baseUrl = process.env.APP_BASE_URL ?? 'https://kozocka-zlata-landing-coral.vercel.app';
   const ticketCode = crypto.createHash('sha256').update(order.order_id).digest('hex').slice(0, 12).toUpperCase();
   const verifyUrl = `${baseUrl}/payment/success?order_id=${encodeURIComponent(order.order_id)}&ticket=${ticketCode}`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(verifyUrl)}`;
-  const amountLabel = order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
-  const buyerName = order.buyer_name || 'Viewer';
-  const buyerNamePdf = toPdfAscii(buyerName);
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(verifyUrl)}`;
 
-  const pdfLines = [
-    'RYBA KIVA - TICKET',
-    '',
-    `Ticket code: ${ticketCode}`,
-    `Order: ${order.order_id}`,
-    `Show: ${order.show_slug}`,
-    `Event: ${order.event_id || '-'}`,
-    `Name: ${buyerNamePdf}`,
-    `Email: ${order.buyer_email}`,
-    `Qty: ${String(order.qty)}`,
-    `Amount: ${amountLabel}`,
-    '',
-    'Use QR from the email to validate this ticket.',
-  ];
+  const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
+  const fontBytes = await loadUnicodeFont();
+  const font = await pdfDoc.embedFont(fontBytes, { subset: false });
+  const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
 
-  const pdfBytes = buildSimplePdf(pdfLines);
+  const qrImage = await embedQrImage(pdfDoc, qrImageUrl);
+  if (qrImage) {
+    page.drawImage(qrImage, {
+      x: 405,
+      y: 640,
+      width: 150,
+      height: 150,
+    });
+  }
+
+  let y = 800;
+  y = drawWrappedLine(page, font, 'RYBA KIVA - TICKET', y, { size: 18 });
+  y = drawWrappedLine(page, font, 'БИЛЕТ - РЫБА КИВА', y);
+  y = drawWrappedLine(page, font, 'כרטיס - ריבה קיבה', y, { rtl: true });
+  y -= 8;
+
+  const common = {
+    ticketCode,
+    orderId: order.order_id,
+    show: order.show_slug,
+    event: order.event_id || '-',
+    name: order.buyer_name || '-',
+    email: order.buyer_email,
+    qty: String(order.qty),
+    amount: amountLabel(order),
+  };
+
+  y = drawWrappedLine(page, font, 'English', y, { size: 14 });
+  y = drawWrappedLine(page, font, `Ticket code: ${common.ticketCode}`, y);
+  y = drawWrappedLine(page, font, `Order: ${common.orderId}`, y);
+  y = drawWrappedLine(page, font, `Show: ${common.show}`, y);
+  y = drawWrappedLine(page, font, `Event: ${common.event}`, y);
+  y = drawWrappedLine(page, font, `Name: ${common.name}`, y);
+  y = drawWrappedLine(page, font, `Email: ${common.email}`, y);
+  y = drawWrappedLine(page, font, `Qty: ${common.qty}`, y);
+  y = drawWrappedLine(page, font, `Amount: ${common.amount}`, y);
+  y -= 6;
+
+  y = drawWrappedLine(page, font, 'Русский', y, { size: 14 });
+  y = drawWrappedLine(page, font, `Код билета: ${common.ticketCode}`, y);
+  y = drawWrappedLine(page, font, `Заказ: ${common.orderId}`, y);
+  y = drawWrappedLine(page, font, `Спектакль: ${common.show}`, y);
+  y = drawWrappedLine(page, font, `Сеанс: ${common.event}`, y);
+  y = drawWrappedLine(page, font, `Имя: ${common.name}`, y);
+  y = drawWrappedLine(page, font, `Email: ${common.email}`, y);
+  y = drawWrappedLine(page, font, `Количество: ${common.qty}`, y);
+  y = drawWrappedLine(page, font, `Сумма: ${common.amount}`, y);
+  y -= 6;
+
+  y = drawWrappedLine(page, font, 'עברית', y, { size: 14, rtl: true });
+  y = drawWrappedLine(page, font, `קוד כרטיס: ${common.ticketCode}`, y, { rtl: true });
+  y = drawWrappedLine(page, font, `הזמנה: ${common.orderId}`, y, { rtl: true });
+  y = drawWrappedLine(page, font, `מופע: ${common.show}`, y, { rtl: true });
+  y = drawWrappedLine(page, font, `אירוע: ${common.event}`, y, { rtl: true });
+  y = drawWrappedLine(page, font, `שם: ${common.name}`, y, { rtl: true });
+  y = drawWrappedLine(page, font, `דוא"ל: ${common.email}`, y, { rtl: true });
+  y = drawWrappedLine(page, font, `כמות: ${common.qty}`, y, { rtl: true });
+  y = drawWrappedLine(page, font, `סכום: ${common.amount}`, y, { rtl: true });
+  y -= 8;
+
+  y = drawWrappedLine(
+    page,
+    font,
+    'Use the QR code in this PDF to verify the ticket. / Используйте QR-код в PDF для проверки билета.',
+    y,
+    { size: 10, color: rgb(0.25, 0.25, 0.25) }
+  );
+  drawWrappedLine(page, font, 'השתמשו בקוד ה-QR שב-PDF כדי לאמת את הכרטיס.', y, {
+    size: 10,
+    color: rgb(0.25, 0.25, 0.25),
+    rtl: true,
+  });
+
+  const pdfBytes = await pdfDoc.save();
 
   return {
     ticketCode,
@@ -123,6 +214,5 @@ export function buildTicketArtifacts(order: StoredOrder): TicketArtifacts {
     qrImageUrl,
     pdfBase64: Buffer.from(pdfBytes).toString('base64'),
     pdfFilename: `ticket-${order.order_id}.pdf`,
-    qrFilename: `ticket-${order.order_id}-qr.png`,
   };
 }

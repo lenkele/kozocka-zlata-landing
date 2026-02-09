@@ -5,17 +5,6 @@ type SendTicketEmailResult = {
   id?: string;
 };
 
-async function fetchBase64Attachment(url: string): Promise<string | null> {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const bytes = await response.arrayBuffer();
-    return Buffer.from(bytes).toString('base64');
-  } catch {
-    return null;
-  }
-}
-
 export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM ?? 'onboarding@resend.dev';
@@ -24,29 +13,50 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     throw new Error('RESEND_API_KEY is required');
   }
 
-  const buyerName = order.buyer_name || 'Зритель';
-  const ticket = buildTicketArtifacts(order);
-  const subject = 'Оплата получена: билет оформлен';
+  const buyerName = order.buyer_name || 'Viewer';
+  const ticket = await buildTicketArtifacts(order);
+  const subject = 'Payment confirmed / Оплата подтверждена / התשלום אושר';
   const showLabel = order.show_slug;
   const eventLabel = order.event_id || '-';
   const qtyLabel = String(order.qty ?? 1);
   const amountLabel = order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
 
   const html = [
+    `<p><strong>English</strong></p>`,
+    `<p>Hello, ${buyerName}!</p>`,
+    `<p>Your payment was received successfully.</p>`,
+    `<p><strong>Ticket code:</strong> ${ticket.ticketCode}</p>`,
+    `<p><a href="${ticket.verifyUrl}">Verify ticket</a></p>`,
+    `<p><strong>Order:</strong> ${order.order_id}<br/>`,
+    `<strong>Show:</strong> ${showLabel}<br/>`,
+    `<strong>Event:</strong> ${eventLabel}<br/>`,
+    `<strong>Qty:</strong> ${qtyLabel}<br/>`,
+    `<strong>Amount:</strong> ${amountLabel}</p>`,
+    `<hr/>`,
+    `<p><strong>Русский</strong></p>`,
     `<p>Здравствуйте, ${buyerName}!</p>`,
     `<p>Оплата успешно получена.</p>`,
     `<p><strong>Код билета:</strong> ${ticket.ticketCode}</p>`,
-    `<p><img src="${ticket.qrImageUrl}" alt="QR ticket" width="180" height="180" /></p>`,
     `<p><a href="${ticket.verifyUrl}">Проверить билет</a></p>`,
     `<p><strong>Заказ:</strong> ${order.order_id}<br/>`,
     `<strong>Спектакль:</strong> ${showLabel}<br/>`,
     `<strong>Сеанс:</strong> ${eventLabel}<br/>`,
     `<strong>Количество:</strong> ${qtyLabel}<br/>`,
     `<strong>Сумма:</strong> ${amountLabel}</p>`,
-    `<p>Во вложении — PDF-билет.</p>`,
+    `<hr/>`,
+    `<p dir="rtl"><strong>עברית</strong></p>`,
+    `<p dir="rtl">שלום, ${buyerName}!</p>`,
+    `<p dir="rtl">התשלום התקבל בהצלחה.</p>`,
+    `<p dir="rtl"><strong>קוד כרטיס:</strong> ${ticket.ticketCode}</p>`,
+    `<p dir="rtl"><a href="${ticket.verifyUrl}">אימות כרטיס</a></p>`,
+    `<p dir="rtl"><strong>הזמנה:</strong> ${order.order_id}<br/>`,
+    `<strong>מופע:</strong> ${showLabel}<br/>`,
+    `<strong>אירוע:</strong> ${eventLabel}<br/>`,
+    `<strong>כמות:</strong> ${qtyLabel}<br/>`,
+    `<strong>סכום:</strong> ${amountLabel}</p>`,
+    `<p>PDF ticket is attached / PDF-билет во вложении / כרטיס PDF מצורף.</p>`,
   ].join('');
 
-  const qrPngBase64 = await fetchBase64Attachment(ticket.qrImageUrl);
   const attachments: Array<{ filename: string; content: string; type: string }> = [
     {
       filename: ticket.pdfFilename,
@@ -54,14 +64,6 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
       type: 'application/pdf',
     },
   ];
-
-  if (qrPngBase64) {
-    attachments.push({
-      filename: ticket.qrFilename,
-      content: qrPngBase64,
-      type: 'image/png',
-    });
-  }
 
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
