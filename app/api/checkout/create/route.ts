@@ -17,10 +17,8 @@ type CreateCheckoutRequest = {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function normalizeLang(input: CreateCheckoutRequest['lang']): 'RU' | 'HE' | 'EN' | 'AUTO' {
-  if (input === 'ru') return 'RU';
-  if (input === 'he') return 'HE';
-  if (input === 'en') return 'EN';
+function resolveAllpayLang(): 'AUTO' {
+  // Use Allpay automatic language selection for mixed-language audience.
   return 'AUTO';
 }
 
@@ -102,7 +100,7 @@ export async function POST(request: Request) {
     qty,
     clientName: buyerName,
     clientEmail: buyerEmail,
-    lang: normalizeLang(body.lang),
+    lang: resolveAllpayLang(),
     successUrl: `${appBaseUrl}/payment/success`,
     backlinkUrl: `${appBaseUrl}/payment/return`,
     webhookUrl: `${appBaseUrl}/api/payment/allpay-callback`,
