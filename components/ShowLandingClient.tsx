@@ -200,7 +200,16 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     };
   }, [lang, show.scheduleFilePath]);
 
-  const displaySchedule = scheduleData.length > 0 ? scheduleData : t.scheduleRows;
+  const fallbackScheduleData: ScheduleDisplayEntry[] = t.scheduleRows.map((row, index) => ({
+    id: row.id ?? `fallback-${index}`,
+    date: row.date,
+    dateIso: '',
+    time: row.time,
+    place: row.place,
+    format: row.format,
+    language: row.language,
+  }));
+  const displaySchedule: ScheduleDisplayEntry[] = scheduleData.length > 0 ? scheduleData : fallbackScheduleData;
   const galleryPhotos = show.galleryPhotos.length > 0 ? show.galleryPhotos : show.carouselPhotos;
 
   const scrollToSchedule = () => {
