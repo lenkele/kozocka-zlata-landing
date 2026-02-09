@@ -18,7 +18,7 @@ export type TicketArtifacts = {
 const PAGE_WIDTH = 595;
 const PAGE_HEIGHT = 842;
 const LEFT_X = 40;
-const RIGHT_X = 390;
+const RIGHT_X = 555;
 const CONTENT_WIDTH = RIGHT_X - LEFT_X;
 const FONT_SIZE = 12;
 const LINE_GAP = 18;
@@ -106,6 +106,18 @@ function drawWrappedLine(
   return y;
 }
 
+function drawLabelValueLines(
+  page: PDFPage,
+  font: PDFFont,
+  y: number,
+  label: string,
+  value: string,
+  options: { rtlLabel?: boolean; valueRtl?: boolean } = {}
+): number {
+  y = drawWrappedLine(page, font, label, y, { rtl: options.rtlLabel ?? false });
+  return drawWrappedLine(page, font, value, y, { rtl: options.valueRtl ?? false });
+}
+
 async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
   try {
     const response = await fetch(qrImageUrl);
@@ -136,10 +148,10 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
   const qrImage = await embedQrImage(pdfDoc, qrImageUrl);
   if (qrImage) {
     page.drawImage(qrImage, {
-      x: 405,
-      y: 640,
-      width: 150,
-      height: 150,
+      x: 40,
+      y: 70,
+      width: 120,
+      height: 120,
     });
   }
 
@@ -161,36 +173,36 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
   };
 
   y = drawWrappedLine(page, font, 'English', y, { size: 14 });
-  y = drawWrappedLine(page, font, `Ticket code: ${common.ticketCode}`, y);
-  y = drawWrappedLine(page, font, `Order: ${common.orderId}`, y);
-  y = drawWrappedLine(page, font, `Show: ${common.show}`, y);
-  y = drawWrappedLine(page, font, `Event: ${common.event}`, y);
-  y = drawWrappedLine(page, font, `Name: ${common.name}`, y);
-  y = drawWrappedLine(page, font, `Email: ${common.email}`, y);
-  y = drawWrappedLine(page, font, `Qty: ${common.qty}`, y);
-  y = drawWrappedLine(page, font, `Amount: ${common.amount}`, y);
+  y = drawLabelValueLines(page, font, y, 'Ticket code:', common.ticketCode);
+  y = drawLabelValueLines(page, font, y, 'Order:', common.orderId);
+  y = drawLabelValueLines(page, font, y, 'Show:', common.show);
+  y = drawLabelValueLines(page, font, y, 'Event:', common.event);
+  y = drawLabelValueLines(page, font, y, 'Name:', common.name);
+  y = drawLabelValueLines(page, font, y, 'Email:', common.email);
+  y = drawLabelValueLines(page, font, y, 'Qty:', common.qty);
+  y = drawLabelValueLines(page, font, y, 'Amount:', common.amount);
   y -= 6;
 
   y = drawWrappedLine(page, font, 'Русский', y, { size: 14 });
-  y = drawWrappedLine(page, font, `Код билета: ${common.ticketCode}`, y);
-  y = drawWrappedLine(page, font, `Заказ: ${common.orderId}`, y);
-  y = drawWrappedLine(page, font, `Спектакль: ${common.show}`, y);
-  y = drawWrappedLine(page, font, `Сеанс: ${common.event}`, y);
-  y = drawWrappedLine(page, font, `Имя: ${common.name}`, y);
-  y = drawWrappedLine(page, font, `Email: ${common.email}`, y);
-  y = drawWrappedLine(page, font, `Количество: ${common.qty}`, y);
-  y = drawWrappedLine(page, font, `Сумма: ${common.amount}`, y);
+  y = drawLabelValueLines(page, font, y, 'Код билета:', common.ticketCode);
+  y = drawLabelValueLines(page, font, y, 'Заказ:', common.orderId);
+  y = drawLabelValueLines(page, font, y, 'Спектакль:', common.show);
+  y = drawLabelValueLines(page, font, y, 'Сеанс:', common.event);
+  y = drawLabelValueLines(page, font, y, 'Имя:', common.name);
+  y = drawLabelValueLines(page, font, y, 'Email:', common.email);
+  y = drawLabelValueLines(page, font, y, 'Количество:', common.qty);
+  y = drawLabelValueLines(page, font, y, 'Сумма:', common.amount);
   y -= 6;
 
   y = drawWrappedLine(page, font, 'עברית', y, { size: 14, rtl: true });
-  y = drawWrappedLine(page, font, `קוד כרטיס: ${common.ticketCode}`, y, { rtl: true });
-  y = drawWrappedLine(page, font, `הזמנה: ${common.orderId}`, y, { rtl: true });
-  y = drawWrappedLine(page, font, `מופע: ${common.show}`, y, { rtl: true });
-  y = drawWrappedLine(page, font, `אירוע: ${common.event}`, y, { rtl: true });
-  y = drawWrappedLine(page, font, `שם: ${common.name}`, y, { rtl: true });
-  y = drawWrappedLine(page, font, `דוא"ל: ${common.email}`, y, { rtl: true });
-  y = drawWrappedLine(page, font, `כמות: ${common.qty}`, y, { rtl: true });
-  y = drawWrappedLine(page, font, `סכום: ${common.amount}`, y, { rtl: true });
+  y = drawLabelValueLines(page, font, y, ':קוד כרטיס', common.ticketCode, { rtlLabel: true, valueRtl: false });
+  y = drawLabelValueLines(page, font, y, ':הזמנה', common.orderId, { rtlLabel: true, valueRtl: false });
+  y = drawLabelValueLines(page, font, y, ':מופע', common.show, { rtlLabel: true, valueRtl: false });
+  y = drawLabelValueLines(page, font, y, ':אירוע', common.event, { rtlLabel: true, valueRtl: false });
+  y = drawLabelValueLines(page, font, y, ':שם', common.name, { rtlLabel: true, valueRtl: false });
+  y = drawLabelValueLines(page, font, y, ':דוא״ל', common.email, { rtlLabel: true, valueRtl: false });
+  y = drawLabelValueLines(page, font, y, ':כמות', common.qty, { rtlLabel: true, valueRtl: false });
+  y = drawLabelValueLines(page, font, y, ':סכום', common.amount, { rtlLabel: true, valueRtl: false });
   y -= 8;
 
   y = drawWrappedLine(
