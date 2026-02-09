@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { NextResponse } from 'next/server';
 
 import { createAllpayPayment } from '@/lib/allpay';
+import { createPendingOrder, markOrderFailed } from '@/lib/ordersStore';
 
 type CreateCheckoutRequest = {
   showSlug?: string;
@@ -74,6 +75,23 @@ export async function POST(request: Request) {
   const showSlug = body.showSlug?.trim() || 'unknown-show';
   const eventId = body.eventId?.trim() || 'unknown-event';
   const orderId = `${showSlug}-${eventId}-${crypto.randomUUID()}`;
+  const amount = unitPrice * qty;
+
+  try {
+    await createPendingOrder({
+      orderId,
+      showSlug,
+      eventId,
+      qty,
+      buyerName,
+      buyerEmail,
+      amount,
+      currency: 'ILS',
+    });
+  } catch (error) {
+    console.error('[checkout-create] failed to create pending order', { orderId, error });
+    return NextResponse.json({ ok: false, reason: 'db_create_pending_failed', orderId }, { status: 500 });
+  }
 
   const payment = await createAllpayPayment({
     login: terminalId,
@@ -91,6 +109,16 @@ export async function POST(request: Request) {
   });
 
   if (!payment.payment_url) {
+    try {
+      await markOrderFailed({
+        orderId,
+        paymentId: payment.payment_id,
+        raw: payment as unknown as Record<string, unknown>,
+      });
+    } catch (error) {
+      console.error('[checkout-create] failed to mark order as failed', { orderId, error });
+    }
+
     console.error('[checkout-create] allpay error', { orderId, payment });
     return NextResponse.json(
       {

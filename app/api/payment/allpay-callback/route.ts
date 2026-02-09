@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { markOrderPaid } from '@/lib/ordersStore';
 import { getAllpaySignature, getAllpaySignatureCandidates, secureSignatureMatch } from './signature';
 
 type CallbackPayload = Record<string, unknown> & {
@@ -41,6 +42,15 @@ function normalizeStatus(status: unknown): string {
   if (typeof status === 'number') return String(status);
   if (typeof status === 'string') return status.trim();
   return '';
+}
+
+function parseAmount(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
 }
 
 export async function POST(request: Request) {
@@ -119,6 +129,11 @@ export async function POST(request: Request) {
   const paymentId = toSafeString(payload.payment_id);
   const status = normalizeStatus(payload.status);
 
+  if (!orderId) {
+    console.error('[allpay-callback] missing order_id', payload);
+    return NextResponse.json({ ok: false, reason: 'missing_order_id' }, { status: 400 });
+  }
+
   if (status !== '1') {
     // Webhook is expected only for successful payments.
     // Return 200 to avoid unnecessary retries for non-success payloads.
@@ -139,6 +154,18 @@ export async function POST(request: Request) {
     clientEmail: payload.client_email,
   });
 
-  // TODO: persist payment confirmation and trigger ticket/email workflow.
+  try {
+    await markOrderPaid({
+      orderId,
+      paymentId,
+      amount: parseAmount(payload.amount),
+      currency: toSafeString(payload.currency) || 'ILS',
+      raw: payload,
+    });
+  } catch (error) {
+    console.error('[allpay-callback] failed to persist paid status', { orderId, paymentId, error });
+    return NextResponse.json({ ok: false, reason: 'db_update_failed' }, { status: 500 });
+  }
+
   return NextResponse.json({ ok: true, accepted: true });
 }
