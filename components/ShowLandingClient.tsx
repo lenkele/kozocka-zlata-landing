@@ -35,6 +35,83 @@ type ScheduleYaml = {
   }[];
 };
 
+type CheckoutLabels = {
+  buyButton: string;
+  buyColumn: string;
+  modalTitle: string;
+  eventLabel: string;
+  nameLabel: string;
+  emailLabel: string;
+  qtyLabel: string;
+  submitLabel: string;
+  submittingLabel: string;
+  cancelLabel: string;
+  unavailableLabel: string;
+  closedShowLabel: string;
+  createErrorLabel: string;
+  namePlaceholder: string;
+  emailPlaceholder: string;
+};
+
+const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
+  ru: {
+    buyButton: 'Купить билет',
+    buyColumn: 'Билеты',
+    modalTitle: 'Оформление билета',
+    eventLabel: 'Событие',
+    nameLabel: 'Имя',
+    emailLabel: 'Email',
+    qtyLabel: 'Количество',
+    submitLabel: 'Перейти к оплате',
+    submittingLabel: 'Создаём оплату...',
+    cancelLabel: 'Отмена',
+    unavailableLabel: 'Недоступно',
+    closedShowLabel: 'Для закрытых показов покупка недоступна',
+    createErrorLabel: 'Не удалось создать оплату. Попробуйте ещё раз.',
+    namePlaceholder: 'Ваше имя',
+    emailPlaceholder: 'you@example.com',
+  },
+  he: {
+    buyButton: 'קניית כרטיס',
+    buyColumn: 'כרטיסים',
+    modalTitle: 'רכישת כרטיס',
+    eventLabel: 'אירוע',
+    nameLabel: 'שם',
+    emailLabel: 'אימייל',
+    qtyLabel: 'כמות',
+    submitLabel: 'מעבר לתשלום',
+    submittingLabel: 'יוצרים תשלום...',
+    cancelLabel: 'ביטול',
+    unavailableLabel: 'לא זמין',
+    closedShowLabel: 'אין רכישה למופעים סגורים',
+    createErrorLabel: 'לא הצלחנו ליצור תשלום. נסו שוב.',
+    namePlaceholder: 'השם שלך',
+    emailPlaceholder: 'you@example.com',
+  },
+  en: {
+    buyButton: 'Buy ticket',
+    buyColumn: 'Tickets',
+    modalTitle: 'Ticket checkout',
+    eventLabel: 'Event',
+    nameLabel: 'Name',
+    emailLabel: 'Email',
+    qtyLabel: 'Quantity',
+    submitLabel: 'Proceed to payment',
+    submittingLabel: 'Creating payment...',
+    cancelLabel: 'Cancel',
+    unavailableLabel: 'Unavailable',
+    closedShowLabel: 'Ticket purchase is unavailable for closed shows',
+    createErrorLabel: 'Could not create payment. Please try again.',
+    namePlaceholder: 'Your name',
+    emailPlaceholder: 'you@example.com',
+  },
+};
+
+function isClosedShow(format: string): boolean {
+  const normalized = format.toLowerCase();
+  return normalized.includes('закрыт') || normalized.includes('סגור') || normalized.includes('private');
+}
+
 export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   // Определяем доступные языки для спектакля (по умолчанию все)
   const availableLanguages: Lang[] = show.availableLanguages ?? ['ru', 'he', 'en'];
@@ -43,9 +120,16 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   const [lang, setLang] = useState<Lang>(defaultLang);
   const [scheduleData, setScheduleData] = useState<ScheduleDisplayEntry[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
+  const [selectedRow, setSelectedRow] = useState<ScheduleDisplayEntry | null>(null);
+  const [buyerName, setBuyerName] = useState('');
+  const [buyerEmail, setBuyerEmail] = useState('');
+  const [ticketQty, setTicketQty] = useState(1);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   // Используем контент для текущего языка или fallback на дефолтный
   const t = show.content[lang] ?? show.content[defaultLang]!;
+  const checkoutT = CHECKOUT_LABELS[lang] ?? CHECKOUT_LABELS.ru;
 
   // Цвета кнопок (по умолчанию янтарные)
   const buttonBg = show.buttonColors?.bg ?? 'bg-amber-600';
@@ -123,6 +207,63 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     const scheduleSection = document.getElementById('schedule');
     if (scheduleSection) {
       scheduleSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const closeCheckout = () => {
+    setSelectedRow(null);
+    setCheckoutLoading(false);
+    setCheckoutError(null);
+  };
+
+  const openCheckout = (row: ScheduleDisplayEntry) => {
+    if (isClosedShow(row.format)) {
+      return;
+    }
+    setSelectedRow(row);
+    setCheckoutError(null);
+  };
+
+  const submitCheckout = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedRow || checkoutLoading) return;
+
+    const safeName = buyerName.trim();
+    const safeEmail = buyerEmail.trim();
+    if (!safeName || !safeEmail) return;
+
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+
+    try {
+      const eventId = selectedRow.id || `${selectedRow.dateIso}-${selectedRow.time}`;
+      const response = await fetch('/api/checkout/create', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          showSlug: show.slug,
+          eventId,
+          qty: ticketQty,
+          lang,
+          buyer: {
+            name: safeName,
+            email: safeEmail,
+          },
+        }),
+      });
+
+      const result = (await response.json()) as { ok?: boolean; paymentUrl?: string };
+      if (!response.ok || !result.ok || !result.paymentUrl) {
+        throw new Error('checkout_create_failed');
+      }
+
+      window.location.href = result.paymentUrl;
+    } catch (error) {
+      console.error('Checkout create failed:', error);
+      setCheckoutError(checkoutT.createErrorLabel);
+      setCheckoutLoading(false);
     }
   };
 
@@ -276,6 +417,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                       <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.schedulePlaceLabel}</th>
                       <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleFormatLabel}</th>
                       <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleLanguageLabel}</th>
+                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{checkoutT.buyColumn}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-amber-100/10 text-amber-50/90">
@@ -286,6 +428,19 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.place)}</td>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.format)}</td>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.language)}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>
+                          {isClosedShow(row.format) ? (
+                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => openCheckout(row)}
+                              className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
+                            >
+                              {checkoutT.buyButton}
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -386,6 +541,76 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
           </section>
         </main>
       </div>
+      {selectedRow && (
+        <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className={`w-full max-w-md ${darkCardBg} border border-amber-100/20 rounded-2xl p-5 space-y-4`}>
+            <h3 className="text-xl font-semibold text-amber-100">{checkoutT.modalTitle}</h3>
+            <div className="text-xs md:text-sm text-amber-100/80 space-y-1">
+              <p>
+                {checkoutT.eventLabel}: {selectedRow.date} {selectedRow.time}
+              </p>
+              <p>{selectedRow.place}</p>
+            </div>
+
+            {isClosedShow(selectedRow.format) ? (
+              <p className="text-sm text-amber-100/80">{checkoutT.closedShowLabel}</p>
+            ) : (
+              <form className="space-y-3" onSubmit={submitCheckout}>
+                <label className="block space-y-1">
+                  <span className="text-xs text-amber-100/80">{checkoutT.nameLabel}</span>
+                  <input
+                    required
+                    value={buyerName}
+                    onChange={(event) => setBuyerName(event.target.value)}
+                    placeholder={checkoutT.namePlaceholder}
+                    className="w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 placeholder:text-amber-50/40 outline-none focus:border-amber-300/60"
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs text-amber-100/80">{checkoutT.emailLabel}</span>
+                  <input
+                    required
+                    type="email"
+                    value={buyerEmail}
+                    onChange={(event) => setBuyerEmail(event.target.value)}
+                    placeholder={checkoutT.emailPlaceholder}
+                    className="w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 placeholder:text-amber-50/40 outline-none focus:border-amber-300/60"
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs text-amber-100/80">{checkoutT.qtyLabel}</span>
+                  <input
+                    required
+                    min={1}
+                    max={10}
+                    type="number"
+                    value={ticketQty}
+                    onChange={(event) => setTicketQty(Math.max(1, Number.parseInt(event.target.value || '1', 10)))}
+                    className="w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 outline-none focus:border-amber-300/60"
+                  />
+                </label>
+                {checkoutError && <p className="text-xs text-red-300">{checkoutError}</p>}
+                <div className={`flex gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <button
+                    type="button"
+                    onClick={closeCheckout}
+                    className="inline-flex rounded-full bg-black/40 hover:bg-black/60 text-amber-50 text-xs md:text-sm font-medium px-4 py-2 transition"
+                  >
+                    {checkoutT.cancelLabel}
+                  </button>
+                  <button
+                    disabled={checkoutLoading}
+                    type="submit"
+                    className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-4 py-2 shadow-md shadow-black/40 transition disabled:opacity-60`}
+                  >
+                    {checkoutLoading ? checkoutT.submittingLabel : checkoutT.submitLabel}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -717,4 +942,3 @@ function parseLinksInText(text: string): React.ReactNode {
 
   return parts.length > 0 ? parts : text;
 }
-
