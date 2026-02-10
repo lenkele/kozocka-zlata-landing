@@ -22,6 +22,7 @@ npm run dev
 ## Email (билеты)
 
 - Настройка отправки с вашего домена на любые адреса: `docs/email-delivery-setup.md`.
+- Операционный runbook: `docs/operations-runbook.md`.
 
 ## Расписание (автоматизация)
 
