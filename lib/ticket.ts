@@ -35,6 +35,8 @@ const FONT_CANDIDATES = [
 ];
 
 type LangCode = 'ru' | 'en' | 'he';
+const LRM = '\u200E';
+const RLM = '\u200F';
 
 async function loadUnicodeFont(): Promise<Uint8Array> {
   for (const filePath of FONT_CANDIDATES) {
@@ -125,12 +127,12 @@ function drawWrapped(
   const lines = wrapText(font, text, size, width, options?.maxLines);
 
   for (const line of lines) {
-    const visualLine = line;
-    const lineWidth = font.widthOfTextAtSize(visualLine, size);
+    const renderLine = options?.rtl ? applyRtlBidi(line) : line;
+    const lineWidth = font.widthOfTextAtSize(line, size);
     const drawX = options?.rtl ? x + Math.max(0, width - lineWidth) : x;
-    page.drawText(visualLine, { x: drawX, y, size, font, color });
+    page.drawText(renderLine, { x: drawX, y, size, font, color });
     if (options?.bold) {
-      page.drawText(visualLine, { x: drawX + 0.35, y, size, font, color });
+      page.drawText(renderLine, { x: drawX + 0.35, y, size, font, color });
     }
     y -= lineHeight;
   }
@@ -155,8 +157,8 @@ function drawFieldRow(
   const labelWidthLocal = options?.rightLabelLeftValue ? labelWidth : labelWidth;
   const labelColor = rgb(0.45, 0.45, 0.45);
 
-  const visualLabel = label;
-  const labelTextWidth = font.widthOfTextAtSize(visualLabel, 9);
+  const visualLabel = options?.rtl ? applyRtlBidi(label) : label;
+  const labelTextWidth = font.widthOfTextAtSize(label, 9);
   const labelDrawX = options?.rightLabelLeftValue
     ? labelX + Math.max(0, labelWidthLocal - labelTextWidth)
     : labelX;
@@ -171,8 +173,8 @@ function drawFieldRow(
   const lines = wrapText(font, value, 10, valueWidth, options?.maxValueLines ?? 2);
   let valueY = y;
   for (const line of lines) {
-    const visualLine = line;
-    const lineWidth = font.widthOfTextAtSize(visualLine, 10);
+    const visualLine = options?.rtl ? applyRtlBidi(line) : line;
+    const lineWidth = font.widthOfTextAtSize(line, 10);
     const drawX = options?.rtl && !options?.rightLabelLeftValue ? valueX + Math.max(0, valueWidth - lineWidth) : valueX;
     page.drawText(visualLine, {
       x: drawX,
@@ -207,6 +209,11 @@ function drawDivider(page: PDFPage, x: number, y: number, width: number): number
     color: rgb(0.9, 0.92, 0.95),
   });
   return y - 14;
+}
+
+function applyRtlBidi(input: string): string {
+  const withLtrRuns = input.replace(/[A-Za-z0-9@:%+./,_'"()\-]+/g, (match) => `${LRM}${match}${LRM}`);
+  return `${RLM}${withLtrRuns}${RLM}`;
 }
 
 async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
@@ -308,7 +315,7 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     color: rgb(0.84, 0.89, 0.96),
   });
 
-  const showTitleLine = `${details.showTitle.ru} | ${details.showTitle.en} | ${details.showTitle.he}`;
+  const showTitleLine = `${details.showTitle.ru} | ${details.showTitle.en} | ${applyRtlBidi(details.showTitle.he)}`;
 
   let y = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 20;
   y = drawWrapped(page, font, showTitleLine, LEFT_X, y, LEFT_WIDTH, {
