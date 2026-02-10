@@ -70,7 +70,7 @@ export function resolveCapacity(value: unknown): number | null {
 }
 
 export function resolveUnitPrice(value: unknown, fallbackPrice: number): number {
-  const parsed = parsePositiveInt(value);
+  const parsed = parsePriceIls(value);
   return parsed ?? fallbackPrice;
 }
 
@@ -221,6 +221,29 @@ function mapLanguageFromRu(languageRu: string, lang: 'en' | 'he'): string {
   return mapped?.[lang] ?? languageRu;
 }
 
+function parsePriceIls(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return Number.isInteger(value) ? value : Number.parseFloat(value.toFixed(2));
+  }
+
+  if (typeof value === 'string') {
+    // Handles: "10", "10.5", "10,50", "₪ 10,00"
+    const normalized = value
+      .trim()
+      .replace(/\s+/g, '')
+      .replace(/[^\d.,-]/g, '')
+      .replace(',', '.');
+
+    if (!normalized) return null;
+    const parsed = Number.parseFloat(normalized);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return Number.isInteger(parsed) ? parsed : Number.parseFloat(parsed.toFixed(2));
+    }
+  }
+
+  return null;
+}
+
 function parseCsvSchedule(text: string): ScheduleEvent[] {
   const rows = parseCsv(text);
   if (rows.length <= 1) return [];
@@ -262,7 +285,11 @@ function parseCsvSchedule(text: string): ScheduleEvent[] {
         throw new Error(`row ${rowNum}: invalid date, expected YYYY-MM-DD or DD.MM.YYYY`);
       }
 
-      const price_ils = requireByAliases(row, headerMap, CSV_SCHEMA.priceIls, rowNum, 'Стоимость');
+      const rawPriceIls = requireByAliases(row, headerMap, CSV_SCHEMA.priceIls, rowNum, 'Стоимость');
+      const price_ils = parsePriceIls(rawPriceIls);
+      if (price_ils === null) {
+        throw new Error(`row ${rowNum}: invalid price in "Стоимость" (${rawPriceIls})`);
+      }
       const capacity = getByAliases(row, headerMap, CSV_SCHEMA.capacity) || undefined;
       const time = requireByAliases(row, headerMap, CSV_SCHEMA.time, rowNum, 'Время');
 
