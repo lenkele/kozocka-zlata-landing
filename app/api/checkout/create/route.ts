@@ -16,6 +16,10 @@ type CreateCheckoutRequest = {
     name?: string;
     email?: string;
   };
+  consents?: {
+    termsAccepted?: boolean;
+    marketingAccepted?: boolean;
+  };
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -87,6 +91,8 @@ export async function POST(request: Request) {
   const buyerName = body.buyer?.name?.trim() ?? '';
   const buyerEmail = body.buyer?.email?.trim().toLowerCase() ?? '';
   const qty = parsePositiveInt(body.qty, 1);
+  const termsAccepted = body.consents?.termsAccepted === true;
+  const marketingAccepted = body.consents?.marketingAccepted === true;
 
   if (!buyerName) {
     return NextResponse.json({ ok: false, reason: 'buyer_name_required' }, { status: 400 });
@@ -94,6 +100,10 @@ export async function POST(request: Request) {
 
   if (!EMAIL_PATTERN.test(buyerEmail)) {
     return NextResponse.json({ ok: false, reason: 'buyer_email_invalid' }, { status: 400 });
+  }
+
+  if (!termsAccepted) {
+    return NextResponse.json({ ok: false, reason: 'terms_not_accepted' }, { status: 400 });
   }
 
   const itemName = process.env.DEFAULT_TICKET_NAME ?? 'Ticket';
@@ -114,6 +124,8 @@ export async function POST(request: Request) {
       buyerEmail,
       amount,
       currency: 'ILS',
+      termsAccepted,
+      marketingAccepted,
     });
   } catch (error) {
     console.error('[checkout-create] failed to create pending order', { orderId, error });

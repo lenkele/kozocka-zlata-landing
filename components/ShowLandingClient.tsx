@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import yaml from 'js-yaml';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -41,10 +42,21 @@ type CheckoutLabels = {
   buyButton: string;
   buyColumn: string;
   modalTitle: string;
+  showLabel: string;
+  dateTimeLabel: string;
+  placeLabel: string;
+  unitPriceLabel: string;
+  totalLabel: string;
   eventLabel: string;
   nameLabel: string;
   emailLabel: string;
   qtyLabel: string;
+  termsConsentPrefix: string;
+  termsLinkLabel: string;
+  privacyLinkLabel: string;
+  termsAndLabel: string;
+  termsConsentSuffix: string;
+  marketingConsentLabel: string;
   submitLabel: string;
   submittingLabel: string;
   cancelLabel: string;
@@ -52,6 +64,7 @@ type CheckoutLabels = {
   passedShowLabel: string;
   closedShowLabel: string;
   createErrorLabel: string;
+  termsRequiredErrorLabel: string;
   namePlaceholder: string;
   emailPlaceholder: string;
 };
@@ -61,10 +74,21 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     buyButton: 'Купить билет',
     buyColumn: 'Билеты',
     modalTitle: 'Оформление билета',
+    showLabel: 'Спектакль',
+    dateTimeLabel: 'Дата и время',
+    placeLabel: 'Место',
+    unitPriceLabel: 'Стоимость',
+    totalLabel: 'Итого',
     eventLabel: 'Событие',
     nameLabel: 'Имя',
     emailLabel: 'Email',
     qtyLabel: 'Количество',
+    termsConsentPrefix: 'Я принимаю',
+    termsLinkLabel: 'Условия',
+    privacyLinkLabel: 'Политику конфиденциальности',
+    termsAndLabel: 'и',
+    termsConsentSuffix: '',
+    marketingConsentLabel: 'Согласен(а) на информационные рассылки',
     submitLabel: 'Перейти к оплате',
     submittingLabel: 'Создаём оплату...',
     cancelLabel: 'Отмена',
@@ -72,6 +96,7 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     passedShowLabel: 'Спектакль прошел',
     closedShowLabel: 'Для закрытых показов покупка недоступна',
     createErrorLabel: 'Не удалось создать оплату. Попробуйте ещё раз.',
+    termsRequiredErrorLabel: 'Чтобы продолжить, нужно принять Условия и Политику конфиденциальности.',
     namePlaceholder: 'Ваше имя',
     emailPlaceholder: 'you@example.com',
   },
@@ -79,10 +104,21 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     buyButton: 'קניית כרטיס',
     buyColumn: 'כרטיסים',
     modalTitle: 'רכישת כרטיס',
+    showLabel: 'הצגה',
+    dateTimeLabel: 'תאריך ושעה',
+    placeLabel: 'מקום',
+    unitPriceLabel: 'מחיר',
+    totalLabel: 'סה״כ',
     eventLabel: 'אירוע',
     nameLabel: 'שם',
     emailLabel: 'אימייל',
     qtyLabel: 'כמות',
+    termsConsentPrefix: 'אני מסכים/ה ל',
+    termsLinkLabel: 'תנאים',
+    privacyLinkLabel: 'מדיניות פרטיות',
+    termsAndLabel: 'ו',
+    termsConsentSuffix: '',
+    marketingConsentLabel: 'אני מסכים/ה לקבל עדכונים שיווקיים',
     submitLabel: 'מעבר לתשלום',
     submittingLabel: 'יוצרים תשלום...',
     cancelLabel: 'ביטול',
@@ -90,6 +126,7 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     passedShowLabel: 'המופע כבר התקיים',
     closedShowLabel: 'אין רכישה למופעים סגורים',
     createErrorLabel: 'לא הצלחנו ליצור תשלום. נסו שוב.',
+    termsRequiredErrorLabel: 'כדי להמשיך צריך לאשר תנאים ומדיניות פרטיות.',
     namePlaceholder: 'השם שלך',
     emailPlaceholder: 'you@example.com',
   },
@@ -97,10 +134,21 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     buyButton: 'Buy ticket',
     buyColumn: 'Tickets',
     modalTitle: 'Ticket checkout',
+    showLabel: 'Show',
+    dateTimeLabel: 'Date and time',
+    placeLabel: 'Venue',
+    unitPriceLabel: 'Price',
+    totalLabel: 'Total',
     eventLabel: 'Event',
     nameLabel: 'Name',
     emailLabel: 'Email',
     qtyLabel: 'Quantity',
+    termsConsentPrefix: 'I agree to the',
+    termsLinkLabel: 'Terms',
+    privacyLinkLabel: 'Privacy Policy',
+    termsAndLabel: 'and',
+    termsConsentSuffix: '',
+    marketingConsentLabel: 'I agree to receive informational newsletters',
     submitLabel: 'Proceed to payment',
     submittingLabel: 'Creating payment...',
     cancelLabel: 'Cancel',
@@ -108,6 +156,7 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     passedShowLabel: 'Performance ended',
     closedShowLabel: 'Ticket purchase is unavailable for closed shows',
     createErrorLabel: 'Could not create payment. Please try again.',
+    termsRequiredErrorLabel: 'To continue, you must accept the Terms and Privacy Policy.',
     namePlaceholder: 'Your name',
     emailPlaceholder: 'you@example.com',
   },
@@ -145,6 +194,8 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   const [buyerName, setBuyerName] = useState('');
   const [buyerEmail, setBuyerEmail] = useState('');
   const [ticketQty, setTicketQty] = useState(1);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [marketingAccepted, setMarketingAccepted] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
@@ -246,6 +297,8 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     setSelectedRow(null);
     setCheckoutLoading(false);
     setCheckoutError(null);
+    setTermsAccepted(false);
+    setMarketingAccepted(false);
   };
 
   const openCheckout = (row: ScheduleDisplayEntry) => {
@@ -254,6 +307,9 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     }
     setSelectedRow(row);
     setCheckoutError(null);
+    setTicketQty(1);
+    setTermsAccepted(false);
+    setMarketingAccepted(false);
   };
 
   const submitCheckout = async (event: React.FormEvent) => {
@@ -263,6 +319,10 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     const safeName = buyerName.trim();
     const safeEmail = buyerEmail.trim();
     if (!safeName || !safeEmail) return;
+    if (!termsAccepted) {
+      setCheckoutError(checkoutT.termsRequiredErrorLabel);
+      return;
+    }
 
     setCheckoutLoading(true);
     setCheckoutError(null);
@@ -283,6 +343,10 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
             name: safeName,
             email: safeEmail,
           },
+          consents: {
+            termsAccepted,
+            marketingAccepted,
+          },
         }),
       });
 
@@ -298,6 +362,9 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
       setCheckoutLoading(false);
     }
   };
+
+  const selectedUnitPrice = selectedRow?.priceIls ?? null;
+  const selectedTotalPrice = selectedUnitPrice !== null ? selectedUnitPrice * ticketQty : null;
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-fixed bg-cover bg-center" style={{ backgroundImage: show.backgroundStyle }}>
@@ -584,11 +651,23 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
         <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4">
           <div className={`w-full max-w-md ${darkCardBg} border border-amber-100/20 rounded-2xl p-5 space-y-4`}>
             <h3 className="text-xl font-semibold text-amber-100">{checkoutT.modalTitle}</h3>
-            <div className="text-xs md:text-sm text-amber-100/80 space-y-1">
+            <div className="text-xs md:text-sm text-amber-100/85 space-y-1 rounded-xl border border-amber-100/20 bg-black/30 px-3 py-3">
               <p>
-                {checkoutT.eventLabel}: {selectedRow.date} {selectedRow.time}
+                <span className="text-amber-100/60">{checkoutT.showLabel}: </span>
+                {t.title}
               </p>
-              <p>{selectedRow.place}</p>
+              <p>
+                <span className="text-amber-100/60">{checkoutT.dateTimeLabel}: </span>
+                {selectedRow.date} {selectedRow.time}
+              </p>
+              <p>
+                <span className="text-amber-100/60">{checkoutT.placeLabel}: </span>
+                {selectedRow.place}
+              </p>
+              <p>
+                <span className="text-amber-100/60">{checkoutT.unitPriceLabel}: </span>
+                {selectedRow.priceIls !== null ? `₪ ${formatIlsAmount(selectedRow.priceIls)}` : '—'}
+              </p>
             </div>
 
             {isClosedShow(selectedRow.format) ? (
@@ -627,6 +706,38 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                     onChange={(event) => setTicketQty(Math.max(1, Number.parseInt(event.target.value || '1', 10)))}
                     className="w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 outline-none focus:border-amber-300/60"
                   />
+                </label>
+                <div className="rounded-xl border border-amber-100/20 bg-black/30 px-3 py-2 text-sm text-amber-100/90">
+                  <span className="text-amber-100/70">{checkoutT.totalLabel}: </span>
+                  {selectedTotalPrice !== null ? `₪ ${formatIlsAmount(selectedTotalPrice)}` : '—'}
+                </div>
+                <label className="flex items-start gap-2 text-xs md:text-sm text-amber-100/85">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(event) => setTermsAccepted(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-amber-100/30 bg-black/40"
+                  />
+                  <span>
+                    {checkoutT.termsConsentPrefix}{' '}
+                    <Link href="/terms" target="_blank" className="underline hover:text-amber-200">
+                      {checkoutT.termsLinkLabel}
+                    </Link>{' '}
+                    {checkoutT.termsAndLabel}{' '}
+                    <Link href="/privacy" target="_blank" className="underline hover:text-amber-200">
+                      {checkoutT.privacyLinkLabel}
+                    </Link>
+                    {checkoutT.termsConsentSuffix}
+                  </span>
+                </label>
+                <label className="flex items-start gap-2 text-xs md:text-sm text-amber-100/85">
+                  <input
+                    type="checkbox"
+                    checked={marketingAccepted}
+                    onChange={(event) => setMarketingAccepted(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-amber-100/30 bg-black/40"
+                  />
+                  <span>{checkoutT.marketingConsentLabel}</span>
                 </label>
                 {checkoutError && <p className="text-xs text-red-300">{checkoutError}</p>}
                 <div className={`flex gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>

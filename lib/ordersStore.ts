@@ -9,6 +9,8 @@ type CreatePendingOrderInput = {
   buyerEmail: string;
   amount: number;
   currency: string;
+  termsAccepted: boolean;
+  marketingAccepted: boolean;
 };
 
 type UpdateOrderInput = {
@@ -31,6 +33,8 @@ export type StoredOrder = {
   status: string;
   paid_at: string | null;
   allpay_payment_id: string | null;
+  consent_terms_accepted: boolean;
+  consent_marketing_accepted: boolean;
 };
 
 function getConfig() {
@@ -68,7 +72,7 @@ async function supabaseRequest(path: string, init: RequestInit): Promise<Respons
 
 async function getOrderByOrderId(orderId: string): Promise<StoredOrder | null> {
   const response = await supabaseRequest(
-    `/orders?order_id=eq.${encodeURIComponent(orderId)}&select=order_id,show_slug,event_id,qty,buyer_name,buyer_email,amount,currency,status,paid_at,allpay_payment_id&limit=1`,
+    `/orders?order_id=eq.${encodeURIComponent(orderId)}&select=order_id,show_slug,event_id,qty,buyer_name,buyer_email,amount,currency,status,paid_at,allpay_payment_id,consent_terms_accepted,consent_marketing_accepted&limit=1`,
     { method: 'GET' }
   );
   const text = await response.text();
@@ -116,6 +120,8 @@ export async function createPendingOrder(input: CreatePendingOrderInput): Promis
       amount: input.amount,
       currency: input.currency,
       status: 'pending',
+      consent_terms_accepted: input.termsAccepted,
+      consent_marketing_accepted: input.marketingAccepted,
     }),
   });
 
