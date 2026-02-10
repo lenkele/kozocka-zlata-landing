@@ -66,6 +66,13 @@ function resolveShowTitle(showSlug: string): Record<Lang, string> {
   };
 }
 
+export function resolveCheckoutItemName(showSlug: string, lang: Lang): string {
+  const titles = resolveShowTitle(showSlug);
+  const localized = titles[lang];
+  if (localized && localized !== '-') return localized;
+  return titles.ru !== '-' ? titles.ru : 'Ticket';
+}
+
 async function loadScheduleEvent(showSlug: string, eventId: string): Promise<ScheduleEvent | null> {
   if (!isShowSlug(showSlug) || !eventId) return null;
 
@@ -117,4 +124,3 @@ export async function resolveOrderDetails(order: StoredOrder): Promise<ResolvedO
     eventPlace,
   };
 }
-

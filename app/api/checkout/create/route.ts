@@ -6,6 +6,7 @@ import yaml from 'js-yaml';
 
 import { createAllpayPayment } from '@/lib/allpay';
 import { createPendingOrder, markOrderFailed } from '@/lib/ordersStore';
+import { resolveCheckoutItemName } from '@/lib/showEventDetails';
 
 type CreateCheckoutRequest = {
   showSlug?: string;
@@ -91,6 +92,7 @@ export async function POST(request: Request) {
   const buyerName = body.buyer?.name?.trim() ?? '';
   const buyerEmail = body.buyer?.email?.trim().toLowerCase() ?? '';
   const qty = parsePositiveInt(body.qty, 1);
+  const lang: 'ru' | 'he' | 'en' = body.lang === 'he' || body.lang === 'en' ? body.lang : 'ru';
   const termsAccepted = body.consents?.termsAccepted === true;
   const marketingAccepted = body.consents?.marketingAccepted === true;
 
@@ -106,9 +108,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: 'terms_not_accepted' }, { status: 400 });
   }
 
-  const itemName = process.env.DEFAULT_TICKET_NAME ?? 'Ticket';
   const showSlug = body.showSlug?.trim() || 'unknown-show';
   const eventId = body.eventId?.trim() || 'unknown-event';
+  const itemName = resolveCheckoutItemName(showSlug, lang) || process.env.DEFAULT_TICKET_NAME || 'Ticket';
   const defaultUnitPrice = parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, 1);
   const unitPrice = await resolveEventUnitPrice(showSlug, eventId, defaultUnitPrice);
   const orderId = `${showSlug}-${eventId}-${crypto.randomUUID()}`;

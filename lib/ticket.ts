@@ -48,6 +48,26 @@ function wrapText(font: PDFFont, text: string, size: number, maxWidth: number): 
   let current = '';
 
   for (const word of words) {
+    if (font.widthOfTextAtSize(word, size) > maxWidth) {
+      if (current) {
+        lines.push(current);
+        current = '';
+      }
+
+      let chunk = '';
+      for (const ch of word) {
+        const candidate = `${chunk}${ch}`;
+        if (font.widthOfTextAtSize(candidate, size) <= maxWidth) {
+          chunk = candidate;
+          continue;
+        }
+        if (chunk) lines.push(chunk);
+        chunk = ch;
+      }
+      current = chunk;
+      continue;
+    }
+
     const candidate = current ? `${current} ${word}` : word;
     if (font.widthOfTextAtSize(candidate, size) <= maxWidth) {
       current = candidate;
@@ -98,6 +118,47 @@ function drawLabelValue(
   y -= labelSize + 5;
   y = drawTextLines(page, font, value, x, y, width, { size: valueSize, color: rgb(0.1, 0.1, 0.1), lineHeight: 16 });
   return y - 6;
+}
+
+function drawKeyValueRow(
+  page: PDFPage,
+  font: PDFFont,
+  label: string,
+  value: string,
+  x: number,
+  y: number,
+  width: number
+): number {
+  const labelWidth = 140;
+  const valueX = x + labelWidth;
+  const valueWidth = Math.max(20, width - labelWidth);
+  const labelSize = 11;
+  const valueSize = 11;
+  const lineHeight = 14;
+  const valueLines = wrapText(font, value, valueSize, valueWidth);
+  const rowHeight = Math.max(lineHeight, valueLines.length * lineHeight);
+
+  page.drawText(label, {
+    x,
+    y,
+    size: labelSize,
+    font,
+    color: rgb(0.45, 0.45, 0.45),
+  });
+
+  let valueY = y;
+  for (const line of valueLines) {
+    page.drawText(line, {
+      x: valueX,
+      y: valueY,
+      size: valueSize,
+      font,
+      color: rgb(0.1, 0.1, 0.1),
+    });
+    valueY -= lineHeight;
+  }
+
+  return y - rowHeight - 8;
 }
 
 async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
@@ -176,8 +237,8 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
   });
 
   const leftColX = MARGIN + 22;
-  const leftColWidth = 340;
-  const rightColX = MARGIN + 390;
+  const leftColWidth = 332;
+  const rightColX = MARGIN + 376;
 
   let y = PAGE_HEIGHT - 145;
   y = drawTextLines(page, font, showTitle, leftColX, y, leftColWidth, { size: 22, color: rgb(0.1, 0.12, 0.16), lineHeight: 28 });
@@ -196,10 +257,10 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
   });
   y -= 16;
 
-  y = drawLabelValue(page, font, 'Покупатель / Buyer', order.buyer_name || '-', leftColX, y, leftColWidth);
-  y = drawLabelValue(page, font, 'Email', order.buyer_email, leftColX, y, leftColWidth);
-  y = drawLabelValue(page, font, 'Количество / Qty', String(order.qty), leftColX, y, leftColWidth);
-  y = drawLabelValue(page, font, 'Сумма / Amount', amountLabel(order), leftColX, y, leftColWidth);
+  y = drawKeyValueRow(page, font, 'Покупатель / Buyer', order.buyer_name || '-', leftColX, y, leftColWidth);
+  y = drawKeyValueRow(page, font, 'Email', order.buyer_email, leftColX, y, leftColWidth);
+  y = drawKeyValueRow(page, font, 'Количество / Qty', String(order.qty), leftColX, y, leftColWidth);
+  y = drawKeyValueRow(page, font, 'Сумма / Amount', amountLabel(order), leftColX, y, leftColWidth);
 
   const qrImage = await embedQrImage(pdfDoc, qrImageUrl);
   if (qrImage) {
@@ -251,7 +312,7 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     font,
     color: rgb(0.42, 0.42, 0.42),
   });
-  page.drawText(`Verify: ${verifyUrl}`, {
+  page.drawText('Verify link is embedded in the QR code', {
     x: MARGIN + 22,
     y: 62,
     size: 9,
@@ -269,4 +330,3 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     pdfFilename: `ticket-${order.order_id}.pdf`,
   };
 }
-
