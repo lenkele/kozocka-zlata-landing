@@ -273,6 +273,9 @@ function parseCsvSchedule(text: string): ScheduleEvent[] {
       const langRu = requireByAliases(row, headerMap, CSV_SCHEMA.langRu, rowNum, 'Язык_ru');
       const langEn = getByAliases(row, headerMap, CSV_SCHEMA.langEn) || mapLanguageFromRu(langRu, 'en');
       const langHe = getByAliases(row, headerMap, CSV_SCHEMA.langHe) || mapLanguageFromRu(langRu, 'he');
+      const placeRu = requireByAliases(row, headerMap, CSV_SCHEMA.placeRu, rowNum, 'Место_ru');
+      const placeEn = getByAliases(row, headerMap, CSV_SCHEMA.placeEn) || placeRu;
+      const placeHe = getByAliases(row, headerMap, CSV_SCHEMA.placeHe) || placeRu;
 
       const event: ScheduleEvent = {
         id,
@@ -281,19 +284,19 @@ function parseCsvSchedule(text: string): ScheduleEvent[] {
         entries: {
           ru: {
             time,
-            place: requireByAliases(row, headerMap, CSV_SCHEMA.placeRu, rowNum, 'Место_ru'),
+            place: placeRu,
             format: formatRu,
             language: langRu,
           },
           he: {
             time,
-            place: requireByAliases(row, headerMap, CSV_SCHEMA.placeHe, rowNum, 'Место_he'),
+            place: placeHe,
             format: formatHe,
             language: langHe,
           },
           en: {
             time,
-            place: requireByAliases(row, headerMap, CSV_SCHEMA.placeEn, rowNum, 'Место_en'),
+            place: placeEn,
             format: formatEn,
             language: langEn,
           },
