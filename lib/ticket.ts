@@ -35,8 +35,6 @@ const FONT_CANDIDATES = [
 ];
 
 type LangCode = 'ru' | 'en' | 'he';
-const LRM = '\u200E';
-const RLM = '\u200F';
 
 async function loadUnicodeFont(): Promise<Uint8Array> {
   for (const filePath of FONT_CANDIDATES) {
@@ -127,8 +125,8 @@ function drawWrapped(
   const lines = wrapText(font, text, size, width, options?.maxLines);
 
   for (const line of lines) {
-    const renderLine = options?.rtl ? applyRtlBidi(line) : line;
-    const lineWidth = font.widthOfTextAtSize(line, size);
+    const renderLine = options?.rtl ? toVisualRtl(line) : line;
+    const lineWidth = font.widthOfTextAtSize(renderLine, size);
     const drawX = options?.rtl ? x + Math.max(0, width - lineWidth) : x;
     page.drawText(renderLine, { x: drawX, y, size, font, color });
     if (options?.bold) {
@@ -157,8 +155,8 @@ function drawFieldRow(
   const labelWidthLocal = options?.rightLabelLeftValue ? labelWidth : labelWidth;
   const labelColor = rgb(0.45, 0.45, 0.45);
 
-  const visualLabel = options?.rtl ? applyRtlBidi(label) : label;
-  const labelTextWidth = font.widthOfTextAtSize(label, 9);
+  const visualLabel = options?.rtl ? toVisualRtl(label) : label;
+  const labelTextWidth = font.widthOfTextAtSize(visualLabel, 9);
   const labelDrawX = options?.rightLabelLeftValue
     ? labelX + Math.max(0, labelWidthLocal - labelTextWidth)
     : labelX;
@@ -173,8 +171,8 @@ function drawFieldRow(
   const lines = wrapText(font, value, 10, valueWidth, options?.maxValueLines ?? 2);
   let valueY = y;
   for (const line of lines) {
-    const visualLine = options?.rtl ? applyRtlBidi(line) : line;
-    const lineWidth = font.widthOfTextAtSize(line, 10);
+    const visualLine = options?.rtl ? toVisualRtl(line) : line;
+    const lineWidth = font.widthOfTextAtSize(visualLine, 10);
     const drawX = options?.rtl && !options?.rightLabelLeftValue ? valueX + Math.max(0, valueWidth - lineWidth) : valueX;
     page.drawText(visualLine, {
       x: drawX,
@@ -211,9 +209,9 @@ function drawDivider(page: PDFPage, x: number, y: number, width: number): number
   return y - 14;
 }
 
-function applyRtlBidi(input: string): string {
-  const withLtrRuns = input.replace(/[A-Za-z0-9@:%+./,_'"()\-]+/g, (match) => `${LRM}${match}${LRM}`);
-  return `${RLM}${withLtrRuns}${RLM}`;
+function toVisualRtl(input: string): string {
+  const reversed = [...input].reverse().join('');
+  return reversed.replace(/[A-Za-z0-9@:%+./,_'"()\-]+/g, (chunk) => [...chunk].reverse().join(''));
 }
 
 async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
@@ -315,7 +313,7 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     color: rgb(0.84, 0.89, 0.96),
   });
 
-  const showTitleLine = `${details.showTitle.ru} | ${details.showTitle.en} | ${applyRtlBidi(details.showTitle.he)}`;
+  const showTitleLine = `${details.showTitle.ru} | ${details.showTitle.en} | ${toVisualRtl(details.showTitle.he)}`;
 
   let y = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 20;
   y = drawWrapped(page, font, showTitleLine, LEFT_X, y, LEFT_WIDTH, {
@@ -350,11 +348,11 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     y = drawDivider(page, LEFT_X, y, LEFT_WIDTH);
   }
 
-  y = drawSectionTitle(page, font, 'Purchase details / Данные покупки / פרטי רכישה', LEFT_X, y);
-  y = drawFieldRow(page, font, 'Buyer / Покупатель / רוכש', order.buyer_name || '-', LEFT_X, y, LEFT_WIDTH, { maxValueLines: 2 });
+  y = drawSectionTitle(page, font, `Purchase details / Данные покупки / ${toVisualRtl('פרטי רכישה')}`, LEFT_X, y);
+  y = drawFieldRow(page, font, `Buyer / Покупатель / ${toVisualRtl('רוכש')}`, order.buyer_name || '-', LEFT_X, y, LEFT_WIDTH, { maxValueLines: 2 });
   y = drawFieldRow(page, font, 'Email', order.buyer_email, LEFT_X, y, LEFT_WIDTH, { maxValueLines: 2 });
-  y = drawFieldRow(page, font, 'Qty / Кол-во / כמות', String(order.qty), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
-  y = drawFieldRow(page, font, 'Amount / Сумма / סכום', amountLabel(order), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
+  y = drawFieldRow(page, font, `Qty / Кол-во / ${toVisualRtl('כמות')}`, String(order.qty), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
+  y = drawFieldRow(page, font, `Amount / Сумма / ${toVisualRtl('סכום')}`, amountLabel(order), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
 
   const qrTopY = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 20;
   page.drawRectangle({
