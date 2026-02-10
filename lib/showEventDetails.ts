@@ -69,8 +69,15 @@ function resolveShowTitle(showSlug: string): Record<Lang, string> {
 export function resolveCheckoutItemName(showSlug: string, lang: Lang): string {
   const titles = resolveShowTitle(showSlug);
   const localized = titles[lang];
-  if (localized && localized !== '-') return localized;
-  return titles.ru !== '-' ? titles.ru : 'Ticket';
+  const showTitle = localized && localized !== '-' ? localized : titles.ru !== '-' ? titles.ru : 'Ticket';
+
+  const suffixByLang: Record<Lang, string> = {
+    ru: 'Билет на спектакль',
+    en: 'Performance ticket',
+    he: 'כרטיס למופע',
+  };
+
+  return `${showTitle} – ${suffixByLang[lang]}`;
 }
 
 async function loadScheduleEvent(showSlug: string, eventId: string): Promise<ScheduleEvent | null> {
