@@ -124,9 +124,10 @@ function drawWrapped(
   const lines = wrapText(font, text, size, width, options?.maxLines);
 
   for (const line of lines) {
-    const lineWidth = font.widthOfTextAtSize(line, size);
+    const visualLine = options?.rtl ? toVisualRtl(line) : line;
+    const lineWidth = font.widthOfTextAtSize(visualLine, size);
     const drawX = options?.rtl ? x + Math.max(0, width - lineWidth) : x;
-    page.drawText(line, { x: drawX, y, size, font, color });
+    page.drawText(visualLine, { x: drawX, y, size, font, color });
     y -= lineHeight;
   }
 
@@ -148,7 +149,8 @@ function drawFieldRow(
   const valueWidth = Math.max(20, width - labelWidth);
   const labelColor = rgb(0.45, 0.45, 0.45);
 
-  page.drawText(label, {
+  const visualLabel = options?.rtl ? toVisualRtl(label) : label;
+  page.drawText(visualLabel, {
     x,
     y,
     size: 9,
@@ -159,9 +161,10 @@ function drawFieldRow(
   const lines = wrapText(font, value, 10, valueWidth, options?.maxValueLines ?? 2);
   let valueY = y;
   for (const line of lines) {
-    const lineWidth = font.widthOfTextAtSize(line, 10);
+    const visualLine = options?.rtl ? toVisualRtl(line) : line;
+    const lineWidth = font.widthOfTextAtSize(visualLine, 10);
     const drawX = options?.rtl ? valueX + Math.max(0, valueWidth - lineWidth) : valueX;
-    page.drawText(line, {
+    page.drawText(visualLine, {
       x: drawX,
       y: valueY,
       size: 10,
@@ -193,7 +196,12 @@ function drawDivider(page: PDFPage, x: number, y: number, width: number): number
     height: 1,
     color: rgb(0.9, 0.92, 0.95),
   });
-  return y - 8;
+  return y - 14;
+}
+
+function toVisualRtl(input: string): string {
+  const reversed = [...input].reverse().join('');
+  return reversed.replace(/[A-Za-z0-9@:%+./,_'"()\-]+/g, (chunk) => [...chunk].reverse().join(''));
 }
 
 async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
@@ -295,24 +303,13 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     color: rgb(0.84, 0.89, 0.96),
   });
 
+  const showTitleLine = `${details.showTitle.ru} | ${details.showTitle.en} | ${details.showTitle.he}`;
+
   let y = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 20;
-  y = drawWrapped(page, font, details.showTitle.ru, LEFT_X, y, LEFT_WIDTH, {
-    size: 16,
-    lineHeight: 19,
+  y = drawWrapped(page, font, showTitleLine, LEFT_X, y, LEFT_WIDTH, {
+    size: 11,
+    lineHeight: 14,
     color: rgb(0.1, 0.12, 0.16),
-    maxLines: 2,
-  });
-  y = drawWrapped(page, font, details.showTitle.en, LEFT_X, y - 2, LEFT_WIDTH, {
-    size: 10,
-    lineHeight: 13,
-    color: rgb(0.33, 0.35, 0.38),
-    maxLines: 1,
-  });
-  y = drawWrapped(page, font, details.showTitle.he, LEFT_X, y - 1, LEFT_WIDTH, {
-    size: 10,
-    lineHeight: 13,
-    color: rgb(0.33, 0.35, 0.38),
-    rtl: true,
     maxLines: 1,
   });
   y -= 2;
@@ -416,4 +413,3 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     pdfFilename: `ticket-${order.order_id}.pdf`,
   };
 }
-
