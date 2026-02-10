@@ -27,27 +27,34 @@ type ScheduleYaml = {
   schedule?: ScheduleEvent[];
 };
 
-const CSV_REQUIRED_COLUMNS = [
-  'id',
-  'date_iso',
-  'price_ils',
-  'capacity',
-  'ru_time',
-  'ru_place',
-  'ru_format',
-  'ru_language',
-  'ru_date_text',
-  'he_time',
-  'he_place',
-  'he_format',
-  'he_language',
-  'he_date_text',
-  'en_time',
-  'en_place',
-  'en_format',
-  'en_language',
-  'en_date_text',
-] as const;
+const CSV_SCHEMA = {
+  id: ['id'],
+  dateIso: ['date_iso'],
+  dateDisplay: ['Дата', 'date', 'date_display'],
+  time: ['Время', 'time', 'ru_time'],
+  placeRu: ['Место_ru', 'ru_place'],
+  placeEn: ['Место_en', 'en_place'],
+  placeHe: ['Место_he', 'he_place'],
+  formatRu: ['Формат_ru', 'ru_format'],
+  formatEn: ['Формат_en', 'en_format'],
+  formatHe: ['Формат_he', 'he_format'],
+  langRu: ['Язык_ru', 'ru_language'],
+  langEn: ['Язык_en', 'en_language'],
+  langHe: ['Язык_he', 'he_language'],
+  priceIls: ['Стоимость', 'price_ils'],
+  capacity: ['Кол-во мест', 'capacity'],
+} as const;
+
+const FORMAT_FROM_RU: Record<string, { en: string; he: string }> = {
+  'открытый показ': { en: 'Public performance', he: 'מופע פתוח' },
+  'закрытый показ': { en: 'Private performance', he: 'מופע סגור' },
+};
+
+const LANGUAGE_FROM_RU: Record<string, { en: string; he: string }> = {
+  русский: { en: 'Russian', he: 'רוסית' },
+  иврит: { en: 'Hebrew', he: 'עברית' },
+  английский: { en: 'English', he: 'אנגלית' },
+};
 
 export function parsePositiveInt(value: unknown): number | null {
   if (typeof value === 'number' && Number.isInteger(value) && value > 0) return value;
@@ -128,32 +135,83 @@ function parseCsv(text: string): string[][] {
   return rows;
 }
 
-function requireField(row: string[], indexMap: Map<string, number>, key: string, rowNum: number): string {
-  const idx = indexMap.get(key);
-  const value = idx === undefined ? '' : (row[idx] ?? '').trim();
+function buildHeaderMap(headers: string[]): Map<string, number> {
+  return new Map(headers.map((header, idx) => [header.trim(), idx]));
+}
+
+function getByAliases(row: string[], headerMap: Map<string, number>, aliases: readonly string[]): string {
+  for (const alias of aliases) {
+    const idx = headerMap.get(alias);
+    if (idx === undefined) continue;
+    const value = (row[idx] ?? '').trim();
+    if (value) return value;
+  }
+  return '';
+}
+
+function requireByAliases(row: string[], headerMap: Map<string, number>, aliases: readonly string[], rowNum: number, label: string): string {
+  const value = getByAliases(row, headerMap, aliases);
   if (!value) {
-    throw new Error(`row ${rowNum}: required field "${key}" is empty`);
+    throw new Error(`row ${rowNum}: required field "${label}" is empty`);
   }
   return value;
 }
 
-function optionalField(row: string[], indexMap: Map<string, number>, key: string): string | undefined {
-  const idx = indexMap.get(key);
-  const value = idx === undefined ? '' : (row[idx] ?? '').trim();
-  return value || undefined;
+function hasAnyAlias(headerMap: Map<string, number>, aliases: readonly string[]): boolean {
+  return aliases.some((alias) => headerMap.has(alias));
+}
+
+function parseDateDisplayToIso(value: string): string {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!match) return '';
+  const [, dd, mm, yyyy] = match;
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function normalizeDateIso(value: string): string {
+  const trimmed = value.trim();
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) return trimmed;
+  return parseDateDisplayToIso(trimmed);
+}
+
+function mapFormatFromRu(formatRu: string, lang: 'en' | 'he'): string {
+  const mapped = FORMAT_FROM_RU[formatRu.trim().toLowerCase()];
+  return mapped?.[lang] ?? formatRu;
+}
+
+function mapLanguageFromRu(languageRu: string, lang: 'en' | 'he'): string {
+  const mapped = LANGUAGE_FROM_RU[languageRu.trim().toLowerCase()];
+  return mapped?.[lang] ?? languageRu;
 }
 
 function parseCsvSchedule(text: string): ScheduleEvent[] {
   const rows = parseCsv(text);
   if (rows.length <= 1) return [];
 
-  const headers = rows[0].map((value) => value.trim());
-  const indexMap = new Map(headers.map((header, idx) => [header, idx]));
+  const headers = rows[0].map((value) => value.trim()).filter(Boolean);
+  const headerMap = buildHeaderMap(headers);
 
-  for (const column of CSV_REQUIRED_COLUMNS) {
-    if (!indexMap.has(column)) {
-      throw new Error(`missing required CSV column "${column}"`);
+  const requiredSchemaKeys: Array<keyof typeof CSV_SCHEMA> = [
+    'id',
+    'priceIls',
+    'time',
+    'placeRu',
+    'placeEn',
+    'placeHe',
+    'formatRu',
+    'langRu',
+  ];
+
+  for (const key of requiredSchemaKeys) {
+    if (!hasAnyAlias(headerMap, CSV_SCHEMA[key])) {
+      throw new Error(`missing required CSV column: one of [${CSV_SCHEMA[key].join(', ')}]`);
     }
+  }
+
+  if (!hasAnyAlias(headerMap, CSV_SCHEMA.dateIso) && !hasAnyAlias(headerMap, CSV_SCHEMA.dateDisplay)) {
+    throw new Error('missing required date column: one of [date_iso] or [Дата]');
   }
 
   return rows
@@ -161,10 +219,25 @@ function parseCsvSchedule(text: string): ScheduleEvent[] {
     .filter((row) => row.some((value) => value.trim() !== ''))
     .map((row, index) => {
       const rowNum = index + 2;
-      const id = requireField(row, indexMap, 'id', rowNum);
-      const date_iso = requireField(row, indexMap, 'date_iso', rowNum);
-      const price_ils = requireField(row, indexMap, 'price_ils', rowNum);
-      const capacity = optionalField(row, indexMap, 'capacity');
+      const id = requireByAliases(row, headerMap, CSV_SCHEMA.id, rowNum, 'id');
+      const rawDateIso = getByAliases(row, headerMap, CSV_SCHEMA.dateIso);
+      const rawDateDisplay = getByAliases(row, headerMap, CSV_SCHEMA.dateDisplay);
+      const date_iso = normalizeDateIso(rawDateIso || rawDateDisplay);
+      if (!date_iso) {
+        throw new Error(`row ${rowNum}: invalid date, expected YYYY-MM-DD or DD.MM.YYYY`);
+      }
+
+      const price_ils = requireByAliases(row, headerMap, CSV_SCHEMA.priceIls, rowNum, 'Стоимость');
+      const capacity = getByAliases(row, headerMap, CSV_SCHEMA.capacity) || undefined;
+      const time = requireByAliases(row, headerMap, CSV_SCHEMA.time, rowNum, 'Время');
+
+      const formatRu = requireByAliases(row, headerMap, CSV_SCHEMA.formatRu, rowNum, 'Формат_ru');
+      const formatEn = getByAliases(row, headerMap, CSV_SCHEMA.formatEn) || mapFormatFromRu(formatRu, 'en');
+      const formatHe = getByAliases(row, headerMap, CSV_SCHEMA.formatHe) || mapFormatFromRu(formatRu, 'he');
+
+      const langRu = requireByAliases(row, headerMap, CSV_SCHEMA.langRu, rowNum, 'Язык_ru');
+      const langEn = getByAliases(row, headerMap, CSV_SCHEMA.langEn) || mapLanguageFromRu(langRu, 'en');
+      const langHe = getByAliases(row, headerMap, CSV_SCHEMA.langHe) || mapLanguageFromRu(langRu, 'he');
 
       const event: ScheduleEvent = {
         id,
@@ -172,25 +245,22 @@ function parseCsvSchedule(text: string): ScheduleEvent[] {
         price_ils,
         entries: {
           ru: {
-            time: requireField(row, indexMap, 'ru_time', rowNum),
-            place: requireField(row, indexMap, 'ru_place', rowNum),
-            format: requireField(row, indexMap, 'ru_format', rowNum),
-            language: requireField(row, indexMap, 'ru_language', rowNum),
-            date_text: optionalField(row, indexMap, 'ru_date_text'),
+            time,
+            place: requireByAliases(row, headerMap, CSV_SCHEMA.placeRu, rowNum, 'Место_ru'),
+            format: formatRu,
+            language: langRu,
           },
           he: {
-            time: requireField(row, indexMap, 'he_time', rowNum),
-            place: requireField(row, indexMap, 'he_place', rowNum),
-            format: requireField(row, indexMap, 'he_format', rowNum),
-            language: requireField(row, indexMap, 'he_language', rowNum),
-            date_text: optionalField(row, indexMap, 'he_date_text'),
+            time,
+            place: requireByAliases(row, headerMap, CSV_SCHEMA.placeHe, rowNum, 'Место_he'),
+            format: formatHe,
+            language: langHe,
           },
           en: {
-            time: requireField(row, indexMap, 'en_time', rowNum),
-            place: requireField(row, indexMap, 'en_place', rowNum),
-            format: requireField(row, indexMap, 'en_format', rowNum),
-            language: requireField(row, indexMap, 'en_language', rowNum),
-            date_text: optionalField(row, indexMap, 'en_date_text'),
+            time,
+            place: requireByAliases(row, headerMap, CSV_SCHEMA.placeEn, rowNum, 'Место_en'),
+            format: formatEn,
+            language: langEn,
           },
         },
       };
