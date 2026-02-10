@@ -1,4 +1,5 @@
 import type { StoredOrder } from './ordersStore';
+import { resolveOrderDetails } from './showEventDetails';
 import { buildTicketArtifacts } from './ticket';
 
 type SendTicketEmailResult = {
@@ -15,9 +16,8 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
 
   const buyerName = order.buyer_name || 'Viewer';
   const ticket = await buildTicketArtifacts(order);
+  const details = await resolveOrderDetails(order);
   const subject = 'Payment confirmed / Оплата подтверждена / התשלום אושר';
-  const showLabel = order.show_slug;
-  const eventLabel = order.event_id || '-';
   const qtyLabel = String(order.qty ?? 1);
   const amountLabel = order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
 
@@ -28,8 +28,9 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<p><strong>Ticket code:</strong> ${ticket.ticketCode}</p>`,
     `<p><a href="${ticket.verifyUrl}">Verify ticket</a></p>`,
     `<p><strong>Order:</strong> ${order.order_id}<br/>`,
-    `<strong>Show:</strong> ${showLabel}<br/>`,
-    `<strong>Event:</strong> ${eventLabel}<br/>`,
+    `<strong>Show:</strong> ${details.showTitle.en}<br/>`,
+    `<strong>Date & time:</strong> ${details.eventDateTime.en}<br/>`,
+    `<strong>Venue:</strong> ${details.eventPlace.en}<br/>`,
     `<strong>Qty:</strong> ${qtyLabel}<br/>`,
     `<strong>Amount:</strong> ${amountLabel}</p>`,
     `<hr/>`,
@@ -39,8 +40,9 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<p><strong>Код билета:</strong> ${ticket.ticketCode}</p>`,
     `<p><a href="${ticket.verifyUrl}">Проверить билет</a></p>`,
     `<p><strong>Заказ:</strong> ${order.order_id}<br/>`,
-    `<strong>Спектакль:</strong> ${showLabel}<br/>`,
-    `<strong>Сеанс:</strong> ${eventLabel}<br/>`,
+    `<strong>Спектакль:</strong> ${details.showTitle.ru}<br/>`,
+    `<strong>Дата и время:</strong> ${details.eventDateTime.ru}<br/>`,
+    `<strong>Место:</strong> ${details.eventPlace.ru}<br/>`,
     `<strong>Количество:</strong> ${qtyLabel}<br/>`,
     `<strong>Сумма:</strong> ${amountLabel}</p>`,
     `<hr/>`,
@@ -50,8 +52,9 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<p dir="rtl"><strong>קוד כרטיס:</strong> ${ticket.ticketCode}</p>`,
     `<p dir="rtl"><a href="${ticket.verifyUrl}">אימות כרטיס</a></p>`,
     `<p dir="rtl"><strong>הזמנה:</strong> ${order.order_id}<br/>`,
-    `<strong>מופע:</strong> ${showLabel}<br/>`,
-    `<strong>אירוע:</strong> ${eventLabel}<br/>`,
+    `<strong>מופע:</strong> ${details.showTitle.he}<br/>`,
+    `<strong>תאריך ושעה:</strong> ${details.eventDateTime.he}<br/>`,
+    `<strong>מקום:</strong> ${details.eventPlace.he}<br/>`,
     `<strong>כמות:</strong> ${qtyLabel}<br/>`,
     `<strong>סכום:</strong> ${amountLabel}</p>`,
     `<p>PDF ticket is attached / PDF-билет во вложении / כרטיס PDF מצורף.</p>`,
