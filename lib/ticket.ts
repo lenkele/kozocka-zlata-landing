@@ -125,7 +125,7 @@ function drawWrapped(
   const lines = wrapText(font, text, size, width, options?.maxLines);
 
   for (const line of lines) {
-    const renderLine = options?.rtl ? toPdfVisualHebrew(line) : line;
+    const renderLine = line;
     const lineWidth = font.widthOfTextAtSize(renderLine, size);
     const drawX = options?.rtl ? x + Math.max(0, width - lineWidth) : x;
     page.drawText(renderLine, { x: drawX, y, size, font, color });
@@ -155,7 +155,7 @@ function drawFieldRow(
   const labelWidthLocal = options?.rightLabelLeftValue ? labelWidth : labelWidth;
   const labelColor = rgb(0.45, 0.45, 0.45);
 
-  const visualLabel = options?.rtl ? toPdfVisualHebrew(label) : label;
+  const visualLabel = label;
   const labelTextWidth = font.widthOfTextAtSize(visualLabel, 9);
   const labelDrawX = options?.rightLabelLeftValue
     ? labelX + Math.max(0, labelWidthLocal - labelTextWidth)
@@ -171,11 +171,52 @@ function drawFieldRow(
   const lines = wrapText(font, value, 10, valueWidth, options?.maxValueLines ?? 2);
   let valueY = y;
   for (const line of lines) {
-    const visualLine = options?.rtl ? toPdfVisualHebrew(line) : line;
+    const visualLine = line;
     const lineWidth = font.widthOfTextAtSize(visualLine, 10);
     const drawX = options?.rtl && !options?.rightLabelLeftValue ? valueX + Math.max(0, valueWidth - lineWidth) : valueX;
     page.drawText(visualLine, {
       x: drawX,
+      y: valueY,
+      size: 10,
+      font,
+      color: rgb(0.1, 0.1, 0.1),
+    });
+    valueY -= 13;
+  }
+
+  const rowHeight = Math.max(13, lines.length * 13);
+  return y - rowHeight - 6;
+}
+
+function drawHebrewFieldRow(
+  page: PDFPage,
+  font: PDFFont,
+  label: string,
+  value: string,
+  x: number,
+  y: number,
+  width: number
+): number {
+  const labelWidth = 124;
+  const valueWidth = Math.max(20, width - labelWidth);
+  const labelX = x + valueWidth;
+  const valueX = x;
+
+  const labelWidthText = font.widthOfTextAtSize(label, 9);
+  page.drawText(label, {
+    x: labelX + Math.max(0, labelWidth - labelWidthText),
+    y,
+    size: 9,
+    font,
+    color: rgb(0.45, 0.45, 0.45),
+  });
+
+  const lines = wrapText(font, value, 10, valueWidth, 2);
+  let valueY = y;
+  for (const line of lines) {
+    const lineWidth = font.widthOfTextAtSize(line, 10);
+    page.drawText(line, {
+      x: valueX + Math.max(0, valueWidth - lineWidth),
       y: valueY,
       size: 10,
       font,
@@ -207,11 +248,6 @@ function drawDivider(page: PDFPage, x: number, y: number, width: number): number
     color: rgb(0.9, 0.92, 0.95),
   });
   return y - 14;
-}
-
-function toPdfVisualHebrew(input: string): string {
-  const reversed = [...input].reverse().join('');
-  return reversed.replace(/[A-Za-z0-9@:%+./,_'"()\-]+/g, (chunk) => [...chunk].reverse().join(''));
 }
 
 async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
@@ -313,7 +349,7 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     color: rgb(0.84, 0.89, 0.96),
   });
 
-  const showTitleLine = `${details.showTitle.ru} | ${details.showTitle.en} | ${toPdfVisualHebrew(details.showTitle.he)}`;
+  const showTitleLine = `${details.showTitle.ru} | ${details.showTitle.en} | ${details.showTitle.he}`;
 
   let y = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 20;
   y = drawWrapped(page, font, showTitleLine, LEFT_X, y, LEFT_WIDTH, {
@@ -325,7 +361,7 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
   });
   y -= 2;
 
-  const langs: LangCode[] = ['ru', 'en', 'he'];
+  const langs: LangCode[] = ['ru', 'en'];
   for (const lang of langs) {
     const l = labels(lang);
     const rtl = lang === 'he';
@@ -348,11 +384,17 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     y = drawDivider(page, LEFT_X, y, LEFT_WIDTH);
   }
 
-  y = drawSectionTitle(page, font, `Purchase details / Данные покупки / ${toPdfVisualHebrew('פרטי רכישה')}`, LEFT_X, y);
-  y = drawFieldRow(page, font, `Buyer / Покупатель / ${toPdfVisualHebrew('רוכש')}`, order.buyer_name || '-', LEFT_X, y, LEFT_WIDTH, { maxValueLines: 2 });
+  y = drawSectionTitle(page, font, 'עברית', LEFT_X, y, true);
+  y = drawHebrewFieldRow(page, font, 'מופע', details.showTitle.he, LEFT_X, y, LEFT_WIDTH);
+  y = drawHebrewFieldRow(page, font, 'תאריך ושעה', details.eventDateTime.he, LEFT_X, y, LEFT_WIDTH);
+  y = drawHebrewFieldRow(page, font, 'מקום', details.eventPlace.he, LEFT_X, y, LEFT_WIDTH);
+  y = drawDivider(page, LEFT_X, y, LEFT_WIDTH);
+
+  y = drawSectionTitle(page, font, 'Purchase details / Данные покупки / פרטי רכישה', LEFT_X, y);
+  y = drawFieldRow(page, font, 'Buyer / Покупатель / רוכש', order.buyer_name || '-', LEFT_X, y, LEFT_WIDTH, { maxValueLines: 2 });
   y = drawFieldRow(page, font, 'Email', order.buyer_email, LEFT_X, y, LEFT_WIDTH, { maxValueLines: 2 });
-  y = drawFieldRow(page, font, `Qty / Кол-во / ${toPdfVisualHebrew('כמות')}`, String(order.qty), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
-  y = drawFieldRow(page, font, `Amount / Сумма / ${toPdfVisualHebrew('סכום')}`, amountLabel(order), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
+  y = drawFieldRow(page, font, 'Qty / Кол-во / כמות', String(order.qty), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
+  y = drawFieldRow(page, font, 'Amount / Сумма / סכום', amountLabel(order), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
 
   const qrTopY = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 20;
   page.drawRectangle({
@@ -404,7 +446,7 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     color: rgb(0.3, 0.3, 0.3),
     maxLines: 2,
   });
-  drawWrapped(page, font, 'הציגו QR בכניסה', RIGHT_X - 4, qrTextY, QR_SIZE + 8, {
+  drawWrapped(page, font, 'הראו את קוד ה-QR בכניסה.', RIGHT_X - 4, qrTextY, QR_SIZE + 8, {
     size: 8,
     lineHeight: 11,
     color: rgb(0.3, 0.3, 0.3),
