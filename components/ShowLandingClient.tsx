@@ -19,7 +19,7 @@ type ScheduleDisplayEntry = {
 type ScheduleYaml = {
   schedule: {
     id: string;
-    date_iso: string;
+    date_iso: string | Date;
     entries: Partial<
       Record<
         Lang,
@@ -875,11 +875,13 @@ function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayE
     .map((event) => {
       const entry = event.entries[lang];
       if (!entry) return null;
+      const dateIso = normalizeDateIso(event.date_iso);
+      if (!dateIso) return null;
 
       return {
         id: event.id,
-        dateIso: event.date_iso,
-        date: entry.date_text || formatDate(event.date_iso, lang),
+        dateIso,
+        date: entry.date_text || formatDate(dateIso, lang),
         time: entry.time,
         place: entry.place,
         format: entry.format,
@@ -888,6 +890,19 @@ function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayE
     })
     .filter((item): item is ScheduleDisplayEntry => item !== null)
     .sort((a, b) => new Date(a.dateIso).getTime() - new Date(b.dateIso).getTime());
+}
+
+function normalizeDateIso(value: unknown): string {
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    return match ? match[1] : '';
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  return '';
 }
 
 function formatDate(dateIso: string, lang: Lang): string {
