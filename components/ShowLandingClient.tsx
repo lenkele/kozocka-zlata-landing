@@ -63,7 +63,6 @@ type CheckoutLabels = {
   cancelLabel: string;
   unavailableLabel: string;
   soldOutLabel: string;
-  remainingLabel: string;
   passedShowLabel: string;
   closedShowLabel: string;
   soldOutErrorLabel: string;
@@ -107,7 +106,6 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     cancelLabel: 'Отмена',
     unavailableLabel: 'Недоступно',
     soldOutLabel: 'Sold out',
-    remainingLabel: 'Осталось',
     passedShowLabel: 'Спектакль прошел',
     closedShowLabel: 'Для закрытых показов покупка недоступна',
     soldOutErrorLabel: 'На это событие билеты закончились.',
@@ -142,7 +140,6 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     cancelLabel: 'ביטול',
     unavailableLabel: 'לא זמין',
     soldOutLabel: 'אזל',
-    remainingLabel: 'נותרו',
     passedShowLabel: 'המופע כבר התקיים',
     closedShowLabel: 'אין רכישה למופעים סגורים',
     soldOutErrorLabel: 'אין יותר כרטיסים לאירוע הזה.',
@@ -177,7 +174,6 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     cancelLabel: 'Cancel',
     unavailableLabel: 'Unavailable',
     soldOutLabel: 'Sold out',
-    remainingLabel: 'Left',
     passedShowLabel: 'Performance ended',
     closedShowLabel: 'Ticket purchase is unavailable for closed shows',
     soldOutErrorLabel: 'No tickets left for this event.',
@@ -654,11 +650,6 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                               {typeof row.priceIls === 'number' && (
                                 <span className="text-xs md:text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
                               )}
-                              {typeof getAvailability(row.id)?.remaining === 'number' && (
-                                <span className="text-xs md:text-sm text-amber-100/75">
-                                  {checkoutT.remainingLabel}: {getAvailability(row.id)?.remaining}
-                                </span>
-                              )}
                               <button
                                 type="button"
                                 onClick={() => openCheckout(row)}
@@ -790,12 +781,6 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                 <span className="text-amber-100/60">{checkoutT.unitPriceLabel}: </span>
                 {selectedRow.priceIls !== null ? `₪ ${formatIlsAmount(selectedRow.priceIls)}` : '—'}
               </p>
-              {typeof selectedRemaining === 'number' && (
-                <p>
-                  <span className="text-amber-100/60">{checkoutT.remainingLabel}: </span>
-                  {selectedRemaining}
-                </p>
-              )}
             </div>
 
             {isClosedShow(selectedRow.format) ? (
