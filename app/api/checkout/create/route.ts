@@ -1,5 +1,8 @@
 import crypto from 'node:crypto';
+import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { NextResponse } from 'next/server';
+import yaml from 'js-yaml';
 
 import { createAllpayPayment } from '@/lib/allpay';
 import { createPendingOrder, markOrderFailed } from '@/lib/ordersStore';
@@ -37,6 +40,31 @@ function parsePositiveInt(value: unknown, fallback: number): number {
   return fallback;
 }
 
+type SchedulePriceYaml = {
+  schedule?: Array<{
+    id?: string;
+    price_ils?: number | string;
+  }>;
+};
+
+async function resolveEventUnitPrice(showSlug: string, eventId: string, fallbackPrice: number): Promise<number> {
+  if (!showSlug || !eventId) return fallbackPrice;
+
+  try {
+    const schedulePath = path.join(process.cwd(), 'public', 'shows', showSlug, 'data', 'schedule.yaml');
+    const raw = await readFile(schedulePath, 'utf8');
+    const parsed = yaml.load(raw) as SchedulePriceYaml;
+
+    const event = parsed.schedule?.find((item) => item.id === eventId);
+    if (!event) return fallbackPrice;
+
+    return parsePositiveInt(event.price_ils, fallbackPrice);
+  } catch (error) {
+    console.error('[checkout-create] failed to resolve event price from schedule', { showSlug, eventId, error });
+    return fallbackPrice;
+  }
+}
+
 export async function POST(request: Request) {
   const terminalId = process.env.ALLPAY_TERMINAL_ID;
   const apiKey = process.env.ALLPAY_API_KEY;
@@ -68,10 +96,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: 'buyer_email_invalid' }, { status: 400 });
   }
 
-  const unitPrice = parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, 1);
   const itemName = process.env.DEFAULT_TICKET_NAME ?? 'Ticket';
   const showSlug = body.showSlug?.trim() || 'unknown-show';
   const eventId = body.eventId?.trim() || 'unknown-event';
+  const defaultUnitPrice = parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, 1);
+  const unitPrice = await resolveEventUnitPrice(showSlug, eventId, defaultUnitPrice);
   const orderId = `${showSlug}-${eventId}-${crypto.randomUUID()}`;
   const amount = unitPrice * qty;
 

@@ -47,6 +47,7 @@ type CheckoutLabels = {
   submittingLabel: string;
   cancelLabel: string;
   unavailableLabel: string;
+  passedShowLabel: string;
   closedShowLabel: string;
   createErrorLabel: string;
   namePlaceholder: string;
@@ -66,6 +67,7 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     submittingLabel: 'Создаём оплату...',
     cancelLabel: 'Отмена',
     unavailableLabel: 'Недоступно',
+    passedShowLabel: 'Спектакль прошел',
     closedShowLabel: 'Для закрытых показов покупка недоступна',
     createErrorLabel: 'Не удалось создать оплату. Попробуйте ещё раз.',
     namePlaceholder: 'Ваше имя',
@@ -83,6 +85,7 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     submittingLabel: 'יוצרים תשלום...',
     cancelLabel: 'ביטול',
     unavailableLabel: 'לא זמין',
+    passedShowLabel: 'המופע כבר התקיים',
     closedShowLabel: 'אין רכישה למופעים סגורים',
     createErrorLabel: 'לא הצלחנו ליצור תשלום. נסו שוב.',
     namePlaceholder: 'השם שלך',
@@ -100,6 +103,7 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     submittingLabel: 'Creating payment...',
     cancelLabel: 'Cancel',
     unavailableLabel: 'Unavailable',
+    passedShowLabel: 'Performance ended',
     closedShowLabel: 'Ticket purchase is unavailable for closed shows',
     createErrorLabel: 'Could not create payment. Please try again.',
     namePlaceholder: 'Your name',
@@ -110,6 +114,21 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
 function isClosedShow(format: string): boolean {
   const normalized = format.toLowerCase();
   return normalized.includes('закрыт') || normalized.includes('סגור') || normalized.includes('private');
+}
+
+function getTodayIsoLocal(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isPastShowDate(dateIso: string): boolean {
+  if (!dateIso || !/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) {
+    return false;
+  }
+  return dateIso < getTodayIsoLocal();
 }
 
 export default function ShowLandingClient({ show }: { show: ShowConfig }) {
@@ -226,7 +245,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   };
 
   const openCheckout = (row: ScheduleDisplayEntry) => {
-    if (isClosedShow(row.format)) {
+    if (isClosedShow(row.format) || isPastShowDate(row.dateIso)) {
       return;
     }
     setSelectedRow(row);
@@ -440,6 +459,8 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>
                           {isClosedShow(row.format) ? (
                             <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
+                          ) : isPastShowDate(row.dateIso) ? (
+                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.passedShowLabel}</span>
                           ) : (
                             <button
                               type="button"
