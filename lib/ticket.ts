@@ -210,7 +210,8 @@ function drawDivider(page: PDFPage, x: number, y: number, width: number): number
 }
 
 function toPdfVisualHebrew(input: string): string {
-  return input.replace(/[\u0590-\u05FF]+/g, (chunk) => [...chunk].reverse().join(''));
+  const reversed = [...input].reverse().join('');
+  return reversed.replace(/[A-Za-z0-9@:%+./,_'"()\-]+/g, (chunk) => [...chunk].reverse().join(''));
 }
 
 async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
