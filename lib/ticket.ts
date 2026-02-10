@@ -165,8 +165,13 @@ function buildTicketHtml(input: {
 async function renderHtmlToPdf(html: string): Promise<Uint8Array> {
   const executablePath = await chromium.executablePath();
   const browser = await puppeteer.launch({
-    args: chromium.args,
-    executablePath,
+    args: [...chromium.args, '--disable-gpu', '--font-render-hinting=none'],
+    executablePath: executablePath || undefined,
+    defaultViewport: {
+      width: 794,
+      height: 1123,
+      deviceScaleFactor: 1,
+    },
     headless: true,
   });
 

@@ -41,15 +41,21 @@ export async function GET(request: Request) {
     consent_marketing_accepted: false,
   };
 
-  const ticket = await buildTicketArtifacts(order);
-  const pdfBuffer = Buffer.from(ticket.pdfBase64, 'base64');
+  try {
+    const ticket = await buildTicketArtifacts(order);
+    const pdfBuffer = Buffer.from(ticket.pdfBase64, 'base64');
 
-  return new NextResponse(pdfBuffer, {
-    status: 200,
-    headers: {
-      'content-type': 'application/pdf',
-      'content-disposition': `inline; filename="${ticket.pdfFilename}"`,
-      'cache-control': 'no-store',
-    },
-  });
+    return new NextResponse(pdfBuffer, {
+      status: 200,
+      headers: {
+        'content-type': 'application/pdf',
+        'content-disposition': `inline; filename="${ticket.pdfFilename}"`,
+        'cache-control': 'no-store',
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'unknown_error';
+    const stack = error instanceof Error ? error.stack : undefined;
+    return NextResponse.json({ ok: false, reason: 'ticket_preview_failed', message, stack }, { status: 500 });
+  }
 }
