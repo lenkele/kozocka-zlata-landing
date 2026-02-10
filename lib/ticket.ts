@@ -188,6 +188,41 @@ function drawFieldRow(
   return y - rowHeight - 6;
 }
 
+function rtlVisualToken(token: string): string {
+  return /[\u0590-\u05FF]/.test(token) ? [...token].reverse().join('') : token;
+}
+
+function splitMixedTokens(input: string): string[] {
+  return input.match(/[\u0590-\u05FF]+|[A-Za-z0-9@:%+./,_'"()\-]+|\s+|./g) ?? [];
+}
+
+function drawRtlMixedLine(
+  page: PDFPage,
+  font: PDFFont,
+  text: string,
+  rightX: number,
+  y: number,
+  options?: { size?: number; color?: ReturnType<typeof rgb> }
+): void {
+  const size = options?.size ?? 10;
+  const color = options?.color ?? rgb(0.1, 0.1, 0.1);
+  const tokens = splitMixedTokens(text);
+
+  let cursor = rightX;
+  for (const token of tokens) {
+    const render = rtlVisualToken(token);
+    const width = font.widthOfTextAtSize(render, size);
+    cursor -= width;
+    page.drawText(render, {
+      x: cursor,
+      y,
+      size,
+      font,
+      color,
+    });
+  }
+}
+
 function drawHebrewFieldRow(
   page: PDFPage,
   font: PDFFont,
@@ -202,24 +237,16 @@ function drawHebrewFieldRow(
   const labelX = x + valueWidth;
   const valueX = x;
 
-  const labelWidthText = font.widthOfTextAtSize(label, 9);
-  page.drawText(label, {
-    x: labelX + Math.max(0, labelWidth - labelWidthText),
-    y,
+  drawRtlMixedLine(page, font, label, labelX + labelWidth, y, {
     size: 9,
-    font,
     color: rgb(0.45, 0.45, 0.45),
   });
 
   const lines = wrapText(font, value, 10, valueWidth, 2);
   let valueY = y;
   for (const line of lines) {
-    const lineWidth = font.widthOfTextAtSize(line, 10);
-    page.drawText(line, {
-      x: valueX + Math.max(0, valueWidth - lineWidth),
-      y: valueY,
+    drawRtlMixedLine(page, font, line, valueX + valueWidth, valueY, {
       size: 10,
-      font,
       color: rgb(0.1, 0.1, 0.1),
     });
     valueY -= 13;
@@ -349,7 +376,7 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     color: rgb(0.84, 0.89, 0.96),
   });
 
-  const showTitleLine = `${details.showTitle.ru} | ${details.showTitle.en} | ${details.showTitle.he}`;
+  const showTitleLine = `${details.showTitle.ru} | ${details.showTitle.en} | ${rtlVisualToken(details.showTitle.he)}`;
 
   let y = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 20;
   y = drawWrapped(page, font, showTitleLine, LEFT_X, y, LEFT_WIDTH, {
@@ -446,12 +473,9 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     color: rgb(0.3, 0.3, 0.3),
     maxLines: 2,
   });
-  drawWrapped(page, font, 'הראו את קוד ה-QR בכניסה.', RIGHT_X - 4, qrTextY, QR_SIZE + 8, {
+  drawRtlMixedLine(page, font, 'הראו את קוד ה-QR בכניסה.', RIGHT_X + QR_SIZE + 4, qrTextY, {
     size: 8,
-    lineHeight: 11,
     color: rgb(0.3, 0.3, 0.3),
-    rtl: true,
-    maxLines: 2,
   });
 
   page.drawText(`Order ID: ${order.order_id}`, {
