@@ -8,11 +8,18 @@ type SendTicketEmailResult = {
 
 export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM ?? 'onboarding@resend.dev';
+  const fromEmail = (process.env.EMAIL_FROM ?? 'onboarding@resend.dev').trim();
+  const fromName = (process.env.EMAIL_FROM_NAME ?? 'RYBA KIVA').trim();
+  const replyTo = process.env.EMAIL_REPLY_TO?.trim();
 
   if (!apiKey) {
     throw new Error('RESEND_API_KEY is required');
   }
+  if (process.env.NODE_ENV === 'production' && fromEmail.toLowerCase() === 'onboarding@resend.dev') {
+    throw new Error('EMAIL_FROM must be set to your verified domain mailbox in production');
+  }
+
+  const from = fromEmail.includes('<') ? fromEmail : `${fromName} <${fromEmail}>`;
 
   const buyerName = order.buyer_name || 'Viewer';
   const ticket = await buildTicketArtifacts(order);
@@ -77,6 +84,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     body: JSON.stringify({
       from,
       to: [order.buyer_email],
+      ...(replyTo ? { reply_to: [replyTo] } : {}),
       subject,
       html,
       attachments,

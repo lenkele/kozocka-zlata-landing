@@ -19,6 +19,10 @@ npm run dev
 - `http://localhost:3000/zlata`
 - `http://localhost:3000/marita`
 
+## Email (билеты)
+
+- Настройка отправки с вашего домена на любые адреса: `docs/email-delivery-setup.md`.
+
 Корневая `/` редиректит на спектакль по умолчанию (`DEFAULT_SHOW_SLUG` в `shows/index.ts`).
 
 ## Домены и middleware
