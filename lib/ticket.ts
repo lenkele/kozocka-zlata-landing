@@ -18,13 +18,23 @@ export type TicketArtifacts = {
 
 const PAGE_WIDTH = 595;
 const PAGE_HEIGHT = 842;
-const MARGIN = 40;
-const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
+const MARGIN = 36;
+const CARD_X = MARGIN;
+const CARD_Y = 92;
+const CARD_WIDTH = PAGE_WIDTH - MARGIN * 2;
+const CARD_HEIGHT = PAGE_HEIGHT - CARD_Y - 36;
+const HEADER_HEIGHT = 68;
+const LEFT_X = CARD_X + 20;
+const LEFT_WIDTH = 360;
+const RIGHT_X = CARD_X + CARD_WIDTH - 132;
+const QR_SIZE = 96;
 
 const FONT_CANDIDATES = [
   path.join(process.cwd(), 'assets', 'fonts', 'DejaVuSans.ttf'),
   path.join(process.cwd(), 'DejaVuSans.ttf'),
 ];
+
+type LangCode = 'ru' | 'en' | 'he';
 
 async function loadUnicodeFont(): Promise<Uint8Array> {
   for (const filePath of FONT_CANDIDATES) {
@@ -41,9 +51,11 @@ function amountLabel(order: StoredOrder): string {
   return order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
 }
 
-function wrapText(font: PDFFont, text: string, size: number, maxWidth: number): string[] {
-  if (!text) return ['-'];
-  const words = text.split(' ');
+function wrapText(font: PDFFont, text: string, size: number, maxWidth: number, maxLines?: number): string[] {
+  const source = (text || '-').trim();
+  if (!source) return ['-'];
+
+  const words = source.split(/\s+/);
   const lines: string[] = [];
   let current = '';
 
@@ -53,7 +65,6 @@ function wrapText(font: PDFFont, text: string, size: number, maxWidth: number): 
         lines.push(current);
         current = '';
       }
-
       let chunk = '';
       for (const ch of word) {
         const candidate = `${chunk}${ch}`;
@@ -73,92 +84,116 @@ function wrapText(font: PDFFont, text: string, size: number, maxWidth: number): 
       current = candidate;
       continue;
     }
+
     if (current) lines.push(current);
     current = word;
   }
 
   if (current) lines.push(current);
-  return lines.length > 0 ? lines : ['-'];
+
+  if (!maxLines || lines.length <= maxLines) return lines;
+
+  const cropped = lines.slice(0, maxLines);
+  const lastIndex = cropped.length - 1;
+  let last = cropped[lastIndex];
+  while (last.length > 0 && font.widthOfTextAtSize(`${last}...`, size) > maxWidth) {
+    last = last.slice(0, -1);
+  }
+  cropped[lastIndex] = last ? `${last}...` : '...';
+  return cropped;
 }
 
-function drawTextLines(
+function drawWrapped(
   page: PDFPage,
   font: PDFFont,
   text: string,
   x: number,
   y: number,
-  maxWidth: number,
-  options?: { size?: number; color?: ReturnType<typeof rgb>; lineHeight?: number }
+  width: number,
+  options?: {
+    size?: number;
+    lineHeight?: number;
+    color?: ReturnType<typeof rgb>;
+    rtl?: boolean;
+    maxLines?: number;
+  }
 ): number {
   const size = options?.size ?? 11;
-  const color = options?.color ?? rgb(0.12, 0.12, 0.12);
-  const lineHeight = options?.lineHeight ?? size + 4;
-  const lines = wrapText(font, text, size, maxWidth);
+  const lineHeight = options?.lineHeight ?? size + 3;
+  const color = options?.color ?? rgb(0.14, 0.14, 0.14);
+  const lines = wrapText(font, text, size, width, options?.maxLines);
 
   for (const line of lines) {
-    page.drawText(line, { x, y, size, font, color });
+    const lineWidth = font.widthOfTextAtSize(line, size);
+    const drawX = options?.rtl ? x + Math.max(0, width - lineWidth) : x;
+    page.drawText(line, { x: drawX, y, size, font, color });
     y -= lineHeight;
   }
 
   return y;
 }
 
-function drawLabelValue(
+function drawFieldRow(
   page: PDFPage,
   font: PDFFont,
   label: string,
   value: string,
   x: number,
   y: number,
-  width: number
+  width: number,
+  options?: { rtl?: boolean; maxValueLines?: number }
 ): number {
-  const labelSize = 10;
-  const valueSize = 12;
-  page.drawText(label, { x, y, size: labelSize, font, color: rgb(0.45, 0.45, 0.45) });
-  y -= labelSize + 5;
-  y = drawTextLines(page, font, value, x, y, width, { size: valueSize, color: rgb(0.1, 0.1, 0.1), lineHeight: 16 });
-  return y - 6;
-}
-
-function drawKeyValueRow(
-  page: PDFPage,
-  font: PDFFont,
-  label: string,
-  value: string,
-  x: number,
-  y: number,
-  width: number
-): number {
-  const labelWidth = 140;
+  const labelWidth = 124;
   const valueX = x + labelWidth;
   const valueWidth = Math.max(20, width - labelWidth);
-  const labelSize = 11;
-  const valueSize = 11;
-  const lineHeight = 14;
-  const valueLines = wrapText(font, value, valueSize, valueWidth);
-  const rowHeight = Math.max(lineHeight, valueLines.length * lineHeight);
+  const labelColor = rgb(0.45, 0.45, 0.45);
 
   page.drawText(label, {
     x,
     y,
-    size: labelSize,
+    size: 9,
     font,
-    color: rgb(0.45, 0.45, 0.45),
+    color: labelColor,
   });
 
+  const lines = wrapText(font, value, 10, valueWidth, options?.maxValueLines ?? 2);
   let valueY = y;
-  for (const line of valueLines) {
+  for (const line of lines) {
+    const lineWidth = font.widthOfTextAtSize(line, 10);
+    const drawX = options?.rtl ? valueX + Math.max(0, valueWidth - lineWidth) : valueX;
     page.drawText(line, {
-      x: valueX,
+      x: drawX,
       y: valueY,
-      size: valueSize,
+      size: 10,
       font,
       color: rgb(0.1, 0.1, 0.1),
     });
-    valueY -= lineHeight;
+    valueY -= 13;
   }
 
-  return y - rowHeight - 8;
+  const rowHeight = Math.max(13, lines.length * 13);
+  return y - rowHeight - 6;
+}
+
+function drawSectionTitle(page: PDFPage, font: PDFFont, title: string, x: number, y: number, rtl = false): number {
+  return drawWrapped(page, font, title, x, y, LEFT_WIDTH, {
+    size: 11,
+    lineHeight: 14,
+    color: rgb(0.1, 0.12, 0.16),
+    rtl,
+    maxLines: 1,
+  }) - 2;
+}
+
+function drawDivider(page: PDFPage, x: number, y: number, width: number): number {
+  page.drawRectangle({
+    x,
+    y,
+    width,
+    height: 1,
+    color: rgb(0.9, 0.92, 0.95),
+  });
+  return y - 8;
 }
 
 async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
@@ -172,6 +207,34 @@ async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
   }
 }
 
+function langTitle(lang: LangCode): string {
+  if (lang === 'ru') return 'Русский';
+  if (lang === 'en') return 'English';
+  return 'עברית';
+}
+
+function labels(lang: LangCode) {
+  if (lang === 'ru') {
+    return {
+      show: 'Спектакль',
+      dateTime: 'Дата и время',
+      venue: 'Место',
+    };
+  }
+  if (lang === 'en') {
+    return {
+      show: 'Show',
+      dateTime: 'Date & time',
+      venue: 'Venue',
+    };
+  }
+  return {
+    show: 'מופע',
+    dateTime: 'תאריך ושעה',
+    venue: 'מקום',
+  };
+}
+
 export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketArtifacts> {
   const baseUrl = process.env.APP_BASE_URL ?? 'https://kozocka-zlata-landing-coral.vercel.app';
   const ticketCode = crypto.createHash('sha256').update(order.order_id).digest('hex').slice(0, 12).toUpperCase();
@@ -179,10 +242,6 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(verifyUrl)}`;
 
   const details = await resolveOrderDetails(order);
-  const showTitle = details.showTitle.ru !== '-' ? details.showTitle.ru : details.showTitle.en;
-  const dateTime = details.eventDateTime.ru !== '-' ? details.eventDateTime.ru : details.eventDateTime.en;
-  const place = details.eventPlace.ru !== '-' ? details.eventPlace.ru : details.eventPlace.en;
-
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
   const fontBytes = await loadUnicodeFont();
@@ -194,128 +253,155 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     y: 0,
     width: PAGE_WIDTH,
     height: PAGE_HEIGHT,
-    color: rgb(0.97, 0.97, 0.97),
+    color: rgb(0.965, 0.968, 0.974),
   });
 
   page.drawRectangle({
-    x: MARGIN,
-    y: PAGE_HEIGHT - 108,
-    width: CONTENT_WIDTH,
-    height: 74,
-    color: rgb(0.12, 0.16, 0.22),
-  });
-
-  page.drawText('RYBA KIVA | E-TICKET', {
-    x: MARGIN + 20,
-    y: PAGE_HEIGHT - 72,
-    size: 16,
-    font,
-    color: rgb(0.96, 0.96, 0.96),
-  });
-  page.drawText(`Ticket code: ${ticketCode}`, {
-    x: MARGIN + 20,
-    y: PAGE_HEIGHT - 93,
-    size: 11,
-    font,
-    color: rgb(0.86, 0.9, 0.96),
-  });
-
-  page.drawRectangle({
-    x: MARGIN,
-    y: 96,
-    width: CONTENT_WIDTH,
-    height: PAGE_HEIGHT - 222,
+    x: CARD_X,
+    y: CARD_Y,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
     color: rgb(1, 1, 1),
   });
   page.drawRectangle({
-    x: MARGIN,
-    y: 96,
-    width: CONTENT_WIDTH,
-    height: PAGE_HEIGHT - 222,
+    x: CARD_X,
+    y: CARD_Y,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    borderColor: rgb(0.84, 0.87, 0.92),
+    borderWidth: 1,
+  });
+
+  page.drawRectangle({
+    x: CARD_X,
+    y: CARD_Y + CARD_HEIGHT - HEADER_HEIGHT,
+    width: CARD_WIDTH,
+    height: HEADER_HEIGHT,
+    color: rgb(0.11, 0.15, 0.22),
+  });
+
+  page.drawText('RYBA KIVA | E-TICKET', {
+    x: LEFT_X,
+    y: CARD_Y + CARD_HEIGHT - 28,
+    size: 14,
+    font,
+    color: rgb(0.95, 0.96, 0.98),
+  });
+  page.drawText(`Ticket code: ${ticketCode}`, {
+    x: LEFT_X,
+    y: CARD_Y + CARD_HEIGHT - 46,
+    size: 10,
+    font,
+    color: rgb(0.84, 0.89, 0.96),
+  });
+
+  let y = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 20;
+  y = drawWrapped(page, font, details.showTitle.ru, LEFT_X, y, LEFT_WIDTH, {
+    size: 16,
+    lineHeight: 19,
+    color: rgb(0.1, 0.12, 0.16),
+    maxLines: 2,
+  });
+  y = drawWrapped(page, font, details.showTitle.en, LEFT_X, y - 2, LEFT_WIDTH, {
+    size: 10,
+    lineHeight: 13,
+    color: rgb(0.33, 0.35, 0.38),
+    maxLines: 1,
+  });
+  y = drawWrapped(page, font, details.showTitle.he, LEFT_X, y - 1, LEFT_WIDTH, {
+    size: 10,
+    lineHeight: 13,
+    color: rgb(0.33, 0.35, 0.38),
+    rtl: true,
+    maxLines: 1,
+  });
+  y -= 2;
+
+  const langs: LangCode[] = ['ru', 'en', 'he'];
+  for (const lang of langs) {
+    const l = labels(lang);
+    const rtl = lang === 'he';
+    y = drawSectionTitle(page, font, langTitle(lang), LEFT_X, y, rtl);
+    y = drawFieldRow(page, font, l.show, details.showTitle[lang], LEFT_X, y, LEFT_WIDTH, { rtl, maxValueLines: 1 });
+    y = drawFieldRow(page, font, l.dateTime, details.eventDateTime[lang], LEFT_X, y, LEFT_WIDTH, { rtl, maxValueLines: 2 });
+    y = drawFieldRow(page, font, l.venue, details.eventPlace[lang], LEFT_X, y, LEFT_WIDTH, { rtl, maxValueLines: 2 });
+    y = drawDivider(page, LEFT_X, y, LEFT_WIDTH);
+  }
+
+  y = drawSectionTitle(page, font, 'Purchase details / Данные покупки / פרטי רכישה', LEFT_X, y);
+  y = drawFieldRow(page, font, 'Buyer / Покупатель / רוכש', order.buyer_name || '-', LEFT_X, y, LEFT_WIDTH, { maxValueLines: 2 });
+  y = drawFieldRow(page, font, 'Email', order.buyer_email, LEFT_X, y, LEFT_WIDTH, { maxValueLines: 2 });
+  y = drawFieldRow(page, font, 'Qty / Кол-во / כמות', String(order.qty), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
+  y = drawFieldRow(page, font, 'Amount / Сумма / סכום', amountLabel(order), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
+
+  page.drawRectangle({
+    x: RIGHT_X - 8,
+    y: CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 136,
+    width: QR_SIZE + 16,
+    height: QR_SIZE + 16,
+    color: rgb(0.985, 0.988, 0.992),
     borderColor: rgb(0.86, 0.88, 0.92),
     borderWidth: 1,
   });
 
-  const leftColX = MARGIN + 22;
-  const leftColWidth = 332;
-  const rightColX = MARGIN + 376;
-
-  let y = PAGE_HEIGHT - 145;
-  y = drawTextLines(page, font, showTitle, leftColX, y, leftColWidth, { size: 22, color: rgb(0.1, 0.12, 0.16), lineHeight: 28 });
-  y -= 8;
-
-  y = drawLabelValue(page, font, 'Дата и время / Date & time', dateTime, leftColX, y, leftColWidth);
-  y = drawLabelValue(page, font, 'Место / Venue', place, leftColX, y, leftColWidth);
-
-  y -= 6;
-  page.drawRectangle({
-    x: leftColX,
-    y: y - 2,
-    width: leftColWidth,
-    height: 1,
-    color: rgb(0.9, 0.92, 0.95),
-  });
-  y -= 16;
-
-  y = drawKeyValueRow(page, font, 'Покупатель / Buyer', order.buyer_name || '-', leftColX, y, leftColWidth);
-  y = drawKeyValueRow(page, font, 'Email', order.buyer_email, leftColX, y, leftColWidth);
-  y = drawKeyValueRow(page, font, 'Количество / Qty', String(order.qty), leftColX, y, leftColWidth);
-  y = drawKeyValueRow(page, font, 'Сумма / Amount', amountLabel(order), leftColX, y, leftColWidth);
-
   const qrImage = await embedQrImage(pdfDoc, qrImageUrl);
   if (qrImage) {
     page.drawImage(qrImage, {
-      x: rightColX,
-      y: PAGE_HEIGHT - 330,
-      width: 150,
-      height: 150,
+      x: RIGHT_X,
+      y: CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 128,
+      width: QR_SIZE,
+      height: QR_SIZE,
     });
   } else {
     page.drawRectangle({
-      x: rightColX,
-      y: PAGE_HEIGHT - 330,
-      width: 150,
-      height: 150,
+      x: RIGHT_X,
+      y: CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 128,
+      width: QR_SIZE,
+      height: QR_SIZE,
       borderColor: rgb(0.82, 0.84, 0.88),
       borderWidth: 1,
     });
-    page.drawText('QR unavailable', {
-      x: rightColX + 35,
-      y: PAGE_HEIGHT - 255,
-      size: 10,
+    page.drawText('QR', {
+      x: RIGHT_X + 40,
+      y: CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 80,
+      size: 14,
       font,
       color: rgb(0.5, 0.5, 0.5),
     });
   }
 
-  let qrTextY = PAGE_HEIGHT - 350;
-  qrTextY = drawTextLines(page, font, 'Покажите QR-код на входе.', rightColX, qrTextY, 150, {
-    size: 10,
-    color: rgb(0.25, 0.25, 0.25),
-    lineHeight: 14,
+  let qrTextY = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 150;
+  qrTextY = drawWrapped(page, font, 'Покажите QR на входе', RIGHT_X - 4, qrTextY, QR_SIZE + 8, {
+    size: 8,
+    lineHeight: 11,
+    color: rgb(0.3, 0.3, 0.3),
+    maxLines: 2,
   });
-  qrTextY = drawTextLines(page, font, 'Show this QR code at the entrance.', rightColX, qrTextY - 2, 150, {
-    size: 10,
-    color: rgb(0.25, 0.25, 0.25),
-    lineHeight: 14,
+  qrTextY = drawWrapped(page, font, 'Show QR at the entrance', RIGHT_X - 4, qrTextY, QR_SIZE + 8, {
+    size: 8,
+    lineHeight: 11,
+    color: rgb(0.3, 0.3, 0.3),
+    maxLines: 2,
   });
-  drawTextLines(page, font, 'אפשר לסרוק את הקוד בכניסה.', rightColX, qrTextY - 2, 150, {
-    size: 10,
-    color: rgb(0.25, 0.25, 0.25),
-    lineHeight: 14,
+  drawWrapped(page, font, 'הציגו QR בכניסה', RIGHT_X - 4, qrTextY, QR_SIZE + 8, {
+    size: 8,
+    lineHeight: 11,
+    color: rgb(0.3, 0.3, 0.3),
+    rtl: true,
+    maxLines: 2,
   });
 
   page.drawText(`Order ID: ${order.order_id}`, {
-    x: MARGIN + 22,
-    y: 78,
-    size: 9,
+    x: LEFT_X,
+    y: CARD_Y + 14,
+    size: 8.5,
     font,
     color: rgb(0.42, 0.42, 0.42),
   });
-  page.drawText('Verify link is embedded in the QR code', {
-    x: MARGIN + 22,
-    y: 62,
-    size: 9,
+  page.drawText('Verification URL is encoded in the QR code', {
+    x: LEFT_X,
+    y: CARD_Y + 2,
+    size: 8.5,
     font,
     color: rgb(0.42, 0.42, 0.42),
   });
@@ -330,3 +416,4 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     pdfFilename: `ticket-${order.order_id}.pdf`,
   };
 }
+
