@@ -23,6 +23,7 @@ npm run dev
 
 - Настройка отправки с вашего домена на любые адреса: `docs/email-delivery-setup.md`.
 - Операционный runbook: `docs/operations-runbook.md`.
+- Операционный чеклист (1 страница): `docs/ops-checklist-onepage.md`.
 
 ## Расписание (автоматизация)
 
