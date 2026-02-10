@@ -166,7 +166,6 @@ async function renderHtmlToPdf(html: string): Promise<Uint8Array> {
   const executablePath = await chromium.executablePath();
   const browser = await puppeteer.launch({
     args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
     executablePath,
     headless: true,
   });
@@ -222,4 +221,3 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     pdfFilename: `ticket-${order.order_id}.pdf`,
   };
 }
-
