@@ -16,10 +16,6 @@ function asPositiveNumber(input: string | null, fallback: number): number {
 }
 
 export async function GET(request: Request) {
-  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_DEV_TICKET_PREVIEW !== '1') {
-    return NextResponse.json({ ok: false, reason: 'disabled_in_production' }, { status: 403 });
-  }
-
   const url = new URL(request.url);
   const showSlug = url.searchParams.get('show') || 'zlata';
   const eventId = url.searchParams.get('event') || '20260222-ashkelon';
@@ -57,4 +53,3 @@ export async function GET(request: Request) {
     },
   });
 }
-
