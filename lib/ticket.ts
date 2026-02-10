@@ -141,11 +141,11 @@ function buildTicketHtml(input: {
               </section>
 
               <section class="section">
-                <h2 class="section-title">Purchase details / Данные покупки / <span dir="rtl">פרטי רכישה</span></h2>
-                <div class="row"><div class="label">Buyer / Покупатель / <span dir="rtl">רוכש</span></div><div class="value">${escapeHtml(input.buyerName)}</div></div>
-                <div class="row"><div class="label">Email / <span dir="rtl">אימייל</span></div><div class="value">${escapeHtml(input.buyerEmail)}</div></div>
-                <div class="row"><div class="label">Qty / Кол-во / <span dir="rtl">כמות</span></div><div class="value">${escapeHtml(input.qty)}</div></div>
-                <div class="row"><div class="label">Amount / Сумма / <span dir="rtl">סכום</span></div><div class="value">${escapeHtml(input.amount)}</div></div>
+                <h2 class="section-title">Purchase details | Данные покупки | <span dir="rtl">פרטי רכישה</span></h2>
+                <div class="row"><div class="label">Buyer | Покупатель | <span dir="rtl">רוכש/ת</span></div><div class="value">${escapeHtml(input.buyerName)}</div></div>
+                <div class="row"><div class="label">Email | <span dir="rtl">אימייל</span></div><div class="value">${escapeHtml(input.buyerEmail)}</div></div>
+                <div class="row"><div class="label">Qty | Кол-во | <span dir="rtl">כמות</span></div><div class="value">${escapeHtml(input.qty)}</div></div>
+                <div class="row"><div class="label">Amount | Сумма | <span dir="rtl">סכום</span></div><div class="value">${escapeHtml(input.amount)}</div></div>
               </section>
             </div>
 
