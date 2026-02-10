@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getPaidQtyMapForShow } from '@/lib/ordersStore';
-import { loadScheduleForShow, resolveCapacity } from '@/lib/schedule';
+import { getCachedScheduleForShow, resolveCapacity } from '@/lib/schedule';
 import { isShowSlug } from '@/shows';
 
 type EventAvailability = {
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [scheduleEvents, soldMap] = await Promise.all([loadScheduleForShow(showSlug), getPaidQtyMapForShow(showSlug)]);
+    const [scheduleEvents, soldMap] = await Promise.all([getCachedScheduleForShow(showSlug), getPaidQtyMapForShow(showSlug)]);
 
     const events: Record<string, EventAvailability> = {};
 

@@ -26,6 +26,7 @@ npm run dev
 ## Расписание (автоматизация)
 
 - Редактирование CSV и генерация YAML: `docs/schedule-automation.md`.
+- Google Sheets + кнопка обновления: `docs/google-sheets-sync.md`.
 
 Корневая `/` редиректит на спектакль по умолчанию (`DEFAULT_SHOW_SLUG` в `shows/index.ts`).
 

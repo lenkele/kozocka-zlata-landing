@@ -1,11 +1,7 @@
-import path from 'node:path';
-import { readFile } from 'node:fs/promises';
-
-import yaml from 'js-yaml';
-
 import { SHOWS, isShowSlug } from '@/shows';
 import type { Lang } from '@/shows/types';
 import type { StoredOrder } from './ordersStore';
+import { loadScheduleForShow } from './schedule';
 
 type ScheduleLangEntry = {
   time?: string;
@@ -17,10 +13,6 @@ type ScheduleEvent = {
   id?: string;
   date_iso?: string | Date;
   entries?: Partial<Record<Lang, ScheduleLangEntry>>;
-};
-
-type ScheduleYaml = {
-  schedule?: ScheduleEvent[];
 };
 
 export type ResolvedOrderDetails = {
@@ -84,11 +76,7 @@ async function loadScheduleEvent(showSlug: string, eventId: string): Promise<Sch
   if (!isShowSlug(showSlug) || !eventId) return null;
 
   try {
-    const scheduleRelativePath = SHOWS[showSlug].scheduleFilePath.replace(/^\//, '');
-    const schedulePath = path.join(process.cwd(), 'public', scheduleRelativePath);
-    const raw = await readFile(schedulePath, 'utf8');
-    const parsed = yaml.load(raw) as ScheduleYaml;
-    const events = Array.isArray(parsed.schedule) ? parsed.schedule : [];
+    const events = await loadScheduleForShow(showSlug);
     return events.find((event) => event.id === eventId) ?? null;
   } catch (error) {
     console.error('[showEventDetails] failed to load schedule', { showSlug, eventId, error });

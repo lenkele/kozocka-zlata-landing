@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import yaml from 'js-yaml';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { type Lang, type ShowConfig } from '@/shows/types';
@@ -277,10 +276,14 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
 
     const loadSchedule = async () => {
       try {
-        const response = await fetch(show.scheduleFilePath);
+        const response = await fetch(`/api/schedule?show=${encodeURIComponent(show.slug)}`);
         if (!response.ok) throw new Error('Failed to load schedule');
-        const text = await response.text();
-        const parsed = yaml.load(text) as ScheduleYaml;
+        const parsedJson = (await response.json()) as {
+          ok?: boolean;
+          schedule?: ScheduleYaml['schedule'];
+        };
+        if (!parsedJson.ok || !Array.isArray(parsedJson.schedule)) throw new Error('Invalid schedule payload');
+        const parsed = { schedule: parsedJson.schedule } as ScheduleYaml;
         const schedule = parseScheduleData(parsed, lang);
 
         if (isMounted) {
@@ -301,7 +304,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     return () => {
       isMounted = false;
     };
-  }, [lang, show.scheduleFilePath]);
+  }, [lang, show.slug]);
 
   useEffect(() => {
     let isMounted = true;
