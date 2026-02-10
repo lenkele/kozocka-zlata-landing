@@ -1,9 +1,7 @@
 import crypto from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 
-import fontkit from '@pdf-lib/fontkit';
-import { PDFDocument, type PDFFont, type PDFPage, rgb } from 'pdf-lib';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 
 import type { StoredOrder } from './ordersStore';
 import { resolveOrderDetails } from './showEventDetails';
@@ -16,484 +14,205 @@ export type TicketArtifacts = {
   pdfFilename: string;
 };
 
-const PAGE_WIDTH = 595;
-const PAGE_HEIGHT = 842;
-const MARGIN = 36;
-const CARD_X = MARGIN;
-const CARD_Y = 92;
-const CARD_WIDTH = PAGE_WIDTH - MARGIN * 2;
-const CARD_HEIGHT = PAGE_HEIGHT - CARD_Y - 36;
-const HEADER_HEIGHT = 68;
-const LEFT_X = CARD_X + 20;
-const LEFT_WIDTH = 360;
-const RIGHT_X = CARD_X + CARD_WIDTH - 132;
-const QR_SIZE = 96;
-
-const FONT_CANDIDATES = [
-  path.join(process.cwd(), 'assets', 'fonts', 'DejaVuSans.ttf'),
-  path.join(process.cwd(), 'DejaVuSans.ttf'),
-];
-
-type LangCode = 'ru' | 'en' | 'he';
-
-async function loadUnicodeFont(): Promise<Uint8Array> {
-  for (const filePath of FONT_CANDIDATES) {
-    try {
-      return await readFile(filePath);
-    } catch {
-      // try next location
-    }
-  }
-  throw new Error('DejaVuSans.ttf not found (assets/fonts/DejaVuSans.ttf or project root)');
-}
-
 function amountLabel(order: StoredOrder): string {
   return order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
 }
 
-function wrapText(font: PDFFont, text: string, size: number, maxWidth: number, maxLines?: number): string[] {
-  const source = (text || '-').trim();
-  if (!source) return ['-'];
+function escapeHtml(input: string): string {
+  return input
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
 
-  const words = source.split(/\s+/);
-  const lines: string[] = [];
-  let current = '';
-
-  for (const word of words) {
-    if (font.widthOfTextAtSize(word, size) > maxWidth) {
-      if (current) {
-        lines.push(current);
-        current = '';
+function formatHebrewMixed(input: string): string {
+  const tokens = input.match(/[A-Za-z0-9@:%+./,_'"()\-]+|[^A-Za-z0-9@:%+./,_'"()\-]+/g) ?? [input];
+  return tokens
+    .map((token) => {
+      if (/^[A-Za-z0-9@:%+./,_'"()\-]+$/.test(token)) {
+        return `<bdi dir="ltr">${escapeHtml(token)}</bdi>`;
       }
-      let chunk = '';
-      for (const ch of word) {
-        const candidate = `${chunk}${ch}`;
-        if (font.widthOfTextAtSize(candidate, size) <= maxWidth) {
-          chunk = candidate;
-          continue;
-        }
-        if (chunk) lines.push(chunk);
-        chunk = ch;
-      }
-      current = chunk;
-      continue;
-    }
-
-    const candidate = current ? `${current} ${word}` : word;
-    if (font.widthOfTextAtSize(candidate, size) <= maxWidth) {
-      current = candidate;
-      continue;
-    }
-
-    if (current) lines.push(current);
-    current = word;
-  }
-
-  if (current) lines.push(current);
-
-  if (!maxLines || lines.length <= maxLines) return lines;
-
-  const cropped = lines.slice(0, maxLines);
-  const lastIndex = cropped.length - 1;
-  let last = cropped[lastIndex];
-  while (last.length > 0 && font.widthOfTextAtSize(`${last}...`, size) > maxWidth) {
-    last = last.slice(0, -1);
-  }
-  cropped[lastIndex] = last ? `${last}...` : '...';
-  return cropped;
+      return `<bdi dir="rtl">${escapeHtml(token)}</bdi>`;
+    })
+    .join('');
 }
 
-function drawWrapped(
-  page: PDFPage,
-  font: PDFFont,
-  text: string,
-  x: number,
-  y: number,
-  width: number,
-  options?: {
-    size?: number;
-    lineHeight?: number;
-    color?: ReturnType<typeof rgb>;
-    rtl?: boolean;
-    maxLines?: number;
-    bold?: boolean;
-  }
-): number {
-  const size = options?.size ?? 11;
-  const lineHeight = options?.lineHeight ?? size + 3;
-  const color = options?.color ?? rgb(0.14, 0.14, 0.14);
-  const lines = wrapText(font, text, size, width, options?.maxLines);
+function buildTicketHtml(input: {
+  ticketCode: string;
+  orderId: string;
+  qrImageUrl: string;
+  showRu: string;
+  showEn: string;
+  showHe: string;
+  dateRu: string;
+  dateEn: string;
+  dateHe: string;
+  venueRu: string;
+  venueEn: string;
+  venueHe: string;
+  buyerName: string;
+  buyerEmail: string;
+  qty: string;
+  amount: string;
+}): string {
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: "DejaVu Sans", Arial, sans-serif; color: #111827; background: #eef1f6; }
+      .page { width: 794px; margin: 0 auto; padding: 46px; }
+      .card { background: #fff; border: 1px solid #d6deea; }
+      .header { background: #13233f; color: #f8fafc; padding: 18px 26px 16px; }
+      .header h1 { margin: 0; font-size: 36px; font-weight: 700; line-height: 1.1; }
+      .header .code { margin-top: 8px; font-size: 20px; }
+      .content { padding: 20px 26px 24px; }
+      .top-grid { display: grid; grid-template-columns: 1fr 170px; gap: 18px; align-items: start; }
+      .title-line { font-size: 18px; font-weight: 700; margin: 0 0 8px; line-height: 1.3; }
+      .section { padding: 10px 0 12px; border-top: 1px solid #d6deea; }
+      .section:first-of-type { border-top: none; padding-top: 0; }
+      .section-title { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
+      .row { display: grid; grid-template-columns: 170px 1fr; gap: 14px; margin: 4px 0; align-items: start; }
+      .row .label { color: #6b7280; font-size: 14px; line-height: 1.35; }
+      .row .value { font-size: 16px; line-height: 1.35; }
+      .he .section-title { text-align: right; direction: rtl; }
+      .he .row { grid-template-columns: 1fr 170px; }
+      .he .label { text-align: right; direction: rtl; unicode-bidi: plaintext; }
+      .he .value { text-align: right; direction: rtl; unicode-bidi: plaintext; }
+      .qr-wrap { text-align: center; }
+      .qr-box { border: 1px solid #d6deea; background: #f8fafc; padding: 10px; display: inline-block; }
+      .qr-box img { width: 150px; height: 150px; display: block; }
+      .qr-note { margin-top: 8px; font-size: 12px; line-height: 1.35; color: #374151; }
+      .qr-note p { margin: 0; }
+      .qr-note .he-note { direction: rtl; unicode-bidi: plaintext; }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <header class="header">
+          <h1>RYBA KIVA | E-TICKET</h1>
+          <div class="code">Ticket code: ${escapeHtml(input.ticketCode)}</div>
+        </header>
+        <div class="content">
+          <div class="top-grid">
+            <div>
+              <p class="title-line">
+                ${escapeHtml(input.showRu)} | ${escapeHtml(input.showEn)} | <span dir="rtl">${formatHebrewMixed(input.showHe)}</span>
+              </p>
 
-  for (const line of lines) {
-    const renderLine = line;
-    const lineWidth = font.widthOfTextAtSize(renderLine, size);
-    const drawX = options?.rtl ? x + Math.max(0, width - lineWidth) : x;
-    page.drawText(renderLine, { x: drawX, y, size, font, color });
-    if (options?.bold) {
-      page.drawText(renderLine, { x: drawX + 0.35, y, size, font, color });
-    }
-    y -= lineHeight;
-  }
+              <section class="section">
+                <h2 class="section-title">Русский</h2>
+                <div class="row"><div class="label">Спектакль</div><div class="value">${escapeHtml(input.showRu)}</div></div>
+                <div class="row"><div class="label">Дата и время</div><div class="value">${escapeHtml(input.dateRu)}</div></div>
+                <div class="row"><div class="label">Место</div><div class="value">${escapeHtml(input.venueRu)}</div></div>
+              </section>
 
-  return y;
+              <section class="section">
+                <h2 class="section-title">English</h2>
+                <div class="row"><div class="label">Show</div><div class="value">${escapeHtml(input.showEn)}</div></div>
+                <div class="row"><div class="label">Date &amp; time</div><div class="value">${escapeHtml(input.dateEn)}</div></div>
+                <div class="row"><div class="label">Venue</div><div class="value">${escapeHtml(input.venueEn)}</div></div>
+              </section>
+
+              <section class="section he">
+                <h2 class="section-title">עברית</h2>
+                <div class="row">
+                  <div class="value">${formatHebrewMixed(input.showHe)}</div>
+                  <div class="label">מופע</div>
+                </div>
+                <div class="row">
+                  <div class="value">${formatHebrewMixed(input.dateHe)}</div>
+                  <div class="label">תאריך ושעה</div>
+                </div>
+                <div class="row">
+                  <div class="value">${formatHebrewMixed(input.venueHe)}</div>
+                  <div class="label">מקום</div>
+                </div>
+              </section>
+
+              <section class="section">
+                <h2 class="section-title">Purchase details / Данные покупки / <span dir="rtl">פרטי רכישה</span></h2>
+                <div class="row"><div class="label">Buyer / Покупатель / <span dir="rtl">רוכש</span></div><div class="value">${escapeHtml(input.buyerName)}</div></div>
+                <div class="row"><div class="label">Email / <span dir="rtl">אימייל</span></div><div class="value">${escapeHtml(input.buyerEmail)}</div></div>
+                <div class="row"><div class="label">Qty / Кол-во / <span dir="rtl">כמות</span></div><div class="value">${escapeHtml(input.qty)}</div></div>
+                <div class="row"><div class="label">Amount / Сумма / <span dir="rtl">סכום</span></div><div class="value">${escapeHtml(input.amount)}</div></div>
+              </section>
+            </div>
+
+            <aside class="qr-wrap">
+              <div class="qr-box">
+                <img src="${escapeHtml(input.qrImageUrl)}" alt="QR" />
+              </div>
+              <div class="qr-note">
+                <p>Покажите QR на входе</p>
+                <p>Show QR at the entrance</p>
+                <p class="he-note">${formatHebrewMixed('הראו את קוד ה-QR בכניסה.')}</p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>`;
 }
 
-function drawFieldRow(
-  page: PDFPage,
-  font: PDFFont,
-  label: string,
-  value: string,
-  x: number,
-  y: number,
-  width: number,
-  options?: { rtl?: boolean; maxValueLines?: number; rightLabelLeftValue?: boolean }
-): number {
-  const labelWidth = 124;
-  const valueX = options?.rightLabelLeftValue ? x : x + labelWidth;
-  const valueWidth = Math.max(20, width - labelWidth);
-  const labelX = options?.rightLabelLeftValue ? x + valueWidth : x;
-  const labelWidthLocal = options?.rightLabelLeftValue ? labelWidth : labelWidth;
-  const labelColor = rgb(0.45, 0.45, 0.45);
-
-  const visualLabel = label;
-  const labelTextWidth = font.widthOfTextAtSize(visualLabel, 9);
-  const labelDrawX = options?.rightLabelLeftValue
-    ? labelX + Math.max(0, labelWidthLocal - labelTextWidth)
-    : labelX;
-  page.drawText(visualLabel, {
-    x: labelDrawX,
-    y,
-    size: 9,
-    font,
-    color: labelColor,
+async function renderHtmlToPdf(html: string): Promise<Uint8Array> {
+  const executablePath = await chromium.executablePath();
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath,
+    headless: true,
   });
 
-  const lines = wrapText(font, value, 10, valueWidth, options?.maxValueLines ?? 2);
-  let valueY = y;
-  for (const line of lines) {
-    const visualLine = line;
-    const lineWidth = font.widthOfTextAtSize(visualLine, 10);
-    const drawX = options?.rtl && !options?.rightLabelLeftValue ? valueX + Math.max(0, valueWidth - lineWidth) : valueX;
-    page.drawText(visualLine, {
-      x: drawX,
-      y: valueY,
-      size: 10,
-      font,
-      color: rgb(0.1, 0.1, 0.1),
-    });
-    valueY -= 13;
-  }
-
-  const rowHeight = Math.max(13, lines.length * 13);
-  return y - rowHeight - 6;
-}
-
-function rtlVisualToken(token: string): string {
-  return /[\u0590-\u05FF]/.test(token) ? [...token].reverse().join('') : token;
-}
-
-function splitMixedTokens(input: string): string[] {
-  return input.match(/[\u0590-\u05FF]+|[A-Za-z0-9@:%+./,_'"()\-]+|\s+|./g) ?? [];
-}
-
-function drawRtlMixedLine(
-  page: PDFPage,
-  font: PDFFont,
-  text: string,
-  rightX: number,
-  y: number,
-  options?: { size?: number; color?: ReturnType<typeof rgb> }
-): void {
-  const size = options?.size ?? 10;
-  const color = options?.color ?? rgb(0.1, 0.1, 0.1);
-  const tokens = splitMixedTokens(text);
-
-  let cursor = rightX;
-  for (const token of tokens) {
-    const render = rtlVisualToken(token);
-    const width = font.widthOfTextAtSize(render, size);
-    cursor -= width;
-    page.drawText(render, {
-      x: cursor,
-      y,
-      size,
-      font,
-      color,
-    });
-  }
-}
-
-function drawHebrewFieldRow(
-  page: PDFPage,
-  font: PDFFont,
-  label: string,
-  value: string,
-  x: number,
-  y: number,
-  width: number
-): number {
-  const labelWidth = 124;
-  const valueWidth = Math.max(20, width - labelWidth);
-  const labelX = x + valueWidth;
-  const valueX = x;
-
-  drawRtlMixedLine(page, font, label, labelX + labelWidth, y, {
-    size: 9,
-    color: rgb(0.45, 0.45, 0.45),
-  });
-
-  const lines = wrapText(font, value, 10, valueWidth, 2);
-  let valueY = y;
-  for (const line of lines) {
-    drawRtlMixedLine(page, font, line, valueX + valueWidth, valueY, {
-      size: 10,
-      color: rgb(0.1, 0.1, 0.1),
-    });
-    valueY -= 13;
-  }
-
-  const rowHeight = Math.max(13, lines.length * 13);
-  return y - rowHeight - 6;
-}
-
-function drawSectionTitle(page: PDFPage, font: PDFFont, title: string, x: number, y: number, rtl = false): number {
-  return drawWrapped(page, font, title, x, y, LEFT_WIDTH, {
-    size: 11,
-    lineHeight: 14,
-    color: rgb(0.1, 0.12, 0.16),
-    rtl,
-    maxLines: 1,
-  }) - 2;
-}
-
-function drawDivider(page: PDFPage, x: number, y: number, width: number): number {
-  page.drawRectangle({
-    x,
-    y,
-    width,
-    height: 1,
-    color: rgb(0.9, 0.92, 0.95),
-  });
-  return y - 14;
-}
-
-async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
   try {
-    const response = await fetch(qrImageUrl);
-    if (!response.ok) return null;
-    const bytes = await response.arrayBuffer();
-    return await pdfDoc.embedPng(bytes);
-  } catch {
-    return null;
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdf = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '0', right: '0', bottom: '0', left: '0' },
+      preferCSSPageSize: true,
+    });
+    return pdf;
+  } finally {
+    await browser.close();
   }
-}
-
-function langTitle(lang: LangCode): string {
-  if (lang === 'ru') return 'Русский';
-  if (lang === 'en') return 'English';
-  return 'עברית';
-}
-
-function labels(lang: LangCode) {
-  if (lang === 'ru') {
-    return {
-      show: 'Спектакль',
-      dateTime: 'Дата и время',
-      venue: 'Место',
-    };
-  }
-  if (lang === 'en') {
-    return {
-      show: 'Show',
-      dateTime: 'Date & time',
-      venue: 'Venue',
-    };
-  }
-  return {
-    show: 'מופע',
-    dateTime: 'תאריך ושעה',
-    venue: 'מקום',
-  };
 }
 
 export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketArtifacts> {
   const baseUrl = process.env.APP_BASE_URL ?? 'https://kozocka-zlata-landing-coral.vercel.app';
   const ticketCode = crypto.createHash('sha256').update(order.order_id).digest('hex').slice(0, 12).toUpperCase();
   const verifyUrl = `${baseUrl}/payment/success?order_id=${encodeURIComponent(order.order_id)}&ticket=${ticketCode}`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(verifyUrl)}`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(verifyUrl)}`;
 
   const details = await resolveOrderDetails(order);
-  const pdfDoc = await PDFDocument.create();
-  pdfDoc.registerFontkit(fontkit);
-  const fontBytes = await loadUnicodeFont();
-  const font = await pdfDoc.embedFont(fontBytes, { subset: false });
-  const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-
-  page.drawRectangle({
-    x: 0,
-    y: 0,
-    width: PAGE_WIDTH,
-    height: PAGE_HEIGHT,
-    color: rgb(0.965, 0.968, 0.974),
+  const html = buildTicketHtml({
+    ticketCode,
+    orderId: order.order_id,
+    qrImageUrl,
+    showRu: details.showTitle.ru,
+    showEn: details.showTitle.en,
+    showHe: details.showTitle.he,
+    dateRu: details.eventDateTime.ru,
+    dateEn: details.eventDateTime.en,
+    dateHe: details.eventDateTime.he,
+    venueRu: details.eventPlace.ru,
+    venueEn: details.eventPlace.en,
+    venueHe: details.eventPlace.he,
+    buyerName: order.buyer_name || '-',
+    buyerEmail: order.buyer_email,
+    qty: String(order.qty),
+    amount: amountLabel(order),
   });
 
-  page.drawRectangle({
-    x: CARD_X,
-    y: CARD_Y,
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    color: rgb(1, 1, 1),
-  });
-  page.drawRectangle({
-    x: CARD_X,
-    y: CARD_Y,
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    borderColor: rgb(0.84, 0.87, 0.92),
-    borderWidth: 1,
-  });
-
-  page.drawRectangle({
-    x: CARD_X,
-    y: CARD_Y + CARD_HEIGHT - HEADER_HEIGHT,
-    width: CARD_WIDTH,
-    height: HEADER_HEIGHT,
-    color: rgb(0.11, 0.15, 0.22),
-  });
-
-  page.drawText('RYBA KIVA | E-TICKET', {
-    x: LEFT_X,
-    y: CARD_Y + CARD_HEIGHT - 28,
-    size: 14,
-    font,
-    color: rgb(0.95, 0.96, 0.98),
-  });
-  page.drawText(`Ticket code: ${ticketCode}`, {
-    x: LEFT_X,
-    y: CARD_Y + CARD_HEIGHT - 46,
-    size: 10,
-    font,
-    color: rgb(0.84, 0.89, 0.96),
-  });
-
-  const showTitleLine = `${details.showTitle.ru} | ${details.showTitle.en} | ${rtlVisualToken(details.showTitle.he)}`;
-
-  let y = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 20;
-  y = drawWrapped(page, font, showTitleLine, LEFT_X, y, LEFT_WIDTH, {
-    size: 11,
-    lineHeight: 14,
-    color: rgb(0.1, 0.12, 0.16),
-    maxLines: 1,
-    bold: true,
-  });
-  y -= 2;
-
-  const langs: LangCode[] = ['ru', 'en'];
-  for (const lang of langs) {
-    const l = labels(lang);
-    const rtl = lang === 'he';
-    y = drawSectionTitle(page, font, langTitle(lang), LEFT_X, y, rtl);
-    y = drawFieldRow(page, font, l.show, details.showTitle[lang], LEFT_X, y, LEFT_WIDTH, {
-      rtl,
-      maxValueLines: 1,
-      rightLabelLeftValue: rtl,
-    });
-    y = drawFieldRow(page, font, l.dateTime, details.eventDateTime[lang], LEFT_X, y, LEFT_WIDTH, {
-      rtl,
-      maxValueLines: 2,
-      rightLabelLeftValue: rtl,
-    });
-    y = drawFieldRow(page, font, l.venue, details.eventPlace[lang], LEFT_X, y, LEFT_WIDTH, {
-      rtl,
-      maxValueLines: 2,
-      rightLabelLeftValue: rtl,
-    });
-    y = drawDivider(page, LEFT_X, y, LEFT_WIDTH);
-  }
-
-  y = drawSectionTitle(page, font, 'עברית', LEFT_X, y, true);
-  y = drawHebrewFieldRow(page, font, 'מופע', details.showTitle.he, LEFT_X, y, LEFT_WIDTH);
-  y = drawHebrewFieldRow(page, font, 'תאריך ושעה', details.eventDateTime.he, LEFT_X, y, LEFT_WIDTH);
-  y = drawHebrewFieldRow(page, font, 'מקום', details.eventPlace.he, LEFT_X, y, LEFT_WIDTH);
-  y = drawDivider(page, LEFT_X, y, LEFT_WIDTH);
-
-  y = drawSectionTitle(page, font, 'Purchase details / Данные покупки / פרטי רכישה', LEFT_X, y);
-  y = drawFieldRow(page, font, 'Buyer / Покупатель / רוכש', order.buyer_name || '-', LEFT_X, y, LEFT_WIDTH, { maxValueLines: 2 });
-  y = drawFieldRow(page, font, 'Email', order.buyer_email, LEFT_X, y, LEFT_WIDTH, { maxValueLines: 2 });
-  y = drawFieldRow(page, font, 'Qty / Кол-во / כמות', String(order.qty), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
-  y = drawFieldRow(page, font, 'Amount / Сумма / סכום', amountLabel(order), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
-
-  const qrTopY = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 20;
-  page.drawRectangle({
-    x: RIGHT_X - 8,
-    y: qrTopY - (QR_SIZE + 8),
-    width: QR_SIZE + 16,
-    height: QR_SIZE + 16,
-    color: rgb(0.985, 0.988, 0.992),
-    borderColor: rgb(0.86, 0.88, 0.92),
-    borderWidth: 1,
-  });
-
-  const qrImage = await embedQrImage(pdfDoc, qrImageUrl);
-  if (qrImage) {
-    page.drawImage(qrImage, {
-      x: RIGHT_X,
-      y: qrTopY - QR_SIZE,
-      width: QR_SIZE,
-      height: QR_SIZE,
-    });
-  } else {
-    page.drawRectangle({
-      x: RIGHT_X,
-      y: qrTopY - QR_SIZE,
-      width: QR_SIZE,
-      height: QR_SIZE,
-      borderColor: rgb(0.82, 0.84, 0.88),
-      borderWidth: 1,
-    });
-    page.drawText('QR', {
-      x: RIGHT_X + 40,
-      y: qrTopY - 48,
-      size: 14,
-      font,
-      color: rgb(0.5, 0.5, 0.5),
-    });
-  }
-
-  let qrTextY = qrTopY - QR_SIZE - 18;
-  qrTextY = drawWrapped(page, font, 'Покажите QR на входе', RIGHT_X - 4, qrTextY, QR_SIZE + 8, {
-    size: 8,
-    lineHeight: 11,
-    color: rgb(0.3, 0.3, 0.3),
-    maxLines: 2,
-  });
-  qrTextY = drawWrapped(page, font, 'Show QR at the entrance', RIGHT_X - 4, qrTextY, QR_SIZE + 8, {
-    size: 8,
-    lineHeight: 11,
-    color: rgb(0.3, 0.3, 0.3),
-    maxLines: 2,
-  });
-  drawRtlMixedLine(page, font, 'הראו את קוד ה-QR בכניסה.', RIGHT_X + QR_SIZE + 4, qrTextY, {
-    size: 8,
-    color: rgb(0.3, 0.3, 0.3),
-  });
-
-  page.drawText(`Order ID: ${order.order_id}`, {
-    x: LEFT_X,
-    y: CARD_Y + 14,
-    size: 8.5,
-    font,
-    color: rgb(0.42, 0.42, 0.42),
-  });
-  page.drawText('Verification URL is encoded in the QR code', {
-    x: LEFT_X,
-    y: CARD_Y + 2,
-    size: 8.5,
-    font,
-    color: rgb(0.42, 0.42, 0.42),
-  });
-
-  const pdfBytes = await pdfDoc.save();
+  const pdfBytes = await renderHtmlToPdf(html);
 
   return {
     ticketCode,
@@ -503,3 +222,4 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     pdfFilename: `ticket-${order.order_id}.pdf`,
   };
 }
+
