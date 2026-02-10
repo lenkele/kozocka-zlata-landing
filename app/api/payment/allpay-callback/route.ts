@@ -84,7 +84,6 @@ export async function POST(request: Request) {
   let isValid = false;
   let matchedSecretName = '';
   let matchedCandidateName = '';
-  let fallbackExpectedSign = '';
 
   for (const secretEntry of secrets) {
     const primaryExpectedSign = getAllpaySignature(payload, secretEntry.value).toLowerCase();
@@ -106,17 +105,13 @@ export async function POST(request: Request) {
       matchedCandidateName = matchedCandidate[0];
       break;
     }
-
-    if (!fallbackExpectedSign) {
-      fallbackExpectedSign = primaryExpectedSign;
-    }
   }
 
   if (!isValid) {
-    console.error('[allpay-callback] signature mismatch', {
+    // Invalid signatures happen regularly from third-party retries/probes.
+    // Treat as an auth reject without polluting error-level logs.
+    console.warn('[allpay-callback] signature rejected', {
       orderId: payload.order_id,
-      incomingSign,
-      expectedSign: fallbackExpectedSign,
     });
     return NextResponse.json({ ok: false, reason: 'invalid_sign' }, { status: 401 });
   }
