@@ -1155,14 +1155,18 @@ function normalizeDateIso(value: unknown): string {
 
 function parsePriceIls(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-    return value;
+    return Number.isInteger(value) ? value : Number.parseFloat(value.toFixed(2));
   }
 
   if (typeof value === 'string') {
-    const normalized = value.trim().replace(',', '.');
+    const normalized = value
+      .trim()
+      .replace(/\s+/g, '')
+      .replace(/[^\d.,-]/g, '')
+      .replace(',', '.');
     const parsed = Number.parseFloat(normalized);
     if (Number.isFinite(parsed) && parsed > 0) {
-      return parsed;
+      return Number.isInteger(parsed) ? parsed : Number.parseFloat(parsed.toFixed(2));
     }
   }
 
