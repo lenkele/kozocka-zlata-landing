@@ -116,6 +116,7 @@ function drawWrapped(
     color?: ReturnType<typeof rgb>;
     rtl?: boolean;
     maxLines?: number;
+    bold?: boolean;
   }
 ): number {
   const size = options?.size ?? 11;
@@ -124,10 +125,13 @@ function drawWrapped(
   const lines = wrapText(font, text, size, width, options?.maxLines);
 
   for (const line of lines) {
-    const visualLine = options?.rtl ? toVisualRtl(line) : line;
+    const visualLine = line;
     const lineWidth = font.widthOfTextAtSize(visualLine, size);
     const drawX = options?.rtl ? x + Math.max(0, width - lineWidth) : x;
     page.drawText(visualLine, { x: drawX, y, size, font, color });
+    if (options?.bold) {
+      page.drawText(visualLine, { x: drawX + 0.35, y, size, font, color });
+    }
     y -= lineHeight;
   }
 
@@ -142,16 +146,22 @@ function drawFieldRow(
   x: number,
   y: number,
   width: number,
-  options?: { rtl?: boolean; maxValueLines?: number }
+  options?: { rtl?: boolean; maxValueLines?: number; rightLabelLeftValue?: boolean }
 ): number {
   const labelWidth = 124;
-  const valueX = x + labelWidth;
+  const valueX = options?.rightLabelLeftValue ? x : x + labelWidth;
   const valueWidth = Math.max(20, width - labelWidth);
+  const labelX = options?.rightLabelLeftValue ? x + valueWidth : x;
+  const labelWidthLocal = options?.rightLabelLeftValue ? labelWidth : labelWidth;
   const labelColor = rgb(0.45, 0.45, 0.45);
 
-  const visualLabel = options?.rtl ? toVisualRtl(label) : label;
+  const visualLabel = label;
+  const labelTextWidth = font.widthOfTextAtSize(visualLabel, 9);
+  const labelDrawX = options?.rightLabelLeftValue
+    ? labelX + Math.max(0, labelWidthLocal - labelTextWidth)
+    : labelX;
   page.drawText(visualLabel, {
-    x,
+    x: labelDrawX,
     y,
     size: 9,
     font,
@@ -161,9 +171,9 @@ function drawFieldRow(
   const lines = wrapText(font, value, 10, valueWidth, options?.maxValueLines ?? 2);
   let valueY = y;
   for (const line of lines) {
-    const visualLine = options?.rtl ? toVisualRtl(line) : line;
+    const visualLine = line;
     const lineWidth = font.widthOfTextAtSize(visualLine, 10);
-    const drawX = options?.rtl ? valueX + Math.max(0, valueWidth - lineWidth) : valueX;
+    const drawX = options?.rtl && !options?.rightLabelLeftValue ? valueX + Math.max(0, valueWidth - lineWidth) : valueX;
     page.drawText(visualLine, {
       x: drawX,
       y: valueY,
@@ -197,11 +207,6 @@ function drawDivider(page: PDFPage, x: number, y: number, width: number): number
     color: rgb(0.9, 0.92, 0.95),
   });
   return y - 14;
-}
-
-function toVisualRtl(input: string): string {
-  const reversed = [...input].reverse().join('');
-  return reversed.replace(/[A-Za-z0-9@:%+./,_'"()\-]+/g, (chunk) => [...chunk].reverse().join(''));
 }
 
 async function embedQrImage(pdfDoc: PDFDocument, qrImageUrl: string) {
@@ -311,6 +316,7 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     lineHeight: 14,
     color: rgb(0.1, 0.12, 0.16),
     maxLines: 1,
+    bold: true,
   });
   y -= 2;
 
@@ -319,9 +325,21 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     const l = labels(lang);
     const rtl = lang === 'he';
     y = drawSectionTitle(page, font, langTitle(lang), LEFT_X, y, rtl);
-    y = drawFieldRow(page, font, l.show, details.showTitle[lang], LEFT_X, y, LEFT_WIDTH, { rtl, maxValueLines: 1 });
-    y = drawFieldRow(page, font, l.dateTime, details.eventDateTime[lang], LEFT_X, y, LEFT_WIDTH, { rtl, maxValueLines: 2 });
-    y = drawFieldRow(page, font, l.venue, details.eventPlace[lang], LEFT_X, y, LEFT_WIDTH, { rtl, maxValueLines: 2 });
+    y = drawFieldRow(page, font, l.show, details.showTitle[lang], LEFT_X, y, LEFT_WIDTH, {
+      rtl,
+      maxValueLines: 1,
+      rightLabelLeftValue: rtl,
+    });
+    y = drawFieldRow(page, font, l.dateTime, details.eventDateTime[lang], LEFT_X, y, LEFT_WIDTH, {
+      rtl,
+      maxValueLines: 2,
+      rightLabelLeftValue: rtl,
+    });
+    y = drawFieldRow(page, font, l.venue, details.eventPlace[lang], LEFT_X, y, LEFT_WIDTH, {
+      rtl,
+      maxValueLines: 2,
+      rightLabelLeftValue: rtl,
+    });
     y = drawDivider(page, LEFT_X, y, LEFT_WIDTH);
   }
 
@@ -331,9 +349,10 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
   y = drawFieldRow(page, font, 'Qty / Кол-во / כמות', String(order.qty), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
   y = drawFieldRow(page, font, 'Amount / Сумма / סכום', amountLabel(order), LEFT_X, y, LEFT_WIDTH, { maxValueLines: 1 });
 
+  const qrTopY = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 20;
   page.drawRectangle({
     x: RIGHT_X - 8,
-    y: CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 136,
+    y: qrTopY - (QR_SIZE + 8),
     width: QR_SIZE + 16,
     height: QR_SIZE + 16,
     color: rgb(0.985, 0.988, 0.992),
@@ -345,14 +364,14 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
   if (qrImage) {
     page.drawImage(qrImage, {
       x: RIGHT_X,
-      y: CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 128,
+      y: qrTopY - QR_SIZE,
       width: QR_SIZE,
       height: QR_SIZE,
     });
   } else {
     page.drawRectangle({
       x: RIGHT_X,
-      y: CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 128,
+      y: qrTopY - QR_SIZE,
       width: QR_SIZE,
       height: QR_SIZE,
       borderColor: rgb(0.82, 0.84, 0.88),
@@ -360,14 +379,14 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     });
     page.drawText('QR', {
       x: RIGHT_X + 40,
-      y: CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 80,
+      y: qrTopY - 48,
       size: 14,
       font,
       color: rgb(0.5, 0.5, 0.5),
     });
   }
 
-  let qrTextY = CARD_Y + CARD_HEIGHT - HEADER_HEIGHT - 150;
+  let qrTextY = qrTopY - QR_SIZE - 18;
   qrTextY = drawWrapped(page, font, 'Покажите QR на входе', RIGHT_X - 4, qrTextY, QR_SIZE + 8, {
     size: 8,
     lineHeight: 11,
