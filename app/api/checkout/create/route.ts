@@ -1,11 +1,9 @@
 import crypto from 'node:crypto';
-import path from 'node:path';
-import { readFile } from 'node:fs/promises';
 import { NextResponse } from 'next/server';
-import yaml from 'js-yaml';
 
 import { createAllpayPayment } from '@/lib/allpay';
-import { createPendingOrder, markOrderFailed } from '@/lib/ordersStore';
+import { createPendingOrder, getPaidQtyForEvent, markOrderFailed } from '@/lib/ordersStore';
+import { loadScheduleForShow, resolveCapacity, resolveUnitPrice } from '@/lib/schedule';
 import { resolveCheckoutItemName } from '@/lib/showEventDetails';
 
 type CreateCheckoutRequest = {
@@ -31,43 +29,8 @@ function resolveAllpayLang(): 'AUTO' {
 }
 
 function parsePositiveInt(value: unknown, fallback: number): number {
-  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
-    return value;
-  }
-
-  if (typeof value === 'string') {
-    const parsed = Number.parseInt(value, 10);
-    if (Number.isInteger(parsed) && parsed > 0) {
-      return parsed;
-    }
-  }
-
-  return fallback;
-}
-
-type SchedulePriceYaml = {
-  schedule?: Array<{
-    id?: string;
-    price_ils?: number | string;
-  }>;
-};
-
-async function resolveEventUnitPrice(showSlug: string, eventId: string, fallbackPrice: number): Promise<number> {
-  if (!showSlug || !eventId) return fallbackPrice;
-
-  try {
-    const schedulePath = path.join(process.cwd(), 'public', 'shows', showSlug, 'data', 'schedule.yaml');
-    const raw = await readFile(schedulePath, 'utf8');
-    const parsed = yaml.load(raw) as SchedulePriceYaml;
-
-    const event = parsed.schedule?.find((item) => item.id === eventId);
-    if (!event) return fallbackPrice;
-
-    return parsePositiveInt(event.price_ils, fallbackPrice);
-  } catch (error) {
-    console.error('[checkout-create] failed to resolve event price from schedule', { showSlug, eventId, error });
-    return fallbackPrice;
-  }
+  const parsed = resolveCapacity(value);
+  return parsed ?? fallback;
 }
 
 export async function POST(request: Request) {
@@ -112,7 +75,34 @@ export async function POST(request: Request) {
   const eventId = body.eventId?.trim() || 'unknown-event';
   const itemName = resolveCheckoutItemName(showSlug, lang) || process.env.DEFAULT_TICKET_NAME || 'Ticket';
   const defaultUnitPrice = parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, 1);
-  const unitPrice = await resolveEventUnitPrice(showSlug, eventId, defaultUnitPrice);
+  let unitPrice = defaultUnitPrice;
+  let eventCapacity: number | null = null;
+
+  try {
+    const schedule = await loadScheduleForShow(showSlug);
+    const scheduleEvent = schedule.find((item) => item.id === eventId);
+    unitPrice = resolveUnitPrice(scheduleEvent?.price_ils, defaultUnitPrice);
+    eventCapacity = resolveCapacity(scheduleEvent?.capacity);
+  } catch (error) {
+    console.error('[checkout-create] failed to resolve event data from schedule', { showSlug, eventId, error });
+  }
+
+  if (eventCapacity !== null) {
+    try {
+      const soldQty = await getPaidQtyForEvent(showSlug, eventId);
+      const remaining = Math.max(0, eventCapacity - soldQty);
+      if (remaining <= 0) {
+        return NextResponse.json({ ok: false, reason: 'sold_out', remaining: 0 }, { status: 409 });
+      }
+      if (qty > remaining) {
+        return NextResponse.json({ ok: false, reason: 'qty_exceeds_remaining', remaining }, { status: 400 });
+      }
+    } catch (error) {
+      console.error('[checkout-create] failed to validate event capacity', { showSlug, eventId, error });
+      return NextResponse.json({ ok: false, reason: 'capacity_check_failed' }, { status: 500 });
+    }
+  }
+
   const orderId = `${showSlug}-${eventId}-${crypto.randomUUID()}`;
   const amount = unitPrice * qty;
 

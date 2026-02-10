@@ -37,6 +37,11 @@ export type StoredOrder = {
   consent_marketing_accepted: boolean;
 };
 
+type PaidQtyRow = {
+  event_id: string | null;
+  qty: number | null;
+};
+
 function getConfig() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -189,4 +194,46 @@ export async function markOrderPaidOnce(input: UpdateOrderInput): Promise<{ upda
   }
 
   return { updated: false, order: existing };
+}
+
+function toPositiveInt(value: number | null): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return 0;
+  return Math.trunc(value);
+}
+
+export async function getPaidQtyForEvent(showSlug: string, eventId: string): Promise<number> {
+  if (!showSlug || !eventId) return 0;
+
+  const response = await supabaseRequest(
+    `/orders?show_slug=eq.${encodeURIComponent(showSlug)}&event_id=eq.${encodeURIComponent(eventId)}&status=eq.paid&select=qty`,
+    { method: 'GET' }
+  );
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`[ordersStore] get paid qty failed: ${response.status} ${text}`);
+  }
+
+  const rows = text ? (JSON.parse(text) as Array<{ qty: number | null }>) : [];
+  return rows.reduce((sum, row) => sum + toPositiveInt(row.qty), 0);
+}
+
+export async function getPaidQtyMapForShow(showSlug: string): Promise<Record<string, number>> {
+  if (!showSlug) return {};
+
+  const response = await supabaseRequest(
+    `/orders?show_slug=eq.${encodeURIComponent(showSlug)}&status=eq.paid&select=event_id,qty`,
+    { method: 'GET' }
+  );
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`[ordersStore] get paid qty map failed: ${response.status} ${text}`);
+  }
+
+  const rows = text ? (JSON.parse(text) as PaidQtyRow[]) : [];
+  return rows.reduce<Record<string, number>>((acc, row) => {
+    const eventId = row.event_id?.trim();
+    if (!eventId) return acc;
+    acc[eventId] = (acc[eventId] ?? 0) + toPositiveInt(row.qty);
+    return acc;
+  }, {});
 }

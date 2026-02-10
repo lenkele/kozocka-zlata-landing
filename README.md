@@ -23,6 +23,10 @@ npm run dev
 
 - Настройка отправки с вашего домена на любые адреса: `docs/email-delivery-setup.md`.
 
+## Расписание (автоматизация)
+
+- Редактирование CSV и генерация YAML: `docs/schedule-automation.md`.
+
 Корневая `/` редиректит на спектакль по умолчанию (`DEFAULT_SHOW_SLUG` в `shows/index.ts`).
 
 ## Домены и middleware

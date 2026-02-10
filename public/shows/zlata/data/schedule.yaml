@@ -1,100 +1,96 @@
 schedule:
   - id: 20260205-jerusalem-school
-    date_iso: 2026-02-05
+    date_iso: "2026-02-05"
     price_ils: 1
     entries:
       ru:
         time: "09:00"
-        place: "Иерусалим, начальная школа в колледже Давида Елина, Sderot Herzl 76"
-        format: "Открытый показ"
-        language: "Иврит"
+        place: Иерусалим, начальная школа в колледже Давида Елина, Sderot Herzl 76
+        format: Открытый показ
+        language: Иврит
       he:
         time: "09:00"
-        place: "ירושלים, בית הספר במכללה ע\"ש דוד ילין, שדרות הרצל 76"
-        format: "מופע פתוח"
-        language: "עברית"
+        place: ירושלים, בית הספר במכללה ע"ש דוד ילין, שדרות הרצל 76
+        format: מופע פתוח
+        language: עברית
       en:
         time: "09:00"
-        place: "Jerusalem, David Yellin College school, Sderot Herzl 76"
-        format: "Public performance"
-        language: "Hebrew"
-
+        place: Jerusalem, David Yellin College school, Sderot Herzl 76
+        format: Public performance
+        language: Hebrew
   - id: 20260214-jerusalem-gilo
-    date_iso: 2026-02-14
+    date_iso: "2026-02-14"
     price_ils: 2
     entries:
       ru:
         time: "18:00"
-        place: "Иерусалим, Матнас Гило, Vardinon St 14"
-        format: "Открытый показ"
-        language: "Русский"
+        place: Иерусалим, Матнас Гило, Vardinon St 14
+        format: Открытый показ
+        language: Русский
       he:
         time: "18:00"
-        place: "ירושלים, מתנ\"ס גילה, ורדינון 14"
-        format: "מופע פתוח"
-        language: "רוסית"
+        place: ירושלים, מתנ"ס גילה, ורדינון 14
+        format: מופע פתוח
+        language: רוסית
       en:
         time: "18:00"
-        place: "Jerusalem, Matnas Gilo, Vardinon St 14"
-        format: "Public performance"
-        language: "Russian"
-
+        place: Jerusalem, Matnas Gilo, Vardinon St 14
+        format: Public performance
+        language: Russian
   - id: 20260218-haifa-city
-    date_iso: 2026-02-18
+    date_iso: "2026-02-18"
     price_ils: 3
     entries:
       ru:
         time: "17:00"
-        place: "Хайфа, Мерказ Хадарим, Kiryat Sefer St 25"
-        format: "Закрытый показ"
-        language: "Иврит"
+        place: Хайфа, Мерказ Хадарим, Kiryat Sefer St 25
+        format: Закрытый показ
+        language: Иврит
       he:
         time: "17:00"
-        place: "חיפה, מרכז חדרים לתרבות יהודית ישראלית, קרית ספר 25"
-        format: "מופע סגור"
-        language: "עברית"
+        place: חיפה, מרכז חדרים לתרבות יהודית ישראלית, קרית ספר 25
+        format: מופע סגור
+        language: עברית
       en:
         time: "17:00"
-        place: "Haifa, Merkaz Hadarim, Kiryat Sefer St 25"
-        format: "Private performance"
-        language: "Hebrew"
-
+        place: Haifa, Merkaz Hadarim, Kiryat Sefer St 25
+        format: Private performance
+        language: Hebrew
   - id: 20260222-ashkelon
-    date_iso: 2026-02-22
+    date_iso: "2026-02-22"
     price_ils: 4
     entries:
       ru:
         time: "18:00"
-        place: "Ашкелон, арт-студия «Еврейское местечко», HaShomer HaTsa'ir St 10/5"
-        format: "Открытый показ"
-        language: "Русский"
+        place: Ашкелон, арт-студия «Еврейское местечко», HaShomer HaTsa'ir St 10/5
+        format: Открытый показ
+        language: Русский
       he:
         time: "18:00"
-        place: "אשקלון, ארט-סטודיו \"שטעטל\", השומר הצעיר 10/5"
-        format: "מופע פתוח"
-        language: "רוסית"
+        place: אשקלון, ארט-סטודיו "שטעטל", השומר הצעיר 10/5
+        format: מופע פתוח
+        language: רוסית
       en:
         time: "18:00"
-        place: "Ashkelon, art studio “Shtetl”, HaShomer HaTsa'ir St 10/5"
-        format: "Public performance"
-        language: "Russian"
-
+        place: Ashkelon, art studio “Shtetl”, HaShomer HaTsa'ir St 10/5
+        format: Public performance
+        language: Russian
   - id: 20260227-nahariya
-    date_iso: 2026-02-27
+    date_iso: "2026-02-27"
     price_ils: 5
     entries:
       ru:
         time: "17:00"
-        place: "Нагария, клуб «Оле», Keren HaYesod St 1"
-        format: "Открытый показ"
-        language: "Русский"
+        place: Нагария, клуб «Оле», Keren HaYesod St 1
+        format: Открытый показ
+        language: Русский
       he:
         time: "17:00"
-        place: "נהריה, מועדון \"עולה\", קרן היסוד 1"
-        format: "מופע פתוח"
-        language: "רוסית"
+        place: נהריה, מועדון "עולה", קרן היסוד 1
+        format: מופע פתוח
+        language: רוסית
       en:
         time: "17:00"
-        place: "Nahariya, Club “Ole”, Keren HaYesod St 1"
-        format: "Public performance"
-        language: "Russian"
+        place: Nahariya, Club “Ole”, Keren HaYesod St 1
+        format: Public performance
+        language: Russian

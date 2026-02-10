@@ -16,6 +16,7 @@ type ScheduleDisplayEntry = {
   format: string;
   language: string;
   priceIls: number | null;
+  capacity: number | null;
 };
 
 type ScheduleYaml = {
@@ -23,6 +24,7 @@ type ScheduleYaml = {
     id: string;
     date_iso: string | Date;
     price_ils?: number | string;
+    capacity?: number | string;
     entries: Partial<
       Record<
         Lang,
@@ -61,12 +63,24 @@ type CheckoutLabels = {
   submittingLabel: string;
   cancelLabel: string;
   unavailableLabel: string;
+  soldOutLabel: string;
+  remainingLabel: string;
   passedShowLabel: string;
   closedShowLabel: string;
+  soldOutErrorLabel: string;
+  qtyExceedsErrorPrefix: string;
+  qtyExceedsErrorSuffix: string;
   createErrorLabel: string;
   termsRequiredErrorLabel: string;
   namePlaceholder: string;
   emailPlaceholder: string;
+};
+
+type EventAvailability = {
+  capacity: number | null;
+  soldQty: number;
+  remaining: number | null;
+  soldOut: boolean;
 };
 
 const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
@@ -93,8 +107,13 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     submittingLabel: 'Создаём оплату...',
     cancelLabel: 'Отмена',
     unavailableLabel: 'Недоступно',
+    soldOutLabel: 'Sold out',
+    remainingLabel: 'Осталось',
     passedShowLabel: 'Спектакль прошел',
     closedShowLabel: 'Для закрытых показов покупка недоступна',
+    soldOutErrorLabel: 'На это событие билеты закончились.',
+    qtyExceedsErrorPrefix: 'Можно выбрать максимум',
+    qtyExceedsErrorSuffix: 'билет(а).',
     createErrorLabel: 'Не удалось создать оплату. Попробуйте ещё раз.',
     termsRequiredErrorLabel: 'Чтобы продолжить, нужно принять Условия и Политику конфиденциальности.',
     namePlaceholder: 'Ваше имя',
@@ -123,8 +142,13 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     submittingLabel: 'יוצרים תשלום...',
     cancelLabel: 'ביטול',
     unavailableLabel: 'לא זמין',
+    soldOutLabel: 'אזל',
+    remainingLabel: 'נותרו',
     passedShowLabel: 'המופע כבר התקיים',
     closedShowLabel: 'אין רכישה למופעים סגורים',
+    soldOutErrorLabel: 'אין יותר כרטיסים לאירוע הזה.',
+    qtyExceedsErrorPrefix: 'ניתן לבחור עד',
+    qtyExceedsErrorSuffix: 'כרטיסים.',
     createErrorLabel: 'לא הצלחנו ליצור תשלום. נסו שוב.',
     termsRequiredErrorLabel: 'כדי להמשיך צריך לאשר תנאים ומדיניות פרטיות.',
     namePlaceholder: 'השם שלך',
@@ -153,8 +177,13 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     submittingLabel: 'Creating payment...',
     cancelLabel: 'Cancel',
     unavailableLabel: 'Unavailable',
+    soldOutLabel: 'Sold out',
+    remainingLabel: 'Left',
     passedShowLabel: 'Performance ended',
     closedShowLabel: 'Ticket purchase is unavailable for closed shows',
+    soldOutErrorLabel: 'No tickets left for this event.',
+    qtyExceedsErrorPrefix: 'You can select up to',
+    qtyExceedsErrorSuffix: 'ticket(s).',
     createErrorLabel: 'Could not create payment. Please try again.',
     termsRequiredErrorLabel: 'To continue, you must accept the Terms and Privacy Policy.',
     namePlaceholder: 'Your name',
@@ -190,6 +219,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   const [lang, setLang] = useState<Lang>(defaultLang);
   const [scheduleData, setScheduleData] = useState<ScheduleDisplayEntry[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
+  const [availabilityByEvent, setAvailabilityByEvent] = useState<Record<string, EventAvailability>>({});
   const [selectedRow, setSelectedRow] = useState<ScheduleDisplayEntry | null>(null);
   const [buyerName, setBuyerName] = useState('');
   const [buyerEmail, setBuyerEmail] = useState('');
@@ -273,6 +303,36 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     };
   }, [lang, show.scheduleFilePath]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAvailability = async () => {
+      try {
+        const response = await fetch(`/api/schedule/availability?show=${encodeURIComponent(show.slug)}`);
+        if (!response.ok) throw new Error('Failed to load schedule availability');
+        const data = (await response.json()) as {
+          ok?: boolean;
+          events?: Record<string, EventAvailability>;
+        };
+
+        if (isMounted && data.ok && data.events) {
+          setAvailabilityByEvent(data.events);
+        }
+      } catch (error) {
+        console.error('Error loading availability:', error);
+        if (isMounted) {
+          setAvailabilityByEvent({});
+        }
+      }
+    };
+
+    loadAvailability();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [show.slug]);
+
   const fallbackScheduleData: ScheduleDisplayEntry[] = t.scheduleRows.map((row, index) => ({
     id: row.id ?? `fallback-${index}`,
     date: row.date,
@@ -282,6 +342,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     format: row.format,
     language: row.language,
     priceIls: null,
+    capacity: null,
   }));
   const displaySchedule: ScheduleDisplayEntry[] = scheduleData.length > 0 ? scheduleData : fallbackScheduleData;
   const galleryPhotos = show.galleryPhotos.length > 0 ? show.galleryPhotos : show.carouselPhotos;
@@ -301,8 +362,22 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     setMarketingAccepted(false);
   };
 
+  const getAvailability = (eventId: string): EventAvailability | null => {
+    if (!eventId) return null;
+    return availabilityByEvent[eventId] ?? null;
+  };
+
+  const isSoldOut = (eventId: string): boolean => {
+    const availability = getAvailability(eventId);
+    return availability?.soldOut === true;
+  };
+
+  const formatQtyExceedsError = (remaining: number): string => {
+    return `${checkoutT.qtyExceedsErrorPrefix} ${remaining} ${checkoutT.qtyExceedsErrorSuffix}`;
+  };
+
   const openCheckout = (row: ScheduleDisplayEntry) => {
-    if (isClosedShow(row.format) || isPastShowDate(row.dateIso)) {
+    if (isClosedShow(row.format) || isPastShowDate(row.dateIso) || isSoldOut(row.id)) {
       return;
     }
     setSelectedRow(row);
@@ -350,9 +425,37 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
         }),
       });
 
-      const result = (await response.json()) as { ok?: boolean; paymentUrl?: string };
+      const result = (await response.json()) as {
+        ok?: boolean;
+        reason?: string;
+        paymentUrl?: string;
+        remaining?: number;
+      };
       if (!response.ok || !result.ok || !result.paymentUrl) {
-        throw new Error('checkout_create_failed');
+        if (result.reason === 'sold_out') {
+          setCheckoutError(checkoutT.soldOutErrorLabel);
+          setAvailabilityByEvent((prev) => ({
+            ...prev,
+            [eventId]: {
+              capacity: prev[eventId]?.capacity ?? selectedRow.capacity,
+              soldQty: prev[eventId]?.soldQty ?? 0,
+              remaining: 0,
+              soldOut: true,
+            },
+          }));
+          setCheckoutLoading(false);
+          return;
+        }
+
+        if (result.reason === 'qty_exceeds_remaining' && typeof result.remaining === 'number') {
+          const safeRemaining = Math.max(1, result.remaining);
+          setTicketQty(safeRemaining);
+          setCheckoutError(formatQtyExceedsError(result.remaining));
+          setCheckoutLoading(false);
+          return;
+        }
+
+        throw new Error(result.reason ?? 'checkout_create_failed');
       }
 
       window.location.href = result.paymentUrl;
@@ -364,7 +467,16 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   };
 
   const selectedUnitPrice = selectedRow?.priceIls ?? null;
+  const selectedAvailability = selectedRow ? getAvailability(selectedRow.id) : null;
+  const selectedRemaining = selectedAvailability?.remaining ?? null;
+  const selectedMaxQty = selectedRemaining === null ? 10 : Math.max(1, Math.min(10, selectedRemaining));
   const selectedTotalPrice = selectedUnitPrice !== null ? selectedUnitPrice * ticketQty : null;
+
+  useEffect(() => {
+    if (ticketQty > selectedMaxQty) {
+      setTicketQty(selectedMaxQty);
+    }
+  }, [selectedMaxQty, ticketQty]);
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-fixed bg-cover bg-center" style={{ backgroundImage: show.backgroundStyle }}>
@@ -532,10 +644,17 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                             <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
                           ) : isPastShowDate(row.dateIso) ? (
                             <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.passedShowLabel}</span>
+                          ) : isSoldOut(row.id) ? (
+                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.soldOutLabel}</span>
                           ) : (
                             <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
                               {typeof row.priceIls === 'number' && (
                                 <span className="text-xs md:text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
+                              )}
+                              {typeof getAvailability(row.id)?.remaining === 'number' && (
+                                <span className="text-xs md:text-sm text-amber-100/75">
+                                  {checkoutT.remainingLabel}: {getAvailability(row.id)?.remaining}
+                                </span>
                               )}
                               <button
                                 type="button"
@@ -668,10 +787,18 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                 <span className="text-amber-100/60">{checkoutT.unitPriceLabel}: </span>
                 {selectedRow.priceIls !== null ? `₪ ${formatIlsAmount(selectedRow.priceIls)}` : '—'}
               </p>
+              {typeof selectedRemaining === 'number' && (
+                <p>
+                  <span className="text-amber-100/60">{checkoutT.remainingLabel}: </span>
+                  {selectedRemaining}
+                </p>
+              )}
             </div>
 
             {isClosedShow(selectedRow.format) ? (
               <p className="text-sm text-amber-100/80">{checkoutT.closedShowLabel}</p>
+            ) : isSoldOut(selectedRow.id) ? (
+              <p className="text-sm text-amber-100/80">{checkoutT.soldOutErrorLabel}</p>
             ) : (
               <form className="space-y-3" onSubmit={submitCheckout}>
                 <label className="block space-y-1">
@@ -700,10 +827,12 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                   <input
                     required
                     min={1}
-                    max={10}
+                    max={selectedMaxQty}
                     type="number"
                     value={ticketQty}
-                    onChange={(event) => setTicketQty(Math.max(1, Number.parseInt(event.target.value || '1', 10)))}
+                    onChange={(event) =>
+                      setTicketQty(Math.max(1, Math.min(selectedMaxQty, Number.parseInt(event.target.value || '1', 10))))
+                    }
                     className="w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 outline-none focus:border-amber-300/60"
                   />
                 </label>
@@ -1007,10 +1136,20 @@ function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayE
         format: entry.format,
         language: entry.language,
         priceIls: parsePriceIls(event.price_ils),
+        capacity: parseCapacity(event.capacity),
       };
     })
     .filter((item): item is ScheduleDisplayEntry => item !== null)
     .sort((a, b) => new Date(a.dateIso).getTime() - new Date(b.dateIso).getTime());
+}
+
+function parseCapacity(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) return value;
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isInteger(parsed) && parsed > 0) return parsed;
+  }
+  return null;
 }
 
 function normalizeDateIso(value: unknown): string {
