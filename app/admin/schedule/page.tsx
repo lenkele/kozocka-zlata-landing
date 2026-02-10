@@ -28,6 +28,7 @@ export default function AdminSchedulePage() {
       const result = (await response.json()) as {
         ok?: boolean;
         reason?: string;
+        message?: string;
         events?: number;
         refreshedAt?: string;
       };
@@ -38,7 +39,7 @@ export default function AdminSchedulePage() {
             ? 'Неверный пароль синхронизации.'
             : result.reason === 'sync_secret_not_configured'
               ? 'Переменная SCHEDULE_SYNC_SECRET не настроена в Vercel.'
-              : 'Не удалось обновить расписание.';
+              : `Не удалось обновить расписание.${result.message ? ` ${result.message}` : ''}`;
         setResultByShow((prev) => ({
           ...prev,
           [show]: { ok: false, text: message },

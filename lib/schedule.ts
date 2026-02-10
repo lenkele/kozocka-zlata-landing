@@ -82,6 +82,41 @@ function getScheduleCsvUrl(showSlug: ShowSlug): string {
   return process.env[envCsvKey(showSlug)]?.trim() ?? '';
 }
 
+function normalizeGoogleCsvUrl(rawUrl: string): string {
+  const value = rawUrl.trim();
+  if (!value) return value;
+
+  try {
+    const url = new URL(value);
+
+    // If editor URL was pasted, convert it to export CSV URL.
+    if (url.hostname === 'docs.google.com' && /\/spreadsheets\/d\/[^/]+\/edit/.test(url.pathname)) {
+      const idMatch = url.pathname.match(/\/spreadsheets\/d\/([^/]+)\//);
+      const id = idMatch?.[1] ?? '';
+      const gid = url.hash.match(/gid=(\d+)/)?.[1] ?? '0';
+      if (id) {
+        return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`;
+      }
+    }
+
+    // Ensure published URL is explicitly CSV.
+    if (url.hostname === 'docs.google.com' && url.pathname.includes('/spreadsheets/d/e/') && url.pathname.endsWith('/pub')) {
+      url.searchParams.set('output', 'csv');
+      if (!url.searchParams.has('gid')) {
+        url.searchParams.set('gid', '0');
+      }
+      if (!url.searchParams.has('single')) {
+        url.searchParams.set('single', 'true');
+      }
+      return url.toString();
+    }
+
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -281,12 +316,20 @@ async function loadLocalYamlSchedule(showSlug: ShowSlug): Promise<ScheduleEvent[
 }
 
 async function loadGoogleCsvSchedule(showSlug: ShowSlug): Promise<ScheduleEvent[]> {
-  const csvUrl = getScheduleCsvUrl(showSlug);
+  const csvUrl = normalizeGoogleCsvUrl(getScheduleCsvUrl(showSlug));
   if (!csvUrl) return [];
 
-  const response = await fetch(csvUrl, { cache: 'no-store' });
+  const response = await fetch(csvUrl, {
+    cache: 'no-store',
+    redirect: 'follow',
+    headers: {
+      Accept: 'text/csv,text/plain;q=0.9,*/*;q=0.8',
+      'User-Agent': 'Mozilla/5.0 (compatible; RybaKivaScheduleBot/1.0; +https://ryba-kiva.com)',
+    },
+  });
   if (!response.ok) {
-    throw new Error(`failed to fetch CSV: ${response.status}`);
+    const body = (await response.text()).slice(0, 240);
+    throw new Error(`failed to fetch CSV: ${response.status} ${response.statusText}; body=${body}`);
   }
   const rawCsv = await response.text();
   return parseCsvSchedule(rawCsv);

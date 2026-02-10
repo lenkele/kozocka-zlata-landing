@@ -45,6 +45,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('[schedule-sync] failed to refresh schedule', { showSlug, error });
-    return NextResponse.json({ ok: false, reason: 'sync_failed' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'sync_failed';
+    return NextResponse.json({ ok: false, reason: 'sync_failed', message }, { status: 500 });
   }
 }
