@@ -14,12 +14,14 @@ type ScheduleDisplayEntry = {
   place: string;
   format: string;
   language: string;
+  priceIls: number | null;
 };
 
 type ScheduleYaml = {
   schedule: {
     id: string;
     date_iso: string | Date;
+    price_ils?: number | string;
     entries: Partial<
       Record<
         Lang,
@@ -178,6 +180,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   const badgeSpacingClass = isRTL ? 'mr-2' : 'ml-2';
   const textDirectionClass = isRTL ? 'text-right' : '';
   const scheduleAlignClass = isRTL ? 'text-right' : 'text-left';
+  const buyCellItemsClass = isRTL ? 'items-end' : 'items-start';
 
   useEffect(() => {
     const preferred = detectBrowserLanguage();
@@ -227,6 +230,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     place: row.place,
     format: row.format,
     language: row.language,
+    priceIls: null,
   }));
   const displaySchedule: ScheduleDisplayEntry[] = scheduleData.length > 0 ? scheduleData : fallbackScheduleData;
   const galleryPhotos = show.galleryPhotos.length > 0 ? show.galleryPhotos : show.carouselPhotos;
@@ -462,13 +466,18 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                           ) : isPastShowDate(row.dateIso) ? (
                             <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.passedShowLabel}</span>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => openCheckout(row)}
-                              className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
-                            >
-                              {checkoutT.buyButton}
-                            </button>
+                            <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
+                              {typeof row.priceIls === 'number' && (
+                                <span className="text-xs md:text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => openCheckout(row)}
+                                className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
+                              >
+                                {checkoutT.buyButton}
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -886,6 +895,7 @@ function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayE
         place: entry.place,
         format: entry.format,
         language: entry.language,
+        priceIls: parsePriceIls(event.price_ils),
       };
     })
     .filter((item): item is ScheduleDisplayEntry => item !== null)
@@ -903,6 +913,29 @@ function normalizeDateIso(value: unknown): string {
   }
 
   return '';
+}
+
+function parsePriceIls(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().replace(',', '.');
+    const parsed = Number.parseFloat(normalized);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function formatIlsAmount(amount: number): string {
+  if (Number.isInteger(amount)) {
+    return String(amount);
+  }
+  return amount.toFixed(2).replace(/\.00$/, '');
 }
 
 function formatDate(dateIso: string, lang: Lang): string {
