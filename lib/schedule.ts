@@ -20,11 +20,32 @@ export type ScheduleEvent = {
   date_iso?: string | Date;
   price_ils?: number | string;
   capacity?: number | string;
+  ticket_mode?: 'self' | 'venue';
+  ticket_url?: string;
   entries?: Partial<Record<'ru' | 'he' | 'en', ScheduleEntry>>;
 };
 
 type ScheduleYaml = {
   schedule?: ScheduleEvent[];
+};
+
+type ScheduleEventRow = {
+  event_id: string;
+  date_iso: string;
+  time: string;
+  place_ru: string;
+  place_en: string;
+  place_he: string;
+  format_ru: string;
+  format_en: string;
+  format_he: string;
+  language_ru: string;
+  language_en: string;
+  language_he: string;
+  price_ils: number | string;
+  capacity: number | string | null;
+  ticket_mode: 'self' | 'venue' | string | null;
+  ticket_url: string | null;
 };
 
 const CSV_SCHEMA = {
@@ -43,6 +64,8 @@ const CSV_SCHEMA = {
   langHe: ['Язык_he', 'he_language'],
   priceIls: ['Стоимость', 'price_ils'],
   capacity: ['Кол-во мест', 'capacity'],
+  ticketMode: ['Продажа_билетов', 'ticket_mode', 'ticket_seller'],
+  ticketUrl: ['Ссылка_билетов', 'ticket_url', 'ticket_link'],
 } as const;
 
 const FORMAT_FROM_RU: Record<string, { en: string; he: string }> = {
@@ -80,6 +103,29 @@ function envCsvKey(showSlug: ShowSlug): string {
 
 function getScheduleCsvUrl(showSlug: ShowSlug): string {
   return process.env[envCsvKey(showSlug)]?.trim() ?? '';
+}
+
+function getSupabaseConfig() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are required');
+  }
+  return { supabaseUrl, serviceRoleKey };
+}
+
+async function supabaseRequest(path: string, init: RequestInit): Promise<Response> {
+  const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
+  return fetch(`${supabaseUrl}/rest/v1${path}`, {
+    ...init,
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      'Content-Type': 'application/json',
+      ...(init.headers ?? {}),
+    },
+    cache: 'no-store',
+  });
 }
 
 function normalizeGoogleCsvUrl(rawUrl: string): string {
@@ -244,6 +290,30 @@ function parsePriceIls(value: unknown): number | null {
   return null;
 }
 
+function parseTicketMode(value: string): 'self' | 'venue' {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return 'self';
+
+  if (
+    normalized === 'venue' ||
+    normalized === 'external' ||
+    normalized === 'площадка' ||
+    normalized === 'площадка продает' ||
+    normalized === 'площадка продаёт'
+  ) {
+    return 'venue';
+  }
+
+  return 'self';
+}
+
+function normalizeTicketUrl(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (!/^https?:\/\//i.test(trimmed)) return '';
+  return trimmed;
+}
+
 function parseCsvSchedule(text: string): ScheduleEvent[] {
   const rows = parseCsv(text);
   if (rows.length <= 1) return [];
@@ -291,6 +361,9 @@ function parseCsvSchedule(text: string): ScheduleEvent[] {
         throw new Error(`row ${rowNum}: invalid price in "Стоимость" (${rawPriceIls})`);
       }
       const capacity = getByAliases(row, headerMap, CSV_SCHEMA.capacity) || undefined;
+      const ticketModeRaw = getByAliases(row, headerMap, CSV_SCHEMA.ticketMode);
+      const ticket_mode = parseTicketMode(ticketModeRaw);
+      const ticket_url = normalizeTicketUrl(getByAliases(row, headerMap, CSV_SCHEMA.ticketUrl));
       const time = requireByAliases(row, headerMap, CSV_SCHEMA.time, rowNum, 'Время');
 
       const formatRu = requireByAliases(row, headerMap, CSV_SCHEMA.formatRu, rowNum, 'Формат_ru');
@@ -333,9 +406,61 @@ function parseCsvSchedule(text: string): ScheduleEvent[] {
       if (capacity) {
         event.capacity = capacity;
       }
+      event.ticket_mode = ticket_mode;
+
+      if (ticket_mode === 'venue') {
+        if (!ticket_url) {
+          throw new Error(`row ${rowNum}: required field "Ссылка_билетов" is empty for venue ticketing`);
+        }
+        event.ticket_url = ticket_url;
+      }
 
       return event;
     });
+}
+
+function mapSupabaseRowToEvent(row: ScheduleEventRow): ScheduleEvent {
+  return {
+    id: row.event_id,
+    date_iso: row.date_iso,
+    price_ils: row.price_ils,
+    capacity: row.capacity ?? undefined,
+    ticket_mode: row.ticket_mode === 'venue' ? 'venue' : 'self',
+    ticket_url: row.ticket_url ?? undefined,
+    entries: {
+      ru: {
+        time: row.time,
+        place: row.place_ru,
+        format: row.format_ru,
+        language: row.language_ru,
+      },
+      he: {
+        time: row.time,
+        place: row.place_he,
+        format: row.format_he,
+        language: row.language_he,
+      },
+      en: {
+        time: row.time,
+        place: row.place_en,
+        format: row.format_en,
+        language: row.language_en,
+      },
+    },
+  };
+}
+
+async function loadSupabaseSchedule(showSlug: ShowSlug): Promise<ScheduleEvent[]> {
+  const response = await supabaseRequest(
+    `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=event_id,date_iso,time,place_ru,place_en,place_he,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.asc,time.asc`,
+    { method: 'GET' },
+  );
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`failed to fetch schedule events from Supabase: ${response.status} ${text}`);
+  }
+  const rows = text ? (JSON.parse(text) as ScheduleEventRow[]) : [];
+  return rows.map(mapSupabaseRowToEvent);
 }
 
 async function loadLocalYamlSchedule(showSlug: ShowSlug): Promise<ScheduleEvent[]> {
@@ -373,6 +498,18 @@ export async function loadScheduleForShow(
 ): Promise<ScheduleEvent[]> {
   if (!isShowSlug(showSlug)) return [];
   const typedShowSlug = showSlug as ShowSlug;
+
+  try {
+    const scheduleFromDb = await loadSupabaseSchedule(typedShowSlug);
+    if (scheduleFromDb.length > 0) {
+      return scheduleFromDb;
+    }
+  } catch (error) {
+    if (options?.forceRemote) {
+      throw error;
+    }
+    console.error('[schedule] failed to load Supabase schedule, fallback to external/local', { showSlug, error });
+  }
 
   const csvUrl = getScheduleCsvUrl(typedShowSlug);
   if (csvUrl) {

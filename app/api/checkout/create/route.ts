@@ -87,14 +87,20 @@ export async function POST(request: Request) {
   const defaultUnitPrice = parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, 1);
   let unitPrice = defaultUnitPrice;
   let eventCapacity: number | null = null;
+  let eventTicketMode: 'self' | 'venue' = 'self';
 
   try {
     const schedule = await loadScheduleForShow(showSlug);
     const scheduleEvent = schedule.find((item) => item.id === eventId);
     unitPrice = resolveUnitPrice(scheduleEvent?.price_ils, defaultUnitPrice);
     eventCapacity = resolveCapacity(scheduleEvent?.capacity);
+    eventTicketMode = scheduleEvent?.ticket_mode === 'venue' ? 'venue' : 'self';
   } catch (error) {
     console.error('[checkout-create] failed to resolve event data from schedule', { showSlug, eventId, error });
+  }
+
+  if (eventTicketMode === 'venue') {
+    return NextResponse.json({ ok: false, reason: 'venue_ticketing' }, { status: 400 });
   }
 
   if (eventCapacity !== null) {

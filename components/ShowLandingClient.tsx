@@ -16,6 +16,8 @@ type ScheduleDisplayEntry = {
   language: string;
   priceIls: number | null;
   capacity: number | null;
+  ticketMode: 'self' | 'venue';
+  ticketUrl: string | null;
 };
 
 type ScheduleYaml = {
@@ -24,6 +26,8 @@ type ScheduleYaml = {
     date_iso: string | Date;
     price_ils?: number | string;
     capacity?: number | string;
+    ticket_mode?: 'self' | 'venue' | string;
+    ticket_url?: string;
     entries: Partial<
       Record<
         Lang,
@@ -189,6 +193,10 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
 function isClosedShow(format: string): boolean {
   const normalized = format.toLowerCase();
   return normalized.includes('закрыт') || normalized.includes('סגור') || normalized.includes('private');
+}
+
+function isVenueTicketingMode(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().toLowerCase() === 'venue';
 }
 
 function getTodayIsoLocal(): string {
@@ -369,6 +377,8 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     language: row.language,
     priceIls: null,
     capacity: null,
+    ticketMode: 'self',
+    ticketUrl: null,
   }));
   const displayScheduleBase: ScheduleDisplayEntry[] = scheduleData.length > 0 ? scheduleData : fallbackScheduleData;
   const displaySchedule: ScheduleDisplayEntry[] = pickVisibleScheduleRows(displayScheduleBase);
@@ -404,7 +414,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   };
 
   const openCheckout = (row: ScheduleDisplayEntry) => {
-    if (isClosedShow(row.format) || isPastShowDate(row.dateIso) || isSoldOut(row.id)) {
+    if (isClosedShow(row.format) || isPastShowDate(row.dateIso) || isSoldOut(row.id) || row.ticketMode === 'venue') {
       return;
     }
     setSelectedRow(row);
@@ -677,6 +687,22 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                             <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.passedShowLabel}</span>
                           ) : isSoldOut(row.id) ? (
                             <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.soldOutLabel}</span>
+                          ) : row.ticketMode === 'venue' && !row.ticketUrl ? (
+                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
+                          ) : row.ticketMode === 'venue' && row.ticketUrl ? (
+                            <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
+                              {typeof row.priceIls === 'number' && (
+                                <span className="text-xs md:text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
+                              )}
+                              <a
+                                href={row.ticketUrl}
+                                target="_blank"
+                                rel="noopener noreferrer nofollow"
+                                className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
+                              >
+                                {checkoutT.buyButton}
+                              </a>
+                            </div>
                           ) : (
                             <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
                               {typeof row.priceIls === 'number' && (
@@ -1157,6 +1183,8 @@ function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayE
         language: entry.language,
         priceIls: parsePriceIls(event.price_ils),
         capacity: parseCapacity(event.capacity),
+        ticketMode: isVenueTicketingMode(event.ticket_mode) ? 'venue' : 'self',
+        ticketUrl: typeof event.ticket_url === 'string' && event.ticket_url.trim() ? event.ticket_url.trim() : null,
       };
     })
     .filter((item): item is ScheduleDisplayEntry => item !== null)
