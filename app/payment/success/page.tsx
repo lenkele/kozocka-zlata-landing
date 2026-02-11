@@ -1,8 +1,5 @@
-'use client';
-
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
+import { headers } from 'next/headers';
 
 type SuccessLang = 'ru' | 'en' | 'he';
 
@@ -52,9 +49,9 @@ function normalizeLang(value: string | null): SuccessLang | null {
   return null;
 }
 
-function resolveSafeReturnPath(raw: string | null): string {
+function resolveSafeReturnPath(raw: string | undefined): string {
   if (!raw) return '/';
-  let decoded = raw;
+  let decoded = raw.trim();
   try {
     decoded = decodeURIComponent(raw);
   } catch {
@@ -64,26 +61,32 @@ function resolveSafeReturnPath(raw: string | null): string {
   return decoded;
 }
 
-function detectFallbackLang(): SuccessLang {
-  if (typeof window === 'undefined') return 'ru';
-  const preferred = normalizeLang(localStorage.getItem('preferredLang'));
-  if (preferred) return preferred;
-  const browserLang = navigator.language.toLowerCase();
-  if (browserLang.startsWith('he') || browserLang.startsWith('iw')) return 'he';
-  if (browserLang.startsWith('en')) return 'en';
+function detectFallbackLangFromHeaders(acceptLanguage: string): SuccessLang {
+  const browserLang = acceptLanguage.toLowerCase();
+  if (browserLang.startsWith('he') || browserLang.startsWith('iw') || browserLang.includes(',he') || browserLang.includes(',iw')) return 'he';
+  if (browserLang.startsWith('en') || browserLang.includes(',en')) return 'en';
   return 'ru';
 }
 
-export default function PaymentSuccessPage() {
-  const searchParams = useSearchParams();
+type PaymentSuccessPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-  const lang = useMemo<SuccessLang>(() => {
-    return normalizeLang(searchParams.get('lang')) ?? detectFallbackLang();
-  }, [searchParams]);
+function getQueryParam(params: Record<string, string | string[] | undefined>, key: string): string | undefined {
+  const value = params[key];
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value[0];
+  return undefined;
+}
 
-  const returnPath = useMemo(() => {
-    return resolveSafeReturnPath(searchParams.get('return'));
-  }, [searchParams]);
+export default async function PaymentSuccessPage({ searchParams }: PaymentSuccessPageProps) {
+  const params = searchParams ? await searchParams : {};
+  const langParam = getQueryParam(params, 'lang');
+  const returnParam = getQueryParam(params, 'return');
+  const headersList = await headers();
+  const acceptLanguage = headersList.get('accept-language') ?? '';
+  const lang = normalizeLang(langParam ?? null) ?? detectFallbackLangFromHeaders(acceptLanguage);
+  const returnPath = resolveSafeReturnPath(returnParam);
 
   const content = SUCCESS_CONTENT[lang];
   const rtl = content.dir === 'rtl';
