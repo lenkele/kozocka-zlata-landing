@@ -156,6 +156,11 @@ function mapLanguageFromRu(languageRu: string, lang: 'en' | 'he'): string {
   return mapped?.[lang] ?? languageRu;
 }
 
+function isLegacyPriceNotNullError(errorText: string): boolean {
+  const text = errorText.toLowerCase();
+  return text.includes('price_ils') && text.includes('null value') && text.includes('not-null constraint');
+}
+
 function buildBaseEventId(dateIso: string, time: string): string {
   const date = dateIso.replaceAll('-', '');
   const hhmm = time.replace(':', '');
@@ -268,39 +273,54 @@ export async function POST(request: Request) {
   const baseEventId = buildBaseEventId(dateIso, time);
   const eventId = await ensureUniqueEventId(showSlug, baseEventId);
 
-  const response = await supabaseRequest('/schedule_events', {
+  const insertPayload = {
+    show_slug: showSlug,
+    event_id: eventId,
+    date_iso: dateIso,
+    time,
+    place_ru: placeRu,
+    place_en: placeEn,
+    place_he: placeHe,
+    waze_url: wazeUrl,
+    format_ru: formatRu,
+    format_en: formatEn,
+    format_he: formatHe,
+    language_ru: languageRu,
+    language_en: languageEn,
+    language_he: languageHe,
+    price_ils: effectivePrice,
+    capacity,
+    ticket_mode: ticketMode,
+    ticket_url: ticketMode === 'venue' ? ticketUrl : null,
+    is_active: true,
+  };
+
+  let response = await supabaseRequest('/schedule_events', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
-    body: JSON.stringify({
-      show_slug: showSlug,
-      event_id: eventId,
-      date_iso: dateIso,
-      time,
-      place_ru: placeRu,
-      place_en: placeEn,
-      place_he: placeHe,
-      waze_url: wazeUrl,
-      format_ru: formatRu,
-      format_en: formatEn,
-      format_he: formatHe,
-      language_ru: languageRu,
-      language_en: languageEn,
-      language_he: languageHe,
-      price_ils: effectivePrice,
-      capacity,
-      ticket_mode: ticketMode,
-      ticket_url: ticketMode === 'venue' ? ticketUrl : null,
-      is_active: true,
-    }),
+    body: JSON.stringify(insertPayload),
   });
 
-  const text = await response.text();
+  let responseText = await response.text();
+  if (!response.ok && ticketMode === 'venue' && isLegacyPriceNotNullError(responseText)) {
+    // Compatibility fallback for DBs where old NOT NULL constraint is still active.
+    response = await supabaseRequest('/schedule_events', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({
+        ...insertPayload,
+        price_ils: 1,
+      }),
+    });
+    responseText = await response.text();
+  }
+
   if (!response.ok) {
-    return NextResponse.json({ ok: false, reason: 'db_insert_failed', message: text }, { status: 500 });
+    return NextResponse.json({ ok: false, reason: 'db_insert_failed', message: responseText }, { status: 500 });
   }
 
   revalidateTag(`schedule-${showSlug}`, 'max');
 
-  const rows = text ? (JSON.parse(text) as ScheduleEventRow[]) : [];
+  const rows = responseText ? (JSON.parse(responseText) as ScheduleEventRow[]) : [];
   return NextResponse.json({ ok: true, event: rows[0] ?? null });
 }
