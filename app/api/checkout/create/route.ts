@@ -145,7 +145,7 @@ export async function POST(request: Request) {
     clientEmail: buyerEmail,
     lang: resolveAllpayLang(),
     successUrl: `${appBaseUrl}/payment/success?lang=${encodeURIComponent(lang)}&return=${encodeURIComponent(returnPath)}`,
-    backlinkUrl: `${appBaseUrl}/payment/return`,
+    backlinkUrl: `${appBaseUrl}/payment/return?lang=${encodeURIComponent(lang)}&return=${encodeURIComponent(returnPath)}`,
     webhookUrl: `${appBaseUrl}/api/payment/allpay-callback`,
   });
 
