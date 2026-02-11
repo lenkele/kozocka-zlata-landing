@@ -72,3 +72,24 @@ export function verifySessionToken(token: string): SessionPayload | null {
 export function getCookieName(): string {
   return COOKIE_NAME;
 }
+
+export function readCookie(request: Request, name: string): string | null {
+  const cookieHeader = request.headers.get('cookie') ?? '';
+  if (!cookieHeader) return null;
+  const parts = cookieHeader.split(';').map((item) => item.trim());
+  for (const part of parts) {
+    const [key, ...value] = part.split('=');
+    if (key === name) return decodeURIComponent(value.join('='));
+  }
+  return null;
+}
+
+export function getAuthorizedAdminLogin(request: Request): string | null {
+  const credentials = getAdminScheduleCredentials();
+  if (!credentials) return null;
+  const token = readCookie(request, getCookieName());
+  if (!token) return null;
+  const payload = verifySessionToken(token);
+  if (!payload || payload.login !== credentials.login) return null;
+  return payload.login;
+}

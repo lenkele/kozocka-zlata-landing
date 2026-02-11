@@ -14,6 +14,10 @@ export type TicketArtifacts = {
   pdfFilename: string;
 };
 
+export function generateTicketCode(orderId: string): string {
+  return crypto.createHash('sha256').update(orderId).digest('hex').slice(0, 12).toUpperCase();
+}
+
 function amountLabel(order: StoredOrder): string {
   return order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
 }
@@ -201,8 +205,8 @@ async function renderHtmlToPdf(html: string): Promise<Uint8Array> {
 
 export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketArtifacts> {
   const baseUrl = process.env.APP_BASE_URL ?? 'https://kozocka-zlata-landing-coral.vercel.app';
-  const ticketCode = crypto.createHash('sha256').update(order.order_id).digest('hex').slice(0, 12).toUpperCase();
-  const verifyUrl = `${baseUrl}/payment/success?order_id=${encodeURIComponent(order.order_id)}&ticket=${ticketCode}`;
+  const ticketCode = generateTicketCode(order.order_id);
+  const verifyUrl = `${baseUrl}/ticket/validate?order_id=${encodeURIComponent(order.order_id)}&ticket=${ticketCode}&show=${encodeURIComponent(order.show_slug)}`;
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(verifyUrl)}`;
 
   const details = await resolveOrderDetails(order);
