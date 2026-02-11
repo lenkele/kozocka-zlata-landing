@@ -156,6 +156,10 @@ function mapLanguageFromRu(languageRu: string, lang: 'en' | 'he'): string {
   return mapped?.[lang] ?? languageRu;
 }
 
+function isPrivateFormat(formatRu: string): boolean {
+  return formatRu.trim().toLowerCase() === 'закрытый показ';
+}
+
 function isLegacyPriceNotNullError(errorText: string): boolean {
   const text = errorText.toLowerCase();
   return text.includes('price_ils') && text.includes('null value') && text.includes('not-null constraint');
@@ -238,9 +242,11 @@ export async function POST(request: Request) {
   const languageRu = body.languageRu?.trim() ?? '';
   const priceIls = parsePriceIls(body.priceIls);
   const capacity = parseCapacity(body.capacity);
-  const ticketMode = parseTicketMode(body.ticketMode);
+  const requestedTicketMode = parseTicketMode(body.ticketMode);
   const ticketUrl = normalizeTicketUrl(body.ticketUrl);
   const wazeUrl = normalizeTicketUrl(body.wazeUrl);
+  const privateFormat = isPrivateFormat(formatRu);
+  const ticketMode: 'self' | 'venue' = privateFormat ? 'self' : requestedTicketMode;
 
   if (!dateIso || !isValidDateIso(dateIso)) {
     return NextResponse.json({ ok: false, reason: 'invalid_date_iso' }, { status: 400 });
@@ -257,14 +263,16 @@ export async function POST(request: Request) {
   if (!languageRu) {
     return NextResponse.json({ ok: false, reason: 'language_required' }, { status: 400 });
   }
-  if (ticketMode === 'self' && priceIls === null) {
+  if (!privateFormat && ticketMode === 'self' && priceIls === null) {
     return NextResponse.json({ ok: false, reason: 'invalid_price' }, { status: 400 });
   }
-  if (ticketMode === 'venue' && !ticketUrl) {
+  if (!privateFormat && ticketMode === 'venue' && !ticketUrl) {
     return NextResponse.json({ ok: false, reason: 'ticket_url_required' }, { status: 400 });
   }
 
-  const effectivePrice = ticketMode === 'self' ? priceIls : null;
+  const effectivePrice = privateFormat ? null : ticketMode === 'self' ? priceIls : null;
+  const effectiveCapacity = privateFormat ? null : capacity;
+  const effectiveTicketUrl = privateFormat ? null : ticketMode === 'venue' ? ticketUrl : null;
 
   const formatEn = body.formatEn?.trim() || mapFormatFromRu(formatRu, 'en');
   const formatHe = body.formatHe?.trim() || mapFormatFromRu(formatRu, 'he');
@@ -289,9 +297,9 @@ export async function POST(request: Request) {
     language_en: languageEn,
     language_he: languageHe,
     price_ils: effectivePrice,
-    capacity,
+    capacity: effectiveCapacity,
     ticket_mode: ticketMode,
-    ticket_url: ticketMode === 'venue' ? ticketUrl : null,
+    ticket_url: effectiveTicketUrl,
     is_active: true,
   };
 
@@ -302,7 +310,7 @@ export async function POST(request: Request) {
   });
 
   let responseText = await response.text();
-  if (!response.ok && ticketMode === 'venue' && isLegacyPriceNotNullError(responseText)) {
+  if (!response.ok && (ticketMode === 'venue' || privateFormat) && isLegacyPriceNotNullError(responseText)) {
     // Compatibility fallback for DBs where old NOT NULL constraint is still active.
     response = await supabaseRequest('/schedule_events', {
       method: 'POST',
