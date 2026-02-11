@@ -39,7 +39,7 @@ type ScheduleEventRow = {
   language_ru: string;
   language_en: string;
   language_he: string;
-  price_ils: number;
+  price_ils: number | null;
   capacity: number | null;
   ticket_mode: 'self' | 'venue';
   ticket_url: string | null;
@@ -248,12 +248,14 @@ export async function POST(request: Request) {
   if (!languageRu) {
     return NextResponse.json({ ok: false, reason: 'language_required' }, { status: 400 });
   }
-  if (priceIls === null) {
+  if (ticketMode === 'self' && priceIls === null) {
     return NextResponse.json({ ok: false, reason: 'invalid_price' }, { status: 400 });
   }
   if (ticketMode === 'venue' && !ticketUrl) {
     return NextResponse.json({ ok: false, reason: 'ticket_url_required' }, { status: 400 });
   }
+
+  const effectivePrice = ticketMode === 'self' ? priceIls : null;
 
   const formatEn = body.formatEn?.trim() || mapFormatFromRu(formatRu, 'en');
   const formatHe = body.formatHe?.trim() || mapFormatFromRu(formatRu, 'he');
@@ -280,7 +282,7 @@ export async function POST(request: Request) {
       language_ru: languageRu,
       language_en: languageEn,
       language_he: languageHe,
-      price_ils: priceIls,
+      price_ils: effectivePrice,
       capacity,
       ticket_mode: ticketMode,
       ticket_url: ticketMode === 'venue' ? ticketUrl : null,

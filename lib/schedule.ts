@@ -43,7 +43,7 @@ type ScheduleEventRow = {
   language_ru: string;
   language_en: string;
   language_he: string;
-  price_ils: number | string;
+  price_ils: number | string | null;
   capacity: number | string | null;
   ticket_mode: 'self' | 'venue' | string | null;
   ticket_url: string | null;
@@ -430,7 +430,7 @@ function mapSupabaseRowToEvent(row: ScheduleEventRow): ScheduleEvent {
   return {
     id: row.event_id,
     date_iso: row.date_iso,
-    price_ils: row.price_ils,
+    price_ils: row.price_ils ?? undefined,
     capacity: row.capacity ?? undefined,
     ticket_mode: row.ticket_mode === 'venue' ? 'venue' : 'self',
     ticket_url: row.ticket_url ?? undefined,

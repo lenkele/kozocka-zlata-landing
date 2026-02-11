@@ -15,7 +15,7 @@ type EventRow = {
   waze_url: string | null;
   format_ru: string;
   language_ru: string;
-  price_ils: number;
+  price_ils: number | null;
   capacity: number | null;
   ticket_mode: 'self' | 'venue';
   ticket_url: string | null;
@@ -334,18 +334,6 @@ export default function AdminSchedulePage() {
               <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
             </label>
             <label className="block text-sm">
-              <span className="font-medium">Стоимость (ILS)</span>
-              <input
-                type="number"
-                min="1"
-                step="0.01"
-                value={priceIls}
-                onChange={(e) => setPriceIls(e.target.value)}
-                required
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-              />
-            </label>
-            <label className="block text-sm">
               <span className="font-medium">Формат (RU)</span>
               <select value={formatRu} onChange={(e) => setFormatRu(e.target.value as (typeof FORMAT_OPTIONS)[number])} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
                 {FORMAT_OPTIONS.map((option) => (
@@ -364,16 +352,6 @@ export default function AdminSchedulePage() {
                   </option>
                 ))}
               </select>
-            </label>
-            <label className="block text-sm">
-              <span className="font-medium">Кол-во мест (опционально)</span>
-              <input
-                type="number"
-                min="1"
-                value={capacity}
-                onChange={(e) => setCapacity(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-              />
             </label>
           </div>
 
@@ -426,6 +404,32 @@ export default function AdminSchedulePage() {
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                   />
                 </label>
+              )}
+              {ticketMode === 'self' && (
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="block text-sm">
+                    <span className="font-medium">Стоимость (ILS)</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={priceIls}
+                      onChange={(e) => setPriceIls(e.target.value)}
+                      required
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="font-medium">Кол-во мест (опционально)</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={capacity}
+                      onChange={(e) => setCapacity(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </label>
+                </div>
               )}
             </div>
           )}
@@ -481,7 +485,7 @@ export default function AdminSchedulePage() {
                       <td className="px-2 py-2">{item.waze_url ? 'Есть' : '—'}</td>
                       <td className="px-2 py-2">{item.format_ru}</td>
                       <td className="px-2 py-2">{item.language_ru}</td>
-                      <td className="px-2 py-2">₪ {item.price_ils}</td>
+                      <td className="px-2 py-2">{typeof item.price_ils === 'number' ? `₪ ${item.price_ils}` : '—'}</td>
                       <td className="px-2 py-2">{item.capacity ?? '∞'}</td>
                       <td className="px-2 py-2">{item.ticket_mode === 'venue' ? 'Площадка' : 'Сайт'}</td>
                     </tr>
