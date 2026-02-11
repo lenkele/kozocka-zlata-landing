@@ -275,6 +275,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     setLang(newLang);
     if (typeof window !== 'undefined') {
       localStorage.setItem('preferredLang', newLang);
+      window.dispatchEvent(new Event('preferredLangChanged'));
     }
   };
 

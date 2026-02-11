@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import LegalFooterLinks from "@/components/LegalFooterLinks";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,15 +39,7 @@ export default function RootLayout({
         <div className="min-h-screen flex flex-col">
           <div className="flex-1">{children}</div>
           <footer className="border-t border-slate-700/60 bg-slate-950/90 px-4 py-4 text-xs text-slate-300">
-            <div className="mx-auto flex max-w-5xl items-center justify-center gap-4 md:gap-6">
-              <Link href="/terms" className="hover:text-slate-100 underline-offset-4 hover:underline">
-                Условия
-              </Link>
-              <span aria-hidden="true" className="text-slate-500">|</span>
-              <Link href="/privacy" className="hover:text-slate-100 underline-offset-4 hover:underline">
-                Политика конфиденциальности
-              </Link>
-            </div>
+            <LegalFooterLinks />
           </footer>
         </div>
       </body>
