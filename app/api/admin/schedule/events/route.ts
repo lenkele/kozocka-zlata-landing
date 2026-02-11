@@ -185,15 +185,19 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const showSlug = url.searchParams.get('show')?.trim() ?? '';
-  if (!isShowSlug(showSlug)) {
+  const showParam = (url.searchParams.get('show')?.trim() ?? 'all').toLowerCase();
+  const loadAll = showParam === 'all' || showParam === '';
+  if (!loadAll && !isShowSlug(showParam)) {
     return NextResponse.json({ ok: false, reason: 'invalid_show' }, { status: 400 });
   }
 
-  const response = await supabaseRequest(
-    `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.asc,time.asc`,
-    { method: 'GET' },
-  );
+  const basePath =
+    '/schedule_events?is_active=eq.true&select=show_slug,event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.desc,time.desc';
+  const queryPath = loadAll
+    ? basePath
+    : `/schedule_events?show_slug=eq.${encodeURIComponent(showParam)}&is_active=eq.true&select=show_slug,event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.desc,time.desc`;
+
+  const response = await supabaseRequest(queryPath, { method: 'GET' });
   const text = await response.text();
   if (!response.ok) {
     return NextResponse.json({ ok: false, reason: 'db_select_failed', message: text }, { status: 500 });

@@ -8,6 +8,7 @@ import type { ShowSlug } from '@/shows/types';
 type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
 
 type EventRow = {
+  show_slug: ShowSlug;
   event_id: string;
   date_iso: string;
   time: string;
@@ -22,6 +23,8 @@ type EventRow = {
 };
 
 type TicketMode = 'self' | 'venue';
+type ListShowFilter = 'all' | ShowSlug;
+type DateFilter = 'current' | 'prev' | 'next' | 'all';
 
 const SHOW_ITEMS = SHOW_SLUGS.map((slug) => ({
   slug,
@@ -54,6 +57,8 @@ export default function AdminSchedulePage() {
   const [authBusy, setAuthBusy] = useState(false);
 
   const [selectedShow, setSelectedShow] = useState<ShowSlug>(SHOW_ITEMS[0]?.slug ?? 'zlata');
+  const [listShowFilter, setListShowFilter] = useState<ListShowFilter>('all');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [events, setEvents] = useState<EventRow[]>([]);
   const [listBusy, setListBusy] = useState(false);
   const [listMessage, setListMessage] = useState('');
@@ -77,11 +82,11 @@ export default function AdminSchedulePage() {
   const derivedLanguage = useMemo(() => LANGUAGE_MAP[languageRu], [languageRu]);
   const isPrivate = useMemo(() => isPrivateFormat(formatRu), [formatRu]);
 
-  const refreshEvents = async (showSlug: ShowSlug) => {
+  const refreshEvents = async () => {
     setListBusy(true);
     setListMessage('');
     try {
-      const response = await fetch(`/api/admin/schedule/events?show=${encodeURIComponent(showSlug)}`, { cache: 'no-store' });
+      const response = await fetch('/api/admin/schedule/events?show=all', { cache: 'no-store' });
       const result = (await response.json()) as { ok?: boolean; reason?: string; message?: string; events?: EventRow[] };
       if (response.status === 401 || result.reason === 'unauthorized') {
         setAuthState('unauthenticated');
@@ -101,6 +106,85 @@ export default function AdminSchedulePage() {
     } finally {
       setListBusy(false);
     }
+  };
+
+  const filteredEvents = useMemo(() => {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+    const nextDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const nextMonth = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
+
+    const monthAllowed = (dateIso: string): boolean => {
+      if (dateFilter === 'all') return true;
+      const monthKey = dateIso.slice(0, 7);
+      if (dateFilter === 'current') return monthKey === currentMonth;
+      if (dateFilter === 'prev') return monthKey === prevMonth;
+      return monthKey === nextMonth;
+    };
+
+    return events
+      .filter((item) => listShowFilter === 'all' || item.show_slug === listShowFilter)
+      .filter((item) => monthAllowed(item.date_iso))
+      .sort((a, b) => {
+        const aTs = Date.parse(`${a.date_iso}T${a.time}:00`);
+        const bTs = Date.parse(`${b.date_iso}T${b.time}:00`);
+        return bTs - aTs;
+      });
+  }, [events, listShowFilter, dateFilter]);
+
+  const handleExportCsv = () => {
+    const escapeCsv = (value: string): string => {
+      if (/[",\n]/.test(value)) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    };
+
+    const header = [
+      'show_slug',
+      'show_title',
+      'event_id',
+      'date_iso',
+      'time',
+      'place_ru',
+      'waze_url',
+      'format_ru',
+      'language_ru',
+      'price_ils',
+      'capacity',
+      'ticket_mode',
+      'ticket_url',
+    ];
+
+    const rows = filteredEvents.map((item) => [
+      item.show_slug,
+      SHOWS[item.show_slug].content.ru?.title ?? item.show_slug,
+      item.event_id,
+      item.date_iso,
+      item.time,
+      item.place_ru,
+      item.waze_url ?? '',
+      item.format_ru,
+      item.language_ru,
+      item.price_ils === null ? '' : String(item.price_ils),
+      item.capacity === null ? '' : String(item.capacity),
+      item.ticket_mode,
+      item.ticket_url ?? '',
+    ]);
+
+    const csv = [header, ...rows].map((line) => line.map(escapeCsv).join(',')).join('\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    link.href = url;
+    link.download = `schedule-events-${stamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const checkSession = async () => {
@@ -127,7 +211,7 @@ export default function AdminSchedulePage() {
         return;
       }
       setAuthState('authenticated');
-      await refreshEvents(selectedShow);
+      await refreshEvents();
     } catch {
       setAuthState('unauthenticated');
       setAuthMessage('Ошибка сети при проверке сессии.');
@@ -138,12 +222,6 @@ export default function AdminSchedulePage() {
     checkSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (authState === 'authenticated') {
-      refreshEvents(selectedShow);
-    }
-  }, [selectedShow, authState]);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -171,7 +249,7 @@ export default function AdminSchedulePage() {
       }
       setPasswordInput('');
       setAuthState('authenticated');
-      await refreshEvents(selectedShow);
+      await refreshEvents();
     } catch {
       setAuthMessage('Ошибка сети при входе.');
     } finally {
@@ -245,7 +323,7 @@ export default function AdminSchedulePage() {
       setTicketMode('self');
       setTicketUrl('');
       setSaveMessage(`Событие сохранено: ${result.event?.event_id ?? ''}`);
-      await refreshEvents(selectedShow);
+      await refreshEvents();
     } catch {
       setSaveMessage('Ошибка сети при сохранении события.');
     } finally {
@@ -446,23 +524,51 @@ export default function AdminSchedulePage() {
         </form>
 
         <section className="rounded-xl border border-slate-300 bg-white p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Текущие события ({SHOWS[selectedShow].content.ru?.title ?? selectedShow})</h2>
-            <button type="button" onClick={() => refreshEvents(selectedShow)} className="rounded-full bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white">
-              Обновить список
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Все события</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={listShowFilter}
+                onChange={(e) => setListShowFilter(e.target.value as ListShowFilter)}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
+              >
+                <option value="all">Все спектакли</option>
+                {SHOW_ITEMS.map((show) => (
+                  <option key={show.slug} value={show.slug}>
+                    {show.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs"
+              >
+                <option value="current">Текущий месяц</option>
+                <option value="prev">Прошлый месяц</option>
+                <option value="next">Следующий месяц</option>
+                <option value="all">Все даты</option>
+              </select>
+              <button type="button" onClick={handleExportCsv} className="rounded-full bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white">
+                Скачать CSV
+              </button>
+              <button type="button" onClick={() => refreshEvents()} className="rounded-full bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white">
+                Обновить список
+              </button>
+            </div>
           </div>
           {listBusy ? (
             <p className="mt-3 text-sm text-slate-600">Загрузка...</p>
           ) : listMessage ? (
             <p className="mt-3 text-sm text-red-700">{listMessage}</p>
-          ) : events.length === 0 ? (
+          ) : filteredEvents.length === 0 ? (
             <p className="mt-3 text-sm text-slate-600">Пока нет событий.</p>
           ) : (
             <div className="mt-3 overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-100 text-left">
                   <tr>
+                    <th className="px-2 py-2">Спектакль</th>
                     <th className="px-2 py-2">ID</th>
                     <th className="px-2 py-2">Дата</th>
                     <th className="px-2 py-2">Время</th>
@@ -476,8 +582,9 @@ export default function AdminSchedulePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {events.map((item) => (
-                    <tr key={item.event_id} className="border-t border-slate-200">
+                  {filteredEvents.map((item) => (
+                    <tr key={`${item.show_slug}:${item.event_id}`} className="border-t border-slate-200">
+                      <td className="px-2 py-2">{SHOWS[item.show_slug].content.ru?.title ?? item.show_slug}</td>
                       <td className="px-2 py-2">{item.event_id}</td>
                       <td className="px-2 py-2">{item.date_iso}</td>
                       <td className="px-2 py-2">{item.time}</td>
