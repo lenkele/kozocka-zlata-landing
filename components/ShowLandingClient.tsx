@@ -18,6 +18,7 @@ type ScheduleDisplayEntry = {
   capacity: number | null;
   ticketMode: 'self' | 'venue';
   ticketUrl: string | null;
+  wazeUrl: string | null;
 };
 
 type ScheduleYaml = {
@@ -28,6 +29,7 @@ type ScheduleYaml = {
     capacity?: number | string;
     ticket_mode?: 'self' | 'venue' | string;
     ticket_url?: string;
+    waze_url?: string;
     entries: Partial<
       Record<
         Lang,
@@ -45,6 +47,7 @@ type ScheduleYaml = {
 
 type CheckoutLabels = {
   buyButton: string;
+  directionsLabel: string;
   buyColumn: string;
   modalTitle: string;
   showLabel: string;
@@ -88,6 +91,7 @@ type EventAvailability = {
 const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
   ru: {
     buyButton: 'Купить билет',
+    directionsLabel: 'Как добраться',
     buyColumn: 'Билеты',
     modalTitle: 'Оформление билета',
     showLabel: 'Спектакль',
@@ -122,6 +126,7 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
   },
   he: {
     buyButton: 'קניית כרטיס',
+    directionsLabel: 'איך מגיעים',
     buyColumn: 'כרטיסים',
     modalTitle: 'רכישת כרטיס',
     showLabel: 'הצגה',
@@ -156,6 +161,7 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
   },
   en: {
     buyButton: 'Buy ticket',
+    directionsLabel: 'How to get there',
     buyColumn: 'Tickets',
     modalTitle: 'Ticket checkout',
     showLabel: 'Show',
@@ -379,6 +385,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     capacity: null,
     ticketMode: 'self',
     ticketUrl: null,
+    wazeUrl: null,
   }));
   const displayScheduleBase: ScheduleDisplayEntry[] = scheduleData.length > 0 ? scheduleData : fallbackScheduleData;
   const displaySchedule: ScheduleDisplayEntry[] = pickVisibleScheduleRows(displayScheduleBase);
@@ -677,7 +684,21 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                       <tr key={row.id || `${row.date}-${row.time}-${row.place}`}>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.date)}</td>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.time)}</td>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.place)}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>
+                          <div className={`flex flex-col gap-1 ${isRTL ? 'items-end' : 'items-start'}`}>
+                            <span>{parseLinksInText(row.place)}</span>
+                            {row.wazeUrl && (
+                              <a
+                                href={row.wazeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer nofollow"
+                                className="text-xs underline hover:text-amber-300 transition"
+                              >
+                                {checkoutT.directionsLabel}
+                              </a>
+                            )}
+                          </div>
+                        </td>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.format)}</td>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.language)}</td>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>
@@ -1185,6 +1206,7 @@ function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayE
         capacity: parseCapacity(event.capacity),
         ticketMode: isVenueTicketingMode(event.ticket_mode) ? 'venue' : 'self',
         ticketUrl: typeof event.ticket_url === 'string' && event.ticket_url.trim() ? event.ticket_url.trim() : null,
+        wazeUrl: typeof event.waze_url === 'string' && event.waze_url.trim() ? event.waze_url.trim() : null,
       };
     })
     .filter((item): item is ScheduleDisplayEntry => item !== null)

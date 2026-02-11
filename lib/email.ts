@@ -27,6 +27,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
   const subject = 'Payment confirmed / Оплата подтверждена / התשלום אושר';
   const qtyLabel = String(order.qty ?? 1);
   const amountLabel = order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
+  const directions = details.eventDirectionsUrl;
 
   const html = [
     `<p><strong>English</strong></p>`,
@@ -38,6 +39,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<strong>Show:</strong> ${details.showTitle.en}<br/>`,
     `<strong>Date & time:</strong> ${details.eventDateTime.en}<br/>`,
     `<strong>Venue:</strong> ${details.eventPlace.en}<br/>`,
+    directions ? `<strong>How to get there:</strong> <a href="${directions}" target="_blank" rel="noopener noreferrer">Waze</a><br/>` : '',
     `<strong>Qty:</strong> ${qtyLabel}<br/>`,
     `<strong>Amount:</strong> ${amountLabel}</p>`,
     `<hr/>`,
@@ -50,6 +52,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<strong>Спектакль:</strong> ${details.showTitle.ru}<br/>`,
     `<strong>Дата и время:</strong> ${details.eventDateTime.ru}<br/>`,
     `<strong>Место:</strong> ${details.eventPlace.ru}<br/>`,
+    directions ? `<strong>Как добраться:</strong> <a href="${directions}" target="_blank" rel="noopener noreferrer">Waze</a><br/>` : '',
     `<strong>Количество:</strong> ${qtyLabel}<br/>`,
     `<strong>Сумма:</strong> ${amountLabel}</p>`,
     `<hr/>`,
@@ -62,6 +65,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<strong>מופע:</strong> ${details.showTitle.he}<br/>`,
     `<strong>תאריך ושעה:</strong> ${details.eventDateTime.he}<br/>`,
     `<strong>מקום:</strong> ${details.eventPlace.he}<br/>`,
+    directions ? `<strong>איך מגיעים:</strong> <a href="${directions}" target="_blank" rel="noopener noreferrer">Waze</a><br/>` : '',
     `<strong>כמות:</strong> ${qtyLabel}<br/>`,
     `<strong>סכום:</strong> ${amountLabel}</p>`,
     `<p>PDF ticket is attached / PDF-билет во вложении / כרטיס PDF מצורף.</p>`,
@@ -78,6 +82,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `Show: ${details.showTitle.en}`,
     `Date & time: ${details.eventDateTime.en}`,
     `Venue: ${details.eventPlace.en}`,
+    ...(directions ? [`How to get there: ${directions}`] : []),
     `Qty: ${qtyLabel}`,
     `Amount: ${amountLabel}`,
     '',
@@ -91,6 +96,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `Спектакль: ${details.showTitle.ru}`,
     `Дата и время: ${details.eventDateTime.ru}`,
     `Место: ${details.eventPlace.ru}`,
+    ...(directions ? [`Как добраться: ${directions}`] : []),
     `Количество: ${qtyLabel}`,
     `Сумма: ${amountLabel}`,
     '',
@@ -104,6 +110,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `מופע: ${details.showTitle.he}`,
     `תאריך ושעה: ${details.eventDateTime.he}`,
     `מקום: ${details.eventPlace.he}`,
+    ...(directions ? [`איך מגיעים: ${directions}`] : []),
     `כמות: ${qtyLabel}`,
     `סכום: ${amountLabel}`,
     '',

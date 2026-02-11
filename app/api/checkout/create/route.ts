@@ -34,6 +34,12 @@ function parsePositiveInt(value: unknown, fallback: number): number {
   return parsed ?? fallback;
 }
 
+function isClosedFormat(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized.includes('закрыт') || normalized.includes('private') || normalized.includes('סגור');
+}
+
 function resolveSafeReturnPath(value: unknown, fallbackPath: string): string {
   if (typeof value !== 'string') return fallbackPath;
   const trimmed = value.trim();
@@ -88,6 +94,7 @@ export async function POST(request: Request) {
   let unitPrice = defaultUnitPrice;
   let eventCapacity: number | null = null;
   let eventTicketMode: 'self' | 'venue' = 'self';
+  let eventIsClosed = false;
 
   try {
     const schedule = await loadScheduleForShow(showSlug);
@@ -95,8 +102,13 @@ export async function POST(request: Request) {
     unitPrice = resolveUnitPrice(scheduleEvent?.price_ils, defaultUnitPrice);
     eventCapacity = resolveCapacity(scheduleEvent?.capacity);
     eventTicketMode = scheduleEvent?.ticket_mode === 'venue' ? 'venue' : 'self';
+    eventIsClosed = isClosedFormat(scheduleEvent?.entries?.ru?.format);
   } catch (error) {
     console.error('[checkout-create] failed to resolve event data from schedule', { showSlug, eventId, error });
+  }
+
+  if (eventIsClosed) {
+    return NextResponse.json({ ok: false, reason: 'closed_show' }, { status: 400 });
   }
 
   if (eventTicketMode === 'venue') {

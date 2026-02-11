@@ -54,6 +54,7 @@ function buildTicketHtml(input: {
   venueRu: string;
   venueEn: string;
   venueHe: string;
+  directionsUrl: string | null;
   buyerName: string;
   buyerEmail: string;
   qty: string;
@@ -115,6 +116,7 @@ function buildTicketHtml(input: {
                 <div class="row"><div class="label">Спектакль</div><div class="value">${escapeHtml(input.showRu)}</div></div>
                 <div class="row"><div class="label">Дата и время</div><div class="value">${escapeHtml(input.dateRu)}</div></div>
                 <div class="row"><div class="label">Место</div><div class="value">${escapeHtml(input.venueRu)}</div></div>
+                ${input.directionsUrl ? `<div class="row"><div class="label">Как добраться</div><div class="value"><a href="${escapeHtml(input.directionsUrl)}">Waze</a></div></div>` : ''}
               </section>
 
               <section class="section">
@@ -122,6 +124,7 @@ function buildTicketHtml(input: {
                 <div class="row"><div class="label">Show</div><div class="value">${escapeHtml(input.showEn)}</div></div>
                 <div class="row"><div class="label">Date &amp; time</div><div class="value">${escapeHtml(input.dateEn)}</div></div>
                 <div class="row"><div class="label">Venue</div><div class="value">${escapeHtml(input.venueEn)}</div></div>
+                ${input.directionsUrl ? `<div class="row"><div class="label">How to get there</div><div class="value"><a href="${escapeHtml(input.directionsUrl)}">Waze</a></div></div>` : ''}
               </section>
 
               <section class="section he">
@@ -138,6 +141,7 @@ function buildTicketHtml(input: {
                   <div class="value">${formatHebrewMixed(input.venueHe)}</div>
                   <div class="label">מקום</div>
                 </div>
+                ${input.directionsUrl ? `<div class="row"><div class="value"><span class="ltr-token"><a href="${escapeHtml(input.directionsUrl)}">Waze</a></span></div><div class="label">איך מגיעים</div></div>` : ''}
               </section>
 
               <section class="section">
@@ -215,6 +219,7 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
     venueRu: details.eventPlace.ru,
     venueEn: details.eventPlace.en,
     venueHe: details.eventPlace.he,
+    directionsUrl: details.eventDirectionsUrl,
     buyerName: order.buyer_name || '-',
     buyerEmail: order.buyer_email,
     qty: String(order.qty),

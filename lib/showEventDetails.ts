@@ -12,6 +12,7 @@ type ScheduleLangEntry = {
 type ScheduleEvent = {
   id?: string;
   date_iso?: string | Date;
+  waze_url?: string;
   entries?: Partial<Record<Lang, ScheduleLangEntry>>;
 };
 
@@ -19,6 +20,7 @@ export type ResolvedOrderDetails = {
   showTitle: Record<Lang, string>;
   eventDateTime: Record<Lang, string>;
   eventPlace: Record<Lang, string>;
+  eventDirectionsUrl: string | null;
 };
 
 const EMPTY_TEXT: Record<Lang, string> = { ru: '-', en: '-', he: '-' };
@@ -84,11 +86,12 @@ async function loadScheduleEvent(showSlug: string, eventId: string): Promise<Sch
   }
 }
 
-function buildEventDetails(event: ScheduleEvent | null, fallbackEventId: string): Pick<ResolvedOrderDetails, 'eventDateTime' | 'eventPlace'> {
+function buildEventDetails(event: ScheduleEvent | null, fallbackEventId: string): Pick<ResolvedOrderDetails, 'eventDateTime' | 'eventPlace' | 'eventDirectionsUrl'> {
   if (!event) {
     return {
       eventDateTime: { ...EMPTY_TEXT, ru: fallbackEventId, en: fallbackEventId, he: fallbackEventId },
       eventPlace: { ...EMPTY_TEXT },
+      eventDirectionsUrl: null,
     };
   }
 
@@ -105,17 +108,21 @@ function buildEventDetails(event: ScheduleEvent | null, fallbackEventId: string)
     eventPlace[lang] = entry.place?.trim() || '-';
   }
 
-  return { eventDateTime, eventPlace };
+  const eventDirectionsUrl =
+    typeof event.waze_url === 'string' && /^https?:\/\//i.test(event.waze_url.trim()) ? event.waze_url.trim() : null;
+
+  return { eventDateTime, eventPlace, eventDirectionsUrl };
 }
 
 export async function resolveOrderDetails(order: StoredOrder): Promise<ResolvedOrderDetails> {
   const showTitle = resolveShowTitle(order.show_slug);
   const event = await loadScheduleEvent(order.show_slug, order.event_id ?? '');
-  const { eventDateTime, eventPlace } = buildEventDetails(event, order.event_id ?? '-');
+  const { eventDateTime, eventPlace, eventDirectionsUrl } = buildEventDetails(event, order.event_id ?? '-');
 
   return {
     showTitle,
     eventDateTime,
     eventPlace,
+    eventDirectionsUrl,
   };
 }

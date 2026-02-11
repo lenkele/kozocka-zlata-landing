@@ -7,6 +7,7 @@ create table if not exists public.schedule_events (
   place_ru text not null,
   place_en text not null,
   place_he text not null,
+  waze_url text null,
   format_ru text not null,
   format_en text not null,
   format_he text not null,
@@ -22,6 +23,9 @@ create table if not exists public.schedule_events (
   updated_at timestamptz not null default now(),
   unique (show_slug, event_id)
 );
+
+alter table public.schedule_events
+  add column if not exists waze_url text null;
 
 create index if not exists idx_schedule_events_show_active_date
   on public.schedule_events (show_slug, is_active, date_iso, time);

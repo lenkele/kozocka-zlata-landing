@@ -22,6 +22,7 @@ export type ScheduleEvent = {
   capacity?: number | string;
   ticket_mode?: 'self' | 'venue';
   ticket_url?: string;
+  waze_url?: string;
   entries?: Partial<Record<'ru' | 'he' | 'en', ScheduleEntry>>;
 };
 
@@ -46,6 +47,7 @@ type ScheduleEventRow = {
   capacity: number | string | null;
   ticket_mode: 'self' | 'venue' | string | null;
   ticket_url: string | null;
+  waze_url: string | null;
 };
 
 const CSV_SCHEMA = {
@@ -66,6 +68,7 @@ const CSV_SCHEMA = {
   capacity: ['Кол-во мест', 'capacity'],
   ticketMode: ['Продажа_билетов', 'ticket_mode', 'ticket_seller'],
   ticketUrl: ['Ссылка_билетов', 'ticket_url', 'ticket_link'],
+  wazeUrl: ['Ссылка_на_Вэйз', 'waze_url', 'waze_link'],
 } as const;
 
 const FORMAT_FROM_RU: Record<string, { en: string; he: string }> = {
@@ -364,6 +367,7 @@ function parseCsvSchedule(text: string): ScheduleEvent[] {
       const ticketModeRaw = getByAliases(row, headerMap, CSV_SCHEMA.ticketMode);
       const ticket_mode = parseTicketMode(ticketModeRaw);
       const ticket_url = normalizeTicketUrl(getByAliases(row, headerMap, CSV_SCHEMA.ticketUrl));
+      const waze_url = normalizeTicketUrl(getByAliases(row, headerMap, CSV_SCHEMA.wazeUrl));
       const time = requireByAliases(row, headerMap, CSV_SCHEMA.time, rowNum, 'Время');
 
       const formatRu = requireByAliases(row, headerMap, CSV_SCHEMA.formatRu, rowNum, 'Формат_ru');
@@ -414,6 +418,9 @@ function parseCsvSchedule(text: string): ScheduleEvent[] {
         }
         event.ticket_url = ticket_url;
       }
+      if (waze_url) {
+        event.waze_url = waze_url;
+      }
 
       return event;
     });
@@ -427,6 +434,7 @@ function mapSupabaseRowToEvent(row: ScheduleEventRow): ScheduleEvent {
     capacity: row.capacity ?? undefined,
     ticket_mode: row.ticket_mode === 'venue' ? 'venue' : 'self',
     ticket_url: row.ticket_url ?? undefined,
+    waze_url: row.waze_url ?? undefined,
     entries: {
       ru: {
         time: row.time,
@@ -452,7 +460,7 @@ function mapSupabaseRowToEvent(row: ScheduleEventRow): ScheduleEvent {
 
 async function loadSupabaseSchedule(showSlug: ShowSlug): Promise<ScheduleEvent[]> {
   const response = await supabaseRequest(
-    `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=event_id,date_iso,time,place_ru,place_en,place_he,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.asc,time.asc`,
+    `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.asc,time.asc`,
     { method: 'GET' },
   );
   const text = await response.text();

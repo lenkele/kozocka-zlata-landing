@@ -12,6 +12,7 @@ type EventRow = {
   date_iso: string;
   time: string;
   place_ru: string;
+  waze_url: string | null;
   format_ru: string;
   language_ru: string;
   price_ils: number;
@@ -41,6 +42,10 @@ const LANGUAGE_MAP: Record<string, { en: string; he: string }> = {
   Английский: { en: 'English', he: 'אנגלית' },
 };
 
+function isPrivateFormat(formatRu: string): boolean {
+  return formatRu.trim().toLowerCase() === 'закрытый показ';
+}
+
 export default function AdminSchedulePage() {
   const [authState, setAuthState] = useState<AuthState>('loading');
   const [authMessage, setAuthMessage] = useState('');
@@ -58,6 +63,7 @@ export default function AdminSchedulePage() {
   const [placeRu, setPlaceRu] = useState('');
   const [placeEn, setPlaceEn] = useState('');
   const [placeHe, setPlaceHe] = useState('');
+  const [wazeUrl, setWazeUrl] = useState('');
   const [formatRu, setFormatRu] = useState<(typeof FORMAT_OPTIONS)[number]>('Открытый показ');
   const [languageRu, setLanguageRu] = useState<(typeof LANGUAGE_OPTIONS)[number]>('Русский');
   const [priceIls, setPriceIls] = useState('');
@@ -69,6 +75,7 @@ export default function AdminSchedulePage() {
 
   const derivedFormat = useMemo(() => FORMAT_MAP[formatRu], [formatRu]);
   const derivedLanguage = useMemo(() => LANGUAGE_MAP[languageRu], [languageRu]);
+  const isPrivate = useMemo(() => isPrivateFormat(formatRu), [formatRu]);
 
   const refreshEvents = async (showSlug: ShowSlug) => {
     setListBusy(true);
@@ -187,6 +194,9 @@ export default function AdminSchedulePage() {
     setSaveBusy(true);
     setSaveMessage('');
     try {
+      const effectiveTicketMode = isPrivate ? 'self' : ticketMode;
+      const effectiveTicketUrl = isPrivate ? '' : ticketUrl;
+
       const response = await fetch('/api/admin/schedule/events', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -197,6 +207,7 @@ export default function AdminSchedulePage() {
           placeRu,
           placeEn,
           placeHe,
+          wazeUrl,
           formatRu,
           formatEn: derivedFormat.en,
           formatHe: derivedFormat.he,
@@ -205,8 +216,8 @@ export default function AdminSchedulePage() {
           languageHe: derivedLanguage.he,
           priceIls,
           capacity,
-          ticketMode,
-          ticketUrl,
+          ticketMode: effectiveTicketMode,
+          ticketUrl: effectiveTicketUrl,
         }),
       });
 
@@ -228,6 +239,7 @@ export default function AdminSchedulePage() {
       setPlaceRu('');
       setPlaceEn('');
       setPlaceHe('');
+      setWazeUrl('');
       setPriceIls('');
       setCapacity('');
       setTicketMode('self');
@@ -380,30 +392,43 @@ export default function AdminSchedulePage() {
             </label>
           </div>
 
-          <div className="space-y-2 rounded-lg border border-slate-300 p-3">
-            <p className="text-sm font-medium">Продажа билетов</p>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="radio" name="ticketMode" checked={ticketMode === 'self'} onChange={() => setTicketMode('self')} />
-              Мы продаём (через сайт)
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="radio" name="ticketMode" checked={ticketMode === 'venue'} onChange={() => setTicketMode('venue')} />
-              Площадка продаёт (внешняя ссылка)
-            </label>
-            {ticketMode === 'venue' && (
-              <label className="block text-sm">
-                <span className="font-medium">Ссылка на покупку у площадки</span>
-                <input
-                  type="url"
-                  value={ticketUrl}
-                  onChange={(e) => setTicketUrl(e.target.value)}
-                  required
-                  placeholder="https://..."
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-                />
+          <label className="block text-sm">
+            <span className="font-medium">Ссылка на Вэйз (опционально)</span>
+            <input
+              type="url"
+              value={wazeUrl}
+              onChange={(e) => setWazeUrl(e.target.value)}
+              placeholder="https://waze.com/..."
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+            />
+          </label>
+
+          {!isPrivate && (
+            <div className="space-y-2 rounded-lg border border-slate-300 p-3">
+              <p className="text-sm font-medium">Продажа билетов</p>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="radio" name="ticketMode" checked={ticketMode === 'self'} onChange={() => setTicketMode('self')} />
+                Мы продаём (через сайт)
               </label>
-            )}
-          </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="radio" name="ticketMode" checked={ticketMode === 'venue'} onChange={() => setTicketMode('venue')} />
+                Площадка продаёт (внешняя ссылка)
+              </label>
+              {ticketMode === 'venue' && (
+                <label className="block text-sm">
+                  <span className="font-medium">Ссылка на покупку у площадки</span>
+                  <input
+                    type="url"
+                    value={ticketUrl}
+                    onChange={(e) => setTicketUrl(e.target.value)}
+                    required
+                    placeholder="https://..."
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                  />
+                </label>
+              )}
+            </div>
+          )}
 
           <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-700">
             <p>Формат EN/HE: {derivedFormat.en} | {derivedFormat.he}</p>
@@ -438,6 +463,7 @@ export default function AdminSchedulePage() {
                     <th className="px-2 py-2">Дата</th>
                     <th className="px-2 py-2">Время</th>
                     <th className="px-2 py-2">Место (RU)</th>
+                    <th className="px-2 py-2">Вэйз</th>
                     <th className="px-2 py-2">Формат</th>
                     <th className="px-2 py-2">Язык</th>
                     <th className="px-2 py-2">Цена</th>
@@ -452,6 +478,7 @@ export default function AdminSchedulePage() {
                       <td className="px-2 py-2">{item.date_iso}</td>
                       <td className="px-2 py-2">{item.time}</td>
                       <td className="px-2 py-2">{item.place_ru}</td>
+                      <td className="px-2 py-2">{item.waze_url ? 'Есть' : '—'}</td>
                       <td className="px-2 py-2">{item.format_ru}</td>
                       <td className="px-2 py-2">{item.language_ru}</td>
                       <td className="px-2 py-2">₪ {item.price_ils}</td>

@@ -11,6 +11,7 @@ type CreateEventBody = {
   placeRu?: string;
   placeEn?: string;
   placeHe?: string;
+  wazeUrl?: string;
   formatRu?: string;
   formatEn?: string;
   formatHe?: string;
@@ -31,6 +32,7 @@ type ScheduleEventRow = {
   place_ru: string;
   place_en: string;
   place_he: string;
+  waze_url: string | null;
   format_ru: string;
   format_en: string;
   format_he: string;
@@ -189,7 +191,7 @@ export async function GET(request: Request) {
   }
 
   const response = await supabaseRequest(
-    `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=event_id,date_iso,time,place_ru,place_en,place_he,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.asc,time.asc`,
+    `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.asc,time.asc`,
     { method: 'GET' },
   );
   const text = await response.text();
@@ -229,6 +231,7 @@ export async function POST(request: Request) {
   const capacity = parseCapacity(body.capacity);
   const ticketMode = parseTicketMode(body.ticketMode);
   const ticketUrl = normalizeTicketUrl(body.ticketUrl);
+  const wazeUrl = normalizeTicketUrl(body.wazeUrl);
 
   if (!dateIso || !isValidDateIso(dateIso)) {
     return NextResponse.json({ ok: false, reason: 'invalid_date_iso' }, { status: 400 });
@@ -270,6 +273,7 @@ export async function POST(request: Request) {
       place_ru: placeRu,
       place_en: placeEn,
       place_he: placeHe,
+      waze_url: wazeUrl,
       format_ru: formatRu,
       format_en: formatEn,
       format_he: formatHe,
