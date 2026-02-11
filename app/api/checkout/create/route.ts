@@ -11,6 +11,7 @@ type CreateCheckoutRequest = {
   eventId?: string;
   qty?: number;
   lang?: 'ru' | 'he' | 'en';
+  returnPath?: string;
   buyer?: {
     name?: string;
     email?: string;
@@ -31,6 +32,14 @@ function resolveAllpayLang(): 'AUTO' {
 function parsePositiveInt(value: unknown, fallback: number): number {
   const parsed = resolveCapacity(value);
   return parsed ?? fallback;
+}
+
+function resolveSafeReturnPath(value: unknown, fallbackPath: string): string {
+  if (typeof value !== 'string') return fallbackPath;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('/')) return fallbackPath;
+  if (trimmed.startsWith('//')) return fallbackPath;
+  return trimmed;
 }
 
 export async function POST(request: Request) {
@@ -73,6 +82,7 @@ export async function POST(request: Request) {
 
   const showSlug = body.showSlug?.trim() || 'unknown-show';
   const eventId = body.eventId?.trim() || 'unknown-event';
+  const returnPath = resolveSafeReturnPath(body.returnPath, `/${showSlug}`);
   const itemName = resolveCheckoutItemName(showSlug, lang) || process.env.DEFAULT_TICKET_NAME || 'Ticket';
   const defaultUnitPrice = parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, 1);
   let unitPrice = defaultUnitPrice;
@@ -134,7 +144,7 @@ export async function POST(request: Request) {
     clientName: buyerName,
     clientEmail: buyerEmail,
     lang: resolveAllpayLang(),
-    successUrl: `${appBaseUrl}/payment/success`,
+    successUrl: `${appBaseUrl}/payment/success?lang=${encodeURIComponent(lang)}&return=${encodeURIComponent(returnPath)}`,
     backlinkUrl: `${appBaseUrl}/payment/return`,
     webhookUrl: `${appBaseUrl}/api/payment/allpay-callback`,
   });

@@ -441,6 +441,10 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
           eventId,
           qty: ticketQty,
           lang,
+          returnPath:
+            typeof window !== 'undefined'
+              ? `${window.location.pathname}${window.location.search}`
+              : `/${show.slug}`,
           buyer: {
             name: safeName,
             email: safeEmail,
