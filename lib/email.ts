@@ -24,7 +24,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
   const buyerName = order.buyer_name || 'Viewer';
   const ticket = await buildTicketArtifacts(order);
   const details = await resolveOrderDetails(order);
-  const subject = 'Payment confirmed / Оплата подтверждена / התשלום אושר';
+  const subject = 'Ваши билеты | Your tickets | הכרטיסים שלכם';
   const qtyLabel = String(order.qty ?? 1);
   const amountLabel = order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
   const directions = details.eventDirectionsUrl;
@@ -32,7 +32,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
   const html = [
     `<p><strong>English</strong></p>`,
     `<p>Hello, ${buyerName}!</p>`,
-    `<p>Your payment was received successfully.</p>`,
+    `<p>Your tickets are ready.</p>`,
     `<p><strong>Ticket code:</strong> ${ticket.ticketCode}</p>`,
     `<p><a href="${ticket.verifyUrl}">Verify ticket</a></p>`,
     `<p><strong>Order:</strong> ${order.order_id}<br/>`,
@@ -45,7 +45,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<hr/>`,
     `<p><strong>Русский</strong></p>`,
     `<p>Здравствуйте, ${buyerName}!</p>`,
-    `<p>Оплата успешно получена.</p>`,
+    `<p>Ваши билеты готовы.</p>`,
     `<p><strong>Код билета:</strong> ${ticket.ticketCode}</p>`,
     `<p><a href="${ticket.verifyUrl}">Проверить билет</a></p>`,
     `<p><strong>Заказ:</strong> ${order.order_id}<br/>`,
@@ -58,7 +58,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<hr/>`,
     `<p dir="rtl"><strong>עברית</strong></p>`,
     `<p dir="rtl">שלום, ${buyerName}!</p>`,
-    `<p dir="rtl">התשלום התקבל בהצלחה.</p>`,
+    `<p dir="rtl">הכרטיסים שלכם מוכנים.</p>`,
     `<p dir="rtl"><strong>קוד כרטיס:</strong> ${ticket.ticketCode}</p>`,
     `<p dir="rtl"><a href="${ticket.verifyUrl}">אימות כרטיס</a></p>`,
     `<p dir="rtl"><strong>הזמנה:</strong> ${order.order_id}<br/>`,
@@ -75,7 +75,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     'English',
     '',
     `Hello, ${buyerName}!`,
-    'Your payment was received successfully.',
+    'Your tickets are ready.',
     `Ticket code: ${ticket.ticketCode}`,
     `Verify ticket: ${ticket.verifyUrl}`,
     `Order: ${order.order_id}`,
@@ -89,7 +89,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     'Русский',
     '',
     `Здравствуйте, ${buyerName}!`,
-    'Оплата успешно получена.',
+    'Ваши билеты готовы.',
     `Код билета: ${ticket.ticketCode}`,
     `Проверить билет: ${ticket.verifyUrl}`,
     `Заказ: ${order.order_id}`,
@@ -103,7 +103,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     'עברית',
     '',
     `שלום, ${buyerName}!`,
-    'התשלום התקבל בהצלחה.',
+    'הכרטיסים שלכם מוכנים.',
     `קוד כרטיס: ${ticket.ticketCode}`,
     `אימות כרטיס: ${ticket.verifyUrl}`,
     `הזמנה: ${order.order_id}`,
