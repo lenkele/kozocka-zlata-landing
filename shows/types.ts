@@ -74,7 +74,7 @@ export type Content = {
   }[];
 };
 
-export type ShowSlug = 'zlata' | 'marita';
+export type ShowSlug = 'zlata' | 'marita' | 'demo';
 
 export type CarouselPhoto = { src: string; alt: string };
 
@@ -103,4 +103,3 @@ export type ShowConfig = {
   headerBg?: string; // Цвет хедера
   headingColor?: string; // Цвет заголовков на карточках
 };
-
