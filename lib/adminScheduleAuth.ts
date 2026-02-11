@@ -24,9 +24,9 @@ function timingSafeEqualHex(a: string, b: string): boolean {
 }
 
 function getAuthSecret(): string {
-  const secret = process.env.ADMIN_SCHEDULE_AUTH_SECRET?.trim() || process.env.SCHEDULE_SYNC_SECRET?.trim();
+  const secret = process.env.ADMIN_SCHEDULE_AUTH_SECRET?.trim();
   if (!secret) {
-    throw new Error('ADMIN_SCHEDULE_AUTH_SECRET (or SCHEDULE_SYNC_SECRET) is required');
+    throw new Error('ADMIN_SCHEDULE_AUTH_SECRET is required');
   }
   return secret;
 }

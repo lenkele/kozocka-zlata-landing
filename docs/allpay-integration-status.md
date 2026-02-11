@@ -1,13 +1,13 @@
 # Allpay Integration Status
 
-Дата обновления: 2026-02-10
+Дата обновления: 2026-02-11
 
 ## Готово
 
 1. End-to-end оплата через Allpay работает.
 - Создание заказа: `/api/checkout/create`.
 - Переход на Allpay checkout.
-- Возврат на `/payment/success`.
+- Возврат на `/payment/success` или `/payment/return`.
 
 2. Callback и фиксация оплаты работают.
 - Endpoint: `/api/payment/allpay-callback`.
@@ -18,7 +18,7 @@
 3. Email + билет работают в прод-потоке.
 - Отправка через Resend после успешного callback.
 - Письмо в 3 языках (RU/EN/HE).
-- Добавлены HTML + plain-text версии письма.
+- HTML + plain-text версии письма.
 - PDF билет прикладывается к письму.
 
 4. PDF билет доведен по верстке и RTL/LTR.
@@ -26,12 +26,11 @@
 - Корректные название, дата/время, место, сумма.
 - QR встроен.
 
-5. Расписание автоматизировано.
-- Источник: Google Sheets CSV.
-- Обновление по кнопке: `/admin/schedule`.
-- API sync: `/api/admin/schedule/sync`.
+5. Расписание автоматизировано через Supabase.
+- Источник: таблица `public.schedule_events`.
+- Управление: `/admin/schedule`.
 - API выдачи расписания: `/api/schedule`.
-- Поддержаны human-friendly колонки таблицы.
+- Поддержаны: лимит мест, sold-out, внешняя продажа билетов площадкой, Waze-ссылка.
 
 6. Лимиты мест и sold-out работают.
 - Поле `Кол-во мест` (capacity) опционально.
@@ -47,12 +46,11 @@
 ## Осталось
 
 1. Deliverability (антиспам)
-- Дожать DMARC-политику по этапам (`none -> quarantine -> reject`).
-- Прогреть домен отправки.
+- Мониторинг DMARC-отчетов.
+- При стабильной доставке: переход `none -> quarantine -> reject`.
 
-2. Runbook/операционка
-- Зафиксировать процедуры ротации ключей, redeploy, диагностики.
-- Документ: `docs/operations-runbook.md`.
+2. Операционка
+- Использовать `docs/operations-runbook.md` и `docs/ops-checklist-onepage.md` как рабочие документы.
 
 3. Юридические тексты
-- Заменить заглушки `/terms` и `/privacy` на финальные документы.
+- Поддерживать актуальность `/terms` и `/privacy` при изменениях политики/процессов.

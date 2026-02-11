@@ -7,8 +7,9 @@
 - `ALLPAY_API_KEY`
 - `ALLPAY_WEBHOOK_SECRET`
 - `RESEND_API_KEY`
-- `SCHEDULE_SYNC_SECRET`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `ADMIN_SCHEDULE_AUTH_SECRET`
+- `ADMIN_SCHEDULE_PASSWORD`
 
 Порядок:
 
@@ -22,7 +23,7 @@
 
 1. `/zlata` открывается, афиша отображается.
 2. `/admin/schedule` открывается.
-3. Нажать `Обновить` для `Козочка Злата` -> статус `Готово`.
+3. Войти в админку, создать тестовое событие и проверить, что оно появляется в списке.
 4. Проверить, что цены отображаются в колонке `Билеты`.
 5. Сделать тестовую покупку:
 - создается checkout,
@@ -32,22 +33,21 @@
 
 ## 3. Диагностика проблем
 
-### 3.1 `/api/admin/schedule/sync` возвращает 500
+### 3.1 `/api/admin/schedule/events` возвращает 500
 
 Проверить:
 
-1. `SCHEDULE_SYNC_SECRET` задан в Vercel.
-2. `SCHEDULE_CSV_URL_<SHOW>` задан и доступен публично.
-3. Лог в Vercel покажет причину:
-- `failed to fetch CSV: 401` -> неверная/приватная CSV ссылка.
-- `required field "... is empty"` -> пустая обязательная колонка.
+1. `SUPABASE_URL` задан в Vercel.
+2. `SUPABASE_SERVICE_ROLE_KEY` задан в Vercel.
+3. Применена миграция `docs/sql/2026-02-11-create-schedule-events.sql`.
+4. В таблице `public.schedule_events` у `price_ils` снят `NOT NULL`.
 
 ### 3.2 Цена не показывается в афише
 
-Проверить колонку `Стоимость` в Google Sheet:
+Проверить поле `price_ils` у события в `public.schedule_events`:
 
-- допустимые значения: `10`, `10.5`, `10,50`, `₪ 10,00`.
-- после правки нажать `Обновить` в `/admin/schedule`.
+- значение должно быть числом > 0 для `ticket_mode=self`.
+- для `ticket_mode=venue` цена может быть `NULL`.
 
 ### 3.3 Callback Allpay
 
@@ -62,19 +62,19 @@
 1. Проверить `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_REPLY_TO`.
 2. Проверить статус домена в Resend (`Verified`).
 3. Проверить SPF/DKIM/DMARC.
-4. Для спама: продолжать прогрев и ужесточать DMARC по этапам.
 
 ## 4. Обязательные env переменные
 
 - Платежи: `ALLPAY_TERMINAL_ID`, `ALLPAY_API_KEY`, `ALLPAY_WEBHOOK_SECRET`, `APP_BASE_URL`
 - Почта: `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_REPLY_TO`
 - DB: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
-- Расписание: `SCHEDULE_SYNC_SECRET`, `SCHEDULE_CSV_URL_ZLATA`, `SCHEDULE_CSV_URL_MARITA`
+- Админка расписания: `ADMIN_SCHEDULE_LOGIN`, `ADMIN_SCHEDULE_PASSWORD`, `ADMIN_SCHEDULE_AUTH_SECRET`
 
 ## 5. Полезные endpoints
 
 - `POST /api/checkout/create`
 - `POST /api/payment/allpay-callback`
-- `GET /api/schedule?show=zlata|marita`
-- `GET /api/schedule/availability?show=zlata|marita`
-- `POST /api/admin/schedule/sync`
+- `GET /api/schedule?show=zlata|marita|demo`
+- `GET /api/schedule/availability?show=zlata|marita|demo`
+- `GET /api/admin/schedule/events?show=all`
+- `POST /api/admin/schedule/events`
