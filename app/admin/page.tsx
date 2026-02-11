@@ -37,6 +37,7 @@ export default function AdminHomePage() {
   const [qty, setQty] = useState('1');
   const [generateBusy, setGenerateBusy] = useState(false);
   const [generateMessage, setGenerateMessage] = useState('');
+  const [freeTicketOpen, setFreeTicketOpen] = useState(false);
 
   const showEvents = useMemo(
     () => events.filter((event) => event.show_slug === selectedShow),
@@ -141,8 +142,7 @@ export default function AdminHomePage() {
     }
   };
 
-  const handleGenerateTestTicket = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const requestFreeTicket = async (action: 'issue' | 'download') => {
     setGenerateBusy(true);
     setGenerateMessage('');
 
@@ -156,6 +156,7 @@ export default function AdminHomePage() {
           buyerName,
           buyerEmail,
           qty: Number.parseInt(qty, 10) || 1,
+          action,
         }),
       });
 
@@ -166,28 +167,42 @@ export default function AdminHomePage() {
       }
 
       const contentType = response.headers.get('content-type') || '';
-      if (!response.ok || !contentType.includes('application/pdf')) {
-        const result = (await response.json()) as { ok?: boolean; reason?: string; message?: string };
-        setGenerateMessage(`Ошибка генерации: ${result.reason ?? 'generate_failed'}.${result.message ? ` ${result.message}` : ''}`);
+      if (action === 'download' && response.ok && contentType.includes('application/pdf')) {
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        link.href = objectUrl;
+        link.download = `free-ticket-${selectedShow}-${selectedEventId}-${stamp}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(objectUrl);
+        setGenerateMessage('PDF бесплатного билета скачан.');
         return;
       }
 
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-      link.href = objectUrl;
-      link.download = `test-ticket-${selectedShow}-${selectedEventId}-${stamp}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(objectUrl);
-      setGenerateMessage('Тестовый билет сгенерирован и скачан.');
+      const result = (await response.json()) as { ok?: boolean; reason?: string; message?: string; email?: string };
+      if (!response.ok || !result.ok) {
+        setGenerateMessage(`Ошибка: ${result.reason ?? 'request_failed'}.${result.message ? ` ${result.message}` : ''}`);
+        return;
+      }
+
+      if (action === 'issue') {
+        setGenerateMessage(`Бесплатный билет выдан и отправлен на ${result.email ?? buyerEmail}.`);
+      } else {
+        setGenerateMessage('Бесплатный билет создан.');
+      }
     } catch {
-      setGenerateMessage('Ошибка сети при генерации тестового билета.');
+      setGenerateMessage('Ошибка сети при работе с бесплатным билетом.');
     } finally {
       setGenerateBusy(false);
     }
+  };
+
+  const handleGenerateTestTicket = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await requestFreeTicket('issue');
   };
 
   if (authState !== 'authenticated') {
@@ -246,13 +261,23 @@ export default function AdminHomePage() {
           </button>
         </div>
 
-        <section className="rounded-xl border border-slate-300 bg-white p-4 space-y-3">
-          <h2 className="text-lg font-semibold">Тестовый билет (QR)</h2>
-          <p className="text-sm text-slate-700">
-            Создает тестовый оплаченный заказ в БД и сразу скачивает PDF-билет для проверки сканирования/валидации.
-          </p>
+        <section className="rounded-xl border border-slate-300 bg-white">
+          <button
+            type="button"
+            onClick={() => setFreeTicketOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left"
+          >
+            <span className="text-lg font-semibold">Бесплатный билет</span>
+            <span className="text-sm text-slate-600">{freeTicketOpen ? 'Свернуть' : 'Развернуть'}</span>
+          </button>
 
-          <form onSubmit={handleGenerateTestTicket} className="grid gap-3 md:grid-cols-2">
+          {freeTicketOpen && (
+            <div className="px-4 pb-4 space-y-3">
+              <p className="text-sm text-slate-700">
+                Выдает гостю бесплатный билет (0 ILS), отправляет обычное подтверждение на email и позволяет скачать PDF по кнопке.
+              </p>
+
+              <form onSubmit={handleGenerateTestTicket} className="grid gap-3 md:grid-cols-2">
             <label className="block text-sm">
               <span className="font-medium">Спектакль</span>
               <select
@@ -322,13 +347,21 @@ export default function AdminHomePage() {
               />
             </label>
 
-            <div className="md:col-span-2 flex items-center gap-3">
+            <div className="md:col-span-2 flex flex-wrap items-center gap-3">
               <button
                 type="submit"
                 disabled={generateBusy || !selectedEventId}
                 className="rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
-                {generateBusy ? 'Генерируем...' : 'Сгенерировать тестовый билет'}
+                {generateBusy ? 'Обрабатываем...' : 'Выдать бесплатный билет'}
+              </button>
+              <button
+                type="button"
+                onClick={() => void requestFreeTicket('download')}
+                disabled={generateBusy || !selectedEventId}
+                className="rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Скачать PDF
               </button>
               <a href="/admin/schedule" className="rounded-full bg-slate-700 px-4 py-2 text-sm font-semibold text-white">
                 Перейти к расписанию
@@ -337,9 +370,15 @@ export default function AdminHomePage() {
           </form>
 
           {generateMessage && (
-            <p className={`text-sm ${generateMessage.startsWith('Тестовый билет') ? 'text-emerald-700' : 'text-red-700'}`}>
+            <p className={`text-sm ${
+              generateMessage.startsWith('Бесплатный билет') || generateMessage.startsWith('PDF')
+                ? 'text-emerald-700'
+                : 'text-red-700'
+            }`}>
               {generateMessage}
             </p>
+          )}
+            </div>
           )}
         </section>
       </div>

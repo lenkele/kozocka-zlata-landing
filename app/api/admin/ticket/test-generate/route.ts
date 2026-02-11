@@ -3,8 +3,9 @@ import crypto from 'node:crypto';
 import { NextResponse } from 'next/server';
 
 import { getAuthorizedAdminLogin } from '@/lib/adminScheduleAuth';
+import { sendTicketEmail } from '@/lib/email';
 import type { StoredOrder } from '@/lib/ordersStore';
-import { loadScheduleForShow, resolveUnitPrice } from '@/lib/schedule';
+import { loadScheduleForShow } from '@/lib/schedule';
 import { buildTicketArtifacts } from '@/lib/ticket';
 import { isShowSlug } from '@/shows';
 
@@ -14,6 +15,7 @@ type TestTicketBody = {
   buyerName?: string;
   buyerEmail?: string;
   qty?: number;
+  action?: 'issue' | 'download' | string;
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -68,6 +70,7 @@ export async function POST(request: Request) {
   const buyerName = (body.buyerName ?? '').trim();
   const buyerEmail = (body.buyerEmail ?? '').trim().toLowerCase();
   const qty = toPositiveQty(body.qty);
+  const action = (body.action ?? 'download').toString().trim().toLowerCase();
 
   if (!isShowSlug(showSlug)) {
     return NextResponse.json({ ok: false, reason: 'invalid_show' }, { status: 400 });
@@ -82,15 +85,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: 'buyer_email_invalid' }, { status: 400 });
   }
 
-  let amount = qty;
   try {
     const schedule = await loadScheduleForShow(showSlug);
     const scheduleEvent = schedule.find((event) => event.id === eventId);
     if (!scheduleEvent) {
       return NextResponse.json({ ok: false, reason: 'event_not_found' }, { status: 404 });
     }
-    const unitPrice = resolveUnitPrice(scheduleEvent.price_ils, 1);
-    amount = unitPrice * qty;
   } catch (error) {
     console.error('[test-ticket] failed to resolve schedule event', { showSlug, eventId, error });
     return NextResponse.json({ ok: false, reason: 'schedule_resolve_failed' }, { status: 500 });
@@ -108,16 +108,17 @@ export async function POST(request: Request) {
       qty,
       buyer_name: buyerName,
       buyer_email: buyerEmail,
-      amount,
+      amount: 0,
       currency: 'ILS',
       status: 'paid',
       paid_at: new Date().toISOString(),
-      allpay_payment_id: 'manual-test',
+      allpay_payment_id: 'complimentary-admin',
       consent_terms_accepted: true,
       consent_marketing_accepted: false,
       allpay_raw: {
-        source: 'admin_test_ticket',
+        source: 'admin_complimentary_ticket',
         created_by: adminLogin,
+        action,
       },
     }),
   });
@@ -131,6 +132,22 @@ export async function POST(request: Request) {
   const order = rows[0];
   if (!order) {
     return NextResponse.json({ ok: false, reason: 'order_not_returned' }, { status: 500 });
+  }
+
+  if (action === 'issue') {
+    try {
+      const emailResult = await sendTicketEmail(order);
+      return NextResponse.json({
+        ok: true,
+        mode: 'issue',
+        orderId: order.order_id,
+        email: order.buyer_email,
+        emailId: emailResult.id ?? null,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'email_send_failed';
+      return NextResponse.json({ ok: false, reason: 'email_send_failed', message, orderId: order.order_id }, { status: 500 });
+    }
   }
 
   try {
