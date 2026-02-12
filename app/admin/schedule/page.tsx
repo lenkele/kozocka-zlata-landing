@@ -36,6 +36,8 @@ const SHOW_ITEMS = SHOW_SLUGS.map((slug) => ({
   label: SHOWS[slug].content.ru?.title ?? slug,
 })) as Array<{ slug: ShowSlug; label: string }>;
 
+const TABLE_MIN_WIDTH = 1595;
+
 const FORMAT_OPTIONS = ['Открытый показ', 'Закрытый показ'] as const;
 const LANGUAGE_OPTIONS = ['Русский', 'Иврит', 'Английский'] as const;
 
@@ -785,7 +787,7 @@ export default function AdminSchedulePage() {
                   style={{ height: 20 }}
                   onScroll={() => syncTableScroll('top')}
                 >
-                  <div className="min-w-[1320px] h-px" aria-hidden />
+                  <div className="h-px" style={{ minWidth: TABLE_MIN_WIDTH }} aria-hidden />
                 </div>
                 <div
                   ref={tableScrollRef}
@@ -793,7 +795,7 @@ export default function AdminSchedulePage() {
                   onScroll={() => syncTableScroll('table')}
                 >
                   <div className="pointer-events-none absolute inset-y-0 right-0 z-30 w-8 bg-gradient-to-l from-slate-100 to-transparent" />
-                  <table className="min-w-[1320px] table-fixed text-sm">
+                  <table className="table-fixed text-sm" style={{ minWidth: TABLE_MIN_WIDTH }}>
                 <thead className="bg-slate-100 text-left">
                   <tr>
                     <th className="sticky left-0 z-20 w-[170px] min-w-[170px] bg-slate-100 px-2 py-2">Спектакль</th>
