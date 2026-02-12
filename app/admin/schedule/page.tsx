@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { SHOWS, SHOW_SLUGS } from '@/shows';
 import type { ShowSlug } from '@/shows/types';
@@ -107,6 +107,24 @@ export default function AdminSchedulePage() {
   const [editBusy, setEditBusy] = useState(false);
   const [editMessage, setEditMessage] = useState('');
   const [deleteBusyKey, setDeleteBusyKey] = useState<string | null>(null);
+
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const isSyncingRef = useRef(false);
+
+  const syncTableScroll = (source: 'top' | 'table') => {
+    if (isSyncingRef.current) return;
+    isSyncingRef.current = true;
+    const top = topScrollRef.current;
+    const table = tableScrollRef.current;
+    if (top && table) {
+      if (source === 'top') table.scrollLeft = top.scrollLeft;
+      else top.scrollLeft = table.scrollLeft;
+    }
+    requestAnimationFrame(() => {
+      isSyncingRef.current = false;
+    });
+  };
 
   const derivedFormat = useMemo(() => FORMAT_MAP[formatRu], [formatRu]);
   const derivedLanguage = useMemo(() => LANGUAGE_MAP[languageRu], [languageRu]);
@@ -758,11 +776,24 @@ export default function AdminSchedulePage() {
             <>
               <div className="mt-2 flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
                 <span>Если часть таблицы не видна, прокрутите влево/вправо.</span>
-                <span className="font-semibold text-slate-700">⇄ Горизонтальный скролл</span>
+                <span className="font-semibold text-slate-700">⇄ Горизонтальный скролл (сверху и снизу)</span>
               </div>
-              <div className="relative mt-3 overflow-x-auto rounded-lg border border-slate-200">
-              <div className="pointer-events-none absolute inset-y-0 right-0 z-30 w-8 bg-gradient-to-l from-slate-100 to-transparent" />
-              <table className="min-w-[1320px] table-fixed text-sm">
+              <div className="mt-3 flex flex-col gap-0 overflow-hidden rounded-lg border border-slate-200">
+                <div
+                  ref={topScrollRef}
+                  className="overflow-x-auto overflow-y-hidden border-b border-slate-200 bg-slate-50"
+                  style={{ height: 20 }}
+                  onScroll={() => syncTableScroll('top')}
+                >
+                  <div className="min-w-[1320px] h-px" aria-hidden />
+                </div>
+                <div
+                  ref={tableScrollRef}
+                  className="relative overflow-x-auto overflow-y-auto"
+                  onScroll={() => syncTableScroll('table')}
+                >
+                  <div className="pointer-events-none absolute inset-y-0 right-0 z-30 w-8 bg-gradient-to-l from-slate-100 to-transparent" />
+                  <table className="min-w-[1320px] table-fixed text-sm">
                 <thead className="bg-slate-100 text-left">
                   <tr>
                     <th className="sticky left-0 z-20 w-[170px] min-w-[170px] bg-slate-100 px-2 py-2">Спектакль</th>
@@ -821,7 +852,8 @@ export default function AdminSchedulePage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                  </table>
+                </div>
               </div>
             </>
           )}
