@@ -6,6 +6,7 @@ import { isShowSlug } from '@/shows';
 
 type CreateEventBody = {
   showSlug?: string;
+  eventId?: string;
   dateIso?: string;
   time?: string;
   placeRu?: string;
@@ -331,4 +332,161 @@ export async function POST(request: Request) {
 
   const rows = responseText ? (JSON.parse(responseText) as ScheduleEventRow[]) : [];
   return NextResponse.json({ ok: true, event: rows[0] ?? null });
+}
+
+export async function PATCH(request: Request) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ ok: false, reason: 'unauthorized' }, { status: 401 });
+  }
+
+  let body: CreateEventBody;
+  try {
+    body = (await request.json()) as CreateEventBody;
+  } catch {
+    return NextResponse.json({ ok: false, reason: 'invalid_json' }, { status: 400 });
+  }
+
+  const showSlug = body.showSlug?.trim() ?? '';
+  const eventId = body.eventId?.trim() ?? '';
+  if (!isShowSlug(showSlug)) {
+    return NextResponse.json({ ok: false, reason: 'invalid_show' }, { status: 400 });
+  }
+  if (!eventId) {
+    return NextResponse.json({ ok: false, reason: 'event_id_required' }, { status: 400 });
+  }
+
+  const dateIso = body.dateIso?.trim() ?? '';
+  const time = body.time?.trim() ?? '';
+  const placeRu = body.placeRu?.trim() ?? '';
+  const placeEn = body.placeEn?.trim() ?? '';
+  const placeHe = body.placeHe?.trim() ?? '';
+  const formatRu = body.formatRu?.trim() ?? '';
+  const languageRu = body.languageRu?.trim() ?? '';
+  const priceIls = parsePriceIls(body.priceIls);
+  const capacity = parseCapacity(body.capacity);
+  const requestedTicketMode = parseTicketMode(body.ticketMode);
+  const ticketUrl = normalizeTicketUrl(body.ticketUrl);
+  const wazeUrl = normalizeTicketUrl(body.wazeUrl);
+  const privateFormat = isPrivateFormat(formatRu);
+  const ticketMode: 'self' | 'venue' = privateFormat ? 'self' : requestedTicketMode;
+
+  if (!dateIso || !isValidDateIso(dateIso)) {
+    return NextResponse.json({ ok: false, reason: 'invalid_date_iso' }, { status: 400 });
+  }
+  if (!time || !isValidTime(time)) {
+    return NextResponse.json({ ok: false, reason: 'invalid_time' }, { status: 400 });
+  }
+  if (!placeRu || !placeEn || !placeHe) {
+    return NextResponse.json({ ok: false, reason: 'place_required' }, { status: 400 });
+  }
+  if (!formatRu) {
+    return NextResponse.json({ ok: false, reason: 'format_required' }, { status: 400 });
+  }
+  if (!languageRu) {
+    return NextResponse.json({ ok: false, reason: 'language_required' }, { status: 400 });
+  }
+  if (!privateFormat && ticketMode === 'self' && priceIls === null) {
+    return NextResponse.json({ ok: false, reason: 'invalid_price' }, { status: 400 });
+  }
+  if (!privateFormat && ticketMode === 'venue' && !ticketUrl) {
+    return NextResponse.json({ ok: false, reason: 'ticket_url_required' }, { status: 400 });
+  }
+
+  const effectivePrice = privateFormat ? null : ticketMode === 'self' ? priceIls : null;
+  const effectiveCapacity = privateFormat ? null : capacity;
+  const effectiveTicketUrl = privateFormat ? null : ticketMode === 'venue' ? ticketUrl : null;
+
+  const formatEn = body.formatEn?.trim() || mapFormatFromRu(formatRu, 'en');
+  const formatHe = body.formatHe?.trim() || mapFormatFromRu(formatRu, 'he');
+  const languageEn = body.languageEn?.trim() || mapLanguageFromRu(languageRu, 'en');
+  const languageHe = body.languageHe?.trim() || mapLanguageFromRu(languageRu, 'he');
+
+  const updatePayload = {
+    date_iso: dateIso,
+    time,
+    place_ru: placeRu,
+    place_en: placeEn,
+    place_he: placeHe,
+    waze_url: wazeUrl,
+    format_ru: formatRu,
+    format_en: formatEn,
+    format_he: formatHe,
+    language_ru: languageRu,
+    language_en: languageEn,
+    language_he: languageHe,
+    price_ils: effectivePrice,
+    capacity: effectiveCapacity,
+    ticket_mode: ticketMode,
+    ticket_url: effectiveTicketUrl,
+  };
+
+  const query = `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&event_id=eq.${encodeURIComponent(eventId)}`;
+  let response = await supabaseRequest(query, {
+    method: 'PATCH',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify(updatePayload),
+  });
+
+  let responseText = await response.text();
+  if (!response.ok && (ticketMode === 'venue' || privateFormat) && isLegacyPriceNotNullError(responseText)) {
+    response = await supabaseRequest(query, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({
+        ...updatePayload,
+        price_ils: 1,
+      }),
+    });
+    responseText = await response.text();
+  }
+
+  if (!response.ok) {
+    return NextResponse.json({ ok: false, reason: 'db_update_failed', message: responseText }, { status: 500 });
+  }
+
+  const rows = responseText ? (JSON.parse(responseText) as ScheduleEventRow[]) : [];
+  if (rows.length === 0) {
+    return NextResponse.json({ ok: false, reason: 'event_not_found' }, { status: 404 });
+  }
+
+  revalidateTag(`schedule-${showSlug}`, 'max');
+  return NextResponse.json({ ok: true, event: rows[0] });
+}
+
+export async function DELETE(request: Request) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ ok: false, reason: 'unauthorized' }, { status: 401 });
+  }
+
+  const url = new URL(request.url);
+  const showSlug = url.searchParams.get('showSlug')?.trim() ?? '';
+  const eventId = url.searchParams.get('eventId')?.trim() ?? '';
+
+  if (!isShowSlug(showSlug)) {
+    return NextResponse.json({ ok: false, reason: 'invalid_show' }, { status: 400 });
+  }
+  if (!eventId) {
+    return NextResponse.json({ ok: false, reason: 'event_id_required' }, { status: 400 });
+  }
+
+  const response = await supabaseRequest(
+    `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&event_id=eq.${encodeURIComponent(eventId)}`,
+    {
+      method: 'DELETE',
+      headers: { Prefer: 'return=representation' },
+    },
+  );
+
+  const responseText = await response.text();
+  if (!response.ok) {
+    return NextResponse.json({ ok: false, reason: 'db_delete_failed', message: responseText }, { status: 500 });
+  }
+
+  const rows = responseText ? (JSON.parse(responseText) as ScheduleEventRow[]) : [];
+  if (rows.length === 0) {
+    return NextResponse.json({ ok: false, reason: 'event_not_found' }, { status: 404 });
+  }
+
+  revalidateTag(`schedule-${showSlug}`, 'max');
+  return NextResponse.json({ ok: true });
 }

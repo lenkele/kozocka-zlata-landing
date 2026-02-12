@@ -13,6 +13,8 @@ type EventRow = {
   date_iso: string;
   time: string;
   place_ru: string;
+  place_en: string;
+  place_he: string;
   waze_url: string | null;
   format_ru: string;
   language_ru: string;
@@ -78,9 +80,31 @@ export default function AdminSchedulePage() {
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editShowSlug, setEditShowSlug] = useState<ShowSlug>(SHOW_ITEMS[0]?.slug ?? 'zlata');
+  const [editEventId, setEditEventId] = useState('');
+  const [editDateIso, setEditDateIso] = useState('');
+  const [editTime, setEditTime] = useState('');
+  const [editPlaceRu, setEditPlaceRu] = useState('');
+  const [editPlaceEn, setEditPlaceEn] = useState('');
+  const [editPlaceHe, setEditPlaceHe] = useState('');
+  const [editWazeUrl, setEditWazeUrl] = useState('');
+  const [editFormatRu, setEditFormatRu] = useState<(typeof FORMAT_OPTIONS)[number]>('Открытый показ');
+  const [editLanguageRu, setEditLanguageRu] = useState<(typeof LANGUAGE_OPTIONS)[number]>('Русский');
+  const [editPriceIls, setEditPriceIls] = useState('');
+  const [editCapacity, setEditCapacity] = useState('');
+  const [editTicketMode, setEditTicketMode] = useState<TicketMode>('self');
+  const [editTicketUrl, setEditTicketUrl] = useState('');
+  const [editBusy, setEditBusy] = useState(false);
+  const [editMessage, setEditMessage] = useState('');
+  const [deleteBusyKey, setDeleteBusyKey] = useState<string | null>(null);
+
   const derivedFormat = useMemo(() => FORMAT_MAP[formatRu], [formatRu]);
   const derivedLanguage = useMemo(() => LANGUAGE_MAP[languageRu], [languageRu]);
   const isPrivate = useMemo(() => isPrivateFormat(formatRu), [formatRu]);
+  const editDerivedFormat = useMemo(() => FORMAT_MAP[editFormatRu], [editFormatRu]);
+  const editDerivedLanguage = useMemo(() => LANGUAGE_MAP[editLanguageRu], [editLanguageRu]);
+  const isEditPrivate = useMemo(() => isPrivateFormat(editFormatRu), [editFormatRu]);
 
   const refreshEvents = async () => {
     setListBusy(true);
@@ -331,6 +355,116 @@ export default function AdminSchedulePage() {
     }
   };
 
+  const openEditModal = (item: EventRow) => {
+    setEditShowSlug(item.show_slug);
+    setEditEventId(item.event_id);
+    setEditDateIso(item.date_iso);
+    setEditTime(item.time);
+    setEditPlaceRu(item.place_ru);
+    setEditPlaceEn(item.place_en);
+    setEditPlaceHe(item.place_he);
+    setEditWazeUrl(item.waze_url ?? '');
+    setEditFormatRu((item.format_ru as (typeof FORMAT_OPTIONS)[number]) ?? 'Открытый показ');
+    setEditLanguageRu((item.language_ru as (typeof LANGUAGE_OPTIONS)[number]) ?? 'Русский');
+    setEditPriceIls(item.price_ils == null ? '' : String(item.price_ils));
+    setEditCapacity(item.capacity == null ? '' : String(item.capacity));
+    setEditTicketMode(item.ticket_mode);
+    setEditTicketUrl(item.ticket_url ?? '');
+    setEditMessage('');
+    setEditOpen(true);
+  };
+
+  const closeEditModal = () => {
+    if (editBusy) return;
+    setEditOpen(false);
+    setEditMessage('');
+  };
+
+  const handleEditSave = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setEditBusy(true);
+    setEditMessage('');
+    try {
+      const effectiveTicketMode = isEditPrivate ? 'self' : editTicketMode;
+      const effectiveTicketUrl = isEditPrivate ? '' : editTicketUrl;
+
+      const response = await fetch('/api/admin/schedule/events', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          showSlug: editShowSlug,
+          eventId: editEventId,
+          dateIso: editDateIso,
+          time: editTime,
+          placeRu: editPlaceRu,
+          placeEn: editPlaceEn,
+          placeHe: editPlaceHe,
+          wazeUrl: editWazeUrl,
+          formatRu: editFormatRu,
+          formatEn: editDerivedFormat.en,
+          formatHe: editDerivedFormat.he,
+          languageRu: editLanguageRu,
+          languageEn: editDerivedLanguage.en,
+          languageHe: editDerivedLanguage.he,
+          priceIls: editPriceIls,
+          capacity: editCapacity,
+          ticketMode: effectiveTicketMode,
+          ticketUrl: effectiveTicketUrl,
+        }),
+      });
+
+      const result = (await response.json()) as { ok?: boolean; reason?: string; message?: string };
+      if (response.status === 401 || result.reason === 'unauthorized') {
+        setAuthState('unauthenticated');
+        setEditMessage('Сессия истекла. Войдите снова.');
+        return;
+      }
+      if (!response.ok || !result.ok) {
+        setEditMessage(`Ошибка сохранения: ${result.reason ?? 'update_failed'}.${result.message ? ` ${result.message}` : ''}`);
+        return;
+      }
+
+      setEditOpen(false);
+      setSaveMessage(`Событие обновлено: ${editEventId}`);
+      await refreshEvents();
+    } catch {
+      setEditMessage('Ошибка сети при сохранении изменений.');
+    } finally {
+      setEditBusy(false);
+    }
+  };
+
+  const handleDelete = async (item: EventRow) => {
+    const showLabel = SHOWS[item.show_slug].content.ru?.title ?? item.show_slug;
+    const ok = window.confirm(`Удалить событие "${showLabel}" (${item.date_iso} ${item.time}, ID: ${item.event_id})?`);
+    if (!ok) return;
+
+    const key = `${item.show_slug}:${item.event_id}`;
+    setDeleteBusyKey(key);
+    try {
+      const response = await fetch(
+        `/api/admin/schedule/events?showSlug=${encodeURIComponent(item.show_slug)}&eventId=${encodeURIComponent(item.event_id)}`,
+        { method: 'DELETE' },
+      );
+      const result = (await response.json()) as { ok?: boolean; reason?: string; message?: string };
+      if (response.status === 401 || result.reason === 'unauthorized') {
+        setAuthState('unauthenticated');
+        setSaveMessage('Сессия истекла. Войдите снова.');
+        return;
+      }
+      if (!response.ok || !result.ok) {
+        setSaveMessage(`Ошибка удаления: ${result.reason ?? 'delete_failed'}.${result.message ? ` ${result.message}` : ''}`);
+        return;
+      }
+      setSaveMessage(`Событие удалено: ${item.event_id}`);
+      await refreshEvents();
+    } catch {
+      setSaveMessage('Ошибка сети при удалении события.');
+    } finally {
+      setDeleteBusyKey(null);
+    }
+  };
+
   if (authState !== 'authenticated') {
     return (
       <main className="min-h-screen bg-slate-100 text-slate-900">
@@ -520,7 +654,19 @@ export default function AdminSchedulePage() {
           <button type="submit" disabled={saveBusy} className="rounded-full bg-amber-500 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50">
             {saveBusy ? 'Сохраняем...' : 'Сохранить'}
           </button>
-          {saveMessage && <p className={`text-sm ${saveMessage.startsWith('Событие сохранено') ? 'text-emerald-700' : 'text-red-700'}`}>{saveMessage}</p>}
+          {saveMessage && (
+            <p
+              className={`text-sm ${
+                saveMessage.startsWith('Событие сохранено') ||
+                saveMessage.startsWith('Событие обновлено') ||
+                saveMessage.startsWith('Событие удалено')
+                  ? 'text-emerald-700'
+                  : 'text-red-700'
+              }`}
+            >
+              {saveMessage}
+            </p>
+          )}
         </form>
 
         <section className="rounded-xl border border-slate-300 bg-white p-4">
@@ -579,6 +725,7 @@ export default function AdminSchedulePage() {
                     <th className="px-2 py-2">Цена</th>
                     <th className="px-2 py-2">Места</th>
                     <th className="px-2 py-2">Продажа</th>
+                    <th className="px-2 py-2">Действия</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -595,6 +742,25 @@ export default function AdminSchedulePage() {
                       <td className="px-2 py-2">{typeof item.price_ils === 'number' ? `₪ ${item.price_ils}` : '—'}</td>
                       <td className="px-2 py-2">{item.capacity ?? '∞'}</td>
                       <td className="px-2 py-2">{item.ticket_mode === 'venue' ? 'Площадка' : 'Сайт'}</td>
+                      <td className="px-2 py-2">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(item)}
+                            className="rounded-full bg-slate-700 px-3 py-1 text-xs font-semibold text-white"
+                          >
+                            Редактировать
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(item)}
+                            disabled={deleteBusyKey === `${item.show_slug}:${item.event_id}`}
+                            className="rounded-full bg-red-700 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                          >
+                            {deleteBusyKey === `${item.show_slug}:${item.event_id}` ? 'Удаляем...' : 'Удалить'}
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -603,6 +769,182 @@ export default function AdminSchedulePage() {
           )}
         </section>
       </div>
+
+      {editOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-slate-300 bg-white p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-lg font-semibold">Редактирование события</h3>
+              <button type="button" onClick={closeEditModal} className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-white">
+                Закрыть
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSave} className="space-y-4">
+              <p className="text-xs text-slate-600">ID события: {editEventId}</p>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="block text-sm">
+                  <span className="font-medium">Спектакль</span>
+                  <select
+                    value={editShowSlug}
+                    onChange={(e) => setEditShowSlug(e.target.value as ShowSlug)}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                  >
+                    {SHOW_ITEMS.map((show) => (
+                      <option key={show.slug} value={show.slug}>
+                        {show.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm">
+                  <span className="font-medium">Дата</span>
+                  <input
+                    type="date"
+                    value={editDateIso}
+                    onChange={(e) => setEditDateIso(e.target.value)}
+                    required
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="font-medium">Время</span>
+                  <input
+                    type="time"
+                    value={editTime}
+                    onChange={(e) => setEditTime(e.target.value)}
+                    required
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="font-medium">Формат (RU)</span>
+                  <select
+                    value={editFormatRu}
+                    onChange={(e) => setEditFormatRu(e.target.value as (typeof FORMAT_OPTIONS)[number])}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                  >
+                    {FORMAT_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm">
+                  <span className="font-medium">Язык (RU)</span>
+                  <select
+                    value={editLanguageRu}
+                    onChange={(e) => setEditLanguageRu(e.target.value as (typeof LANGUAGE_OPTIONS)[number])}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                  >
+                    {LANGUAGE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="block text-sm">
+                  <span className="font-medium">Место (RU)</span>
+                  <input value={editPlaceRu} onChange={(e) => setEditPlaceRu(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                </label>
+                <label className="block text-sm">
+                  <span className="font-medium">Место (EN)</span>
+                  <input value={editPlaceEn} onChange={(e) => setEditPlaceEn(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                </label>
+                <label className="block text-sm">
+                  <span className="font-medium">Место (HE)</span>
+                  <input value={editPlaceHe} onChange={(e) => setEditPlaceHe(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                </label>
+              </div>
+
+              <label className="block text-sm">
+                <span className="font-medium">Ссылка на Вэйз (опционально)</span>
+                <input
+                  type="url"
+                  value={editWazeUrl}
+                  onChange={(e) => setEditWazeUrl(e.target.value)}
+                  placeholder="https://waze.com/..."
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                />
+              </label>
+
+              {!isEditPrivate && (
+                <div className="space-y-2 rounded-lg border border-slate-300 p-3">
+                  <p className="text-sm font-medium">Продажа билетов</p>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="radio" name="editTicketMode" checked={editTicketMode === 'self'} onChange={() => setEditTicketMode('self')} />
+                    Мы продаём (через сайт)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="radio" name="editTicketMode" checked={editTicketMode === 'venue'} onChange={() => setEditTicketMode('venue')} />
+                    Площадка продаёт (внешняя ссылка)
+                  </label>
+                  {editTicketMode === 'venue' && (
+                    <label className="block text-sm">
+                      <span className="font-medium">Ссылка на покупку у площадки</span>
+                      <input
+                        type="url"
+                        value={editTicketUrl}
+                        onChange={(e) => setEditTicketUrl(e.target.value)}
+                        required
+                        placeholder="https://..."
+                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                      />
+                    </label>
+                  )}
+                  {editTicketMode === 'self' && (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <label className="block text-sm">
+                        <span className="font-medium">Стоимость (ILS)</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="0.01"
+                          value={editPriceIls}
+                          onChange={(e) => setEditPriceIls(e.target.value)}
+                          required
+                          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                        />
+                      </label>
+                      <label className="block text-sm">
+                        <span className="font-medium">Кол-во мест (опционально)</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={editCapacity}
+                          onChange={(e) => setEditCapacity(e.target.value)}
+                          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-700">
+                <p>Формат EN/HE: {editDerivedFormat.en} | {editDerivedFormat.he}</p>
+                <p>Язык EN/HE: {editDerivedLanguage.en} | {editDerivedLanguage.he}</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button type="submit" disabled={editBusy} className="rounded-full bg-amber-500 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                  {editBusy ? 'Сохраняем...' : 'Сохранить'}
+                </button>
+                <button type="button" onClick={closeEditModal} className="rounded-full bg-slate-200 px-5 py-2 text-sm font-semibold text-slate-900">
+                  Отмена
+                </button>
+              </div>
+              {editMessage && <p className="text-sm text-red-700">{editMessage}</p>}
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
