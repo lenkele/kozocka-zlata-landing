@@ -101,7 +101,7 @@ const RU_CONTENT: Content = {
   scheduleDateLabel: 'Дата',
   scheduleTimeLabel: 'Время',
   schedulePlaceLabel: 'Место',
-  scheduleFormatLabel: 'Формат',
+  scheduleFormatLabel: 'Комментарий',
   scheduleLanguageLabel: 'Язык',
   scheduleRows: [
     {
@@ -248,7 +248,7 @@ const HE_CONTENT: Content = {
   scheduleDateLabel: 'תאריך',
   scheduleTimeLabel: 'שעה',
   schedulePlaceLabel: 'מקום',
-  scheduleFormatLabel: 'פורמט',
+  scheduleFormatLabel: 'הערה',
   scheduleLanguageLabel: 'שפה',
   scheduleRows: [
     {
@@ -395,7 +395,7 @@ Children dive into the fairytale with a happy ending, while its philosophical ov
   scheduleDateLabel: 'Date',
   scheduleTimeLabel: 'Time',
   schedulePlaceLabel: 'Venue',
-  scheduleFormatLabel: 'Format',
+  scheduleFormatLabel: 'Comment',
   scheduleLanguageLabel: 'Language',
   scheduleRows: [
     {
@@ -448,4 +448,3 @@ export const ZLATA_CONTENT: Record<Lang, Content> = {
   he: HE_CONTENT,
   en: EN_CONTENT,
 };
-

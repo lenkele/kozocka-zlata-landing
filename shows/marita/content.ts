@@ -99,7 +99,7 @@ const RU_CONTENT: Content = {
   scheduleDateLabel: 'Дата',
   scheduleTimeLabel: 'Время',
   schedulePlaceLabel: 'Место',
-  scheduleFormatLabel: 'Формат',
+  scheduleFormatLabel: 'Комментарий',
   scheduleLanguageLabel: 'Язык',
   scheduleRows: [
     {
@@ -150,4 +150,3 @@ const RU_CONTENT: Content = {
 export const MARITA_CONTENT: Partial<Record<Lang, Content>> = {
   ru: RU_CONTENT,
 };
-
