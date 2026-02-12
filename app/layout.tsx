@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import LegalFooterLinks from "@/components/LegalFooterLinks";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,7 +36,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="min-h-screen flex flex-col">
+          <div className="flex-1">{children}</div>
+          <footer className="border-t border-slate-700/60 bg-slate-950/90 px-4 py-4 text-xs text-slate-300">
+            <LegalFooterLinks />
+          </footer>
+        </div>
       </body>
     </html>
   );

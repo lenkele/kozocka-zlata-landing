@@ -14,4 +14,3 @@ export const DEFAULT_SHOW_SLUG: ShowSlug = 'zlata';
 export function isShowSlug(candidate: string): candidate is ShowSlug {
   return SHOW_SLUGS.includes(candidate as ShowSlug);
 }
-

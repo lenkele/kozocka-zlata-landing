@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import yaml from 'js-yaml';
+import Link from 'next/link';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { type Lang, type ShowConfig } from '@/shows/types';
@@ -14,12 +14,22 @@ type ScheduleDisplayEntry = {
   place: string;
   format: string;
   language: string;
+  priceIls: number | null;
+  capacity: number | null;
+  ticketMode: 'self' | 'venue';
+  ticketUrl: string | null;
+  wazeUrl: string | null;
 };
 
 type ScheduleYaml = {
   schedule: {
     id: string;
-    date_iso: string;
+    date_iso: string | Date;
+    price_ils?: number | string;
+    capacity?: number | string;
+    ticket_mode?: 'self' | 'venue' | string;
+    ticket_url?: string;
+    waze_url?: string;
     entries: Partial<
       Record<
         Lang,
@@ -35,6 +45,207 @@ type ScheduleYaml = {
   }[];
 };
 
+type CheckoutLabels = {
+  buyButton: string;
+  directionsLabel: string;
+  buyColumn: string;
+  modalTitle: string;
+  showLabel: string;
+  dateTimeLabel: string;
+  placeLabel: string;
+  unitPriceLabel: string;
+  totalLabel: string;
+  eventLabel: string;
+  nameLabel: string;
+  emailLabel: string;
+  qtyLabel: string;
+  termsConsentPrefix: string;
+  termsLinkLabel: string;
+  privacyLinkLabel: string;
+  termsAndLabel: string;
+  termsConsentSuffix: string;
+  marketingConsentLabel: string;
+  submitLabel: string;
+  submittingLabel: string;
+  cancelLabel: string;
+  unavailableLabel: string;
+  soldOutLabel: string;
+  passedShowLabel: string;
+  closedShowLabel: string;
+  soldOutErrorLabel: string;
+  qtyExceedsErrorPrefix: string;
+  qtyExceedsErrorSuffix: string;
+  createErrorLabel: string;
+  termsRequiredErrorLabel: string;
+  namePlaceholder: string;
+  emailPlaceholder: string;
+};
+
+type EventAvailability = {
+  capacity: number | null;
+  soldQty: number;
+  remaining: number | null;
+  soldOut: boolean;
+};
+
+const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
+  ru: {
+    buyButton: 'Купить билет',
+    directionsLabel: 'Как добраться',
+    buyColumn: 'Билеты',
+    modalTitle: 'Оформление билета',
+    showLabel: 'Спектакль',
+    dateTimeLabel: 'Дата и время',
+    placeLabel: 'Место',
+    unitPriceLabel: 'Стоимость',
+    totalLabel: 'Итого',
+    eventLabel: 'Событие',
+    nameLabel: 'Имя',
+    emailLabel: 'Email',
+    qtyLabel: 'Количество',
+    termsConsentPrefix: 'Я принимаю',
+    termsLinkLabel: 'Условия',
+    privacyLinkLabel: 'Политику конфиденциальности',
+    termsAndLabel: 'и',
+    termsConsentSuffix: '',
+    marketingConsentLabel: 'Согласен(а) на информационные рассылки',
+    submitLabel: 'Перейти к оплате',
+    submittingLabel: 'Создаём оплату...',
+    cancelLabel: 'Отмена',
+    unavailableLabel: 'Недоступно',
+    soldOutLabel: 'Sold out',
+    passedShowLabel: 'Спектакль прошел',
+    closedShowLabel: 'Для закрытых показов покупка недоступна',
+    soldOutErrorLabel: 'На это событие билеты закончились.',
+    qtyExceedsErrorPrefix: 'Можно выбрать максимум',
+    qtyExceedsErrorSuffix: 'билет(а).',
+    createErrorLabel: 'Не удалось создать оплату. Попробуйте ещё раз.',
+    termsRequiredErrorLabel: 'Чтобы продолжить, нужно принять Условия и Политику конфиденциальности.',
+    namePlaceholder: 'Ваше имя',
+    emailPlaceholder: 'you@example.com',
+  },
+  he: {
+    buyButton: 'קניית כרטיס',
+    directionsLabel: 'איך מגיעים',
+    buyColumn: 'כרטיסים',
+    modalTitle: 'רכישת כרטיס',
+    showLabel: 'הצגה',
+    dateTimeLabel: 'תאריך ושעה',
+    placeLabel: 'מקום',
+    unitPriceLabel: 'מחיר',
+    totalLabel: 'סה״כ',
+    eventLabel: 'אירוע',
+    nameLabel: 'שם',
+    emailLabel: 'אימייל',
+    qtyLabel: 'כמות',
+    termsConsentPrefix: 'אני מסכים/ה ל',
+    termsLinkLabel: 'תנאים',
+    privacyLinkLabel: 'מדיניות פרטיות',
+    termsAndLabel: 'ו',
+    termsConsentSuffix: '',
+    marketingConsentLabel: 'אני מסכים/ה לקבל עדכונים שיווקיים',
+    submitLabel: 'מעבר לתשלום',
+    submittingLabel: 'יוצרים תשלום...',
+    cancelLabel: 'ביטול',
+    unavailableLabel: 'לא זמין',
+    soldOutLabel: 'אזל',
+    passedShowLabel: 'המופע כבר התקיים',
+    closedShowLabel: 'אין רכישה למופעים סגורים',
+    soldOutErrorLabel: 'אין יותר כרטיסים לאירוע הזה.',
+    qtyExceedsErrorPrefix: 'ניתן לבחור עד',
+    qtyExceedsErrorSuffix: 'כרטיסים.',
+    createErrorLabel: 'לא הצלחנו ליצור תשלום. נסו שוב.',
+    termsRequiredErrorLabel: 'כדי להמשיך צריך לאשר תנאים ומדיניות פרטיות.',
+    namePlaceholder: 'השם שלך',
+    emailPlaceholder: 'you@example.com',
+  },
+  en: {
+    buyButton: 'Buy ticket',
+    directionsLabel: 'How to get there',
+    buyColumn: 'Tickets',
+    modalTitle: 'Ticket checkout',
+    showLabel: 'Show',
+    dateTimeLabel: 'Date and time',
+    placeLabel: 'Venue',
+    unitPriceLabel: 'Price',
+    totalLabel: 'Total',
+    eventLabel: 'Event',
+    nameLabel: 'Name',
+    emailLabel: 'Email',
+    qtyLabel: 'Quantity',
+    termsConsentPrefix: 'I agree to the',
+    termsLinkLabel: 'Terms',
+    privacyLinkLabel: 'Privacy Policy',
+    termsAndLabel: 'and',
+    termsConsentSuffix: '',
+    marketingConsentLabel: 'I agree to receive informational newsletters',
+    submitLabel: 'Proceed to payment',
+    submittingLabel: 'Creating payment...',
+    cancelLabel: 'Cancel',
+    unavailableLabel: 'Unavailable',
+    soldOutLabel: 'Sold out',
+    passedShowLabel: 'Performance ended',
+    closedShowLabel: 'Ticket purchase is unavailable for closed shows',
+    soldOutErrorLabel: 'No tickets left for this event.',
+    qtyExceedsErrorPrefix: 'You can select up to',
+    qtyExceedsErrorSuffix: 'ticket(s).',
+    createErrorLabel: 'Could not create payment. Please try again.',
+    termsRequiredErrorLabel: 'To continue, you must accept the Terms and Privacy Policy.',
+    namePlaceholder: 'Your name',
+    emailPlaceholder: 'you@example.com',
+  },
+};
+
+function isClosedShow(format: string): boolean {
+  const normalized = format.toLowerCase();
+  return normalized.includes('закрыт') || normalized.includes('סגור') || normalized.includes('private');
+}
+
+function isVenueTicketingMode(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().toLowerCase() === 'venue';
+}
+
+function getTodayIsoLocal(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getCurrentYearMonthLocal(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+}
+
+function isPastShowDate(dateIso: string): boolean {
+  if (!dateIso || !/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) {
+    return false;
+  }
+  return dateIso < getTodayIsoLocal();
+}
+
+function pickVisibleScheduleRows(rows: ScheduleDisplayEntry[]): ScheduleDisplayEntry[] {
+  if (rows.length === 0) return rows;
+
+  const currentYearMonth = getCurrentYearMonthLocal();
+  const currentMonthRows = rows.filter((row) => row.dateIso.startsWith(`${currentYearMonth}-`));
+  if (currentMonthRows.length > 0) {
+    return currentMonthRows;
+  }
+
+  const todayIso = getTodayIsoLocal();
+  const futureRows = rows.filter((row) => row.dateIso >= todayIso);
+  if (futureRows.length > 0) {
+    return futureRows.slice(0, 7);
+  }
+
+  const recentPastRows = rows.slice(-7);
+  return recentPastRows;
+}
+
 export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   // Определяем доступные языки для спектакля (по умолчанию все)
   const availableLanguages: Lang[] = show.availableLanguages ?? ['ru', 'he', 'en'];
@@ -43,9 +254,19 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   const [lang, setLang] = useState<Lang>(defaultLang);
   const [scheduleData, setScheduleData] = useState<ScheduleDisplayEntry[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
+  const [availabilityByEvent, setAvailabilityByEvent] = useState<Record<string, EventAvailability>>({});
+  const [selectedRow, setSelectedRow] = useState<ScheduleDisplayEntry | null>(null);
+  const [buyerName, setBuyerName] = useState('');
+  const [buyerEmail, setBuyerEmail] = useState('');
+  const [ticketQty, setTicketQty] = useState(1);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [marketingAccepted, setMarketingAccepted] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   // Используем контент для текущего языка или fallback на дефолтный
   const t = show.content[lang] ?? show.content[defaultLang]!;
+  const checkoutT = CHECKOUT_LABELS[lang] ?? CHECKOUT_LABELS.ru;
 
   // Цвета кнопок (по умолчанию янтарные)
   const buttonBg = show.buttonColors?.bg ?? 'bg-amber-600';
@@ -68,6 +289,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     setLang(newLang);
     if (typeof window !== 'undefined') {
       localStorage.setItem('preferredLang', newLang);
+      window.dispatchEvent(new Event('preferredLangChanged'));
     }
   };
 
@@ -75,6 +297,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   const badgeSpacingClass = isRTL ? 'mr-2' : 'ml-2';
   const textDirectionClass = isRTL ? 'text-right' : '';
   const scheduleAlignClass = isRTL ? 'text-right' : 'text-left';
+  const buyCellItemsClass = isRTL ? 'items-end' : 'items-start';
 
   useEffect(() => {
     const preferred = detectBrowserLanguage();
@@ -90,10 +313,14 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
 
     const loadSchedule = async () => {
       try {
-        const response = await fetch(show.scheduleFilePath);
+        const response = await fetch(`/api/schedule?show=${encodeURIComponent(show.slug)}`);
         if (!response.ok) throw new Error('Failed to load schedule');
-        const text = await response.text();
-        const parsed = yaml.load(text) as ScheduleYaml;
+        const parsedJson = (await response.json()) as {
+          ok?: boolean;
+          schedule?: ScheduleYaml['schedule'];
+        };
+        if (!parsedJson.ok || !Array.isArray(parsedJson.schedule)) throw new Error('Invalid schedule payload');
+        const parsed = { schedule: parsedJson.schedule } as ScheduleYaml;
         const schedule = parseScheduleData(parsed, lang);
 
         if (isMounted) {
@@ -114,9 +341,54 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     return () => {
       isMounted = false;
     };
-  }, [lang, show.scheduleFilePath]);
+  }, [lang, show.slug]);
 
-  const displaySchedule = scheduleData.length > 0 ? scheduleData : t.scheduleRows;
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAvailability = async () => {
+      try {
+        const response = await fetch(`/api/schedule/availability?show=${encodeURIComponent(show.slug)}`);
+        if (!response.ok) throw new Error('Failed to load schedule availability');
+        const data = (await response.json()) as {
+          ok?: boolean;
+          events?: Record<string, EventAvailability>;
+        };
+
+        if (isMounted && data.ok && data.events) {
+          setAvailabilityByEvent(data.events);
+        }
+      } catch (error) {
+        console.error('Error loading availability:', error);
+        if (isMounted) {
+          setAvailabilityByEvent({});
+        }
+      }
+    };
+
+    loadAvailability();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [show.slug]);
+
+  const fallbackScheduleData: ScheduleDisplayEntry[] = t.scheduleRows.map((row, index) => ({
+    id: row.id ?? `fallback-${index}`,
+    date: row.date,
+    dateIso: '',
+    time: row.time,
+    place: row.place,
+    format: row.format,
+    language: row.language,
+    priceIls: null,
+    capacity: null,
+    ticketMode: 'self',
+    ticketUrl: null,
+    wazeUrl: null,
+  }));
+  const displayScheduleBase: ScheduleDisplayEntry[] = scheduleData.length > 0 ? scheduleData : fallbackScheduleData;
+  const displaySchedule: ScheduleDisplayEntry[] = pickVisibleScheduleRows(displayScheduleBase);
   const galleryPhotos = show.galleryPhotos.length > 0 ? show.galleryPhotos : show.carouselPhotos;
 
   const scrollToSchedule = () => {
@@ -125,6 +397,134 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
       scheduleSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+
+  const closeCheckout = () => {
+    setSelectedRow(null);
+    setCheckoutLoading(false);
+    setCheckoutError(null);
+    setTermsAccepted(false);
+    setMarketingAccepted(false);
+  };
+
+  const getAvailability = (eventId: string): EventAvailability | null => {
+    if (!eventId) return null;
+    return availabilityByEvent[eventId] ?? null;
+  };
+
+  const isSoldOut = (eventId: string): boolean => {
+    const availability = getAvailability(eventId);
+    return availability?.soldOut === true;
+  };
+
+  const formatQtyExceedsError = (remaining: number): string => {
+    return `${checkoutT.qtyExceedsErrorPrefix} ${remaining} ${checkoutT.qtyExceedsErrorSuffix}`;
+  };
+
+  const openCheckout = (row: ScheduleDisplayEntry) => {
+    if (isClosedShow(row.format) || isPastShowDate(row.dateIso) || isSoldOut(row.id) || row.ticketMode === 'venue') {
+      return;
+    }
+    setSelectedRow(row);
+    setCheckoutError(null);
+    setTicketQty(1);
+    setTermsAccepted(false);
+    setMarketingAccepted(false);
+  };
+
+  const submitCheckout = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedRow || checkoutLoading) return;
+
+    const safeName = buyerName.trim();
+    const safeEmail = buyerEmail.trim();
+    if (!safeName || !safeEmail) return;
+    if (!termsAccepted) {
+      setCheckoutError(checkoutT.termsRequiredErrorLabel);
+      return;
+    }
+
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+
+    try {
+      const eventId = selectedRow.id || `${selectedRow.dateIso}-${selectedRow.time}`;
+      const response = await fetch('/api/checkout/create', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          showSlug: show.slug,
+          eventId,
+          qty: ticketQty,
+          lang,
+          returnPath:
+            typeof window !== 'undefined'
+              ? `${window.location.pathname}${window.location.search}`
+              : `/${show.slug}`,
+          buyer: {
+            name: safeName,
+            email: safeEmail,
+          },
+          consents: {
+            termsAccepted,
+            marketingAccepted,
+          },
+        }),
+      });
+
+      const result = (await response.json()) as {
+        ok?: boolean;
+        reason?: string;
+        paymentUrl?: string;
+        remaining?: number;
+      };
+      if (!response.ok || !result.ok || !result.paymentUrl) {
+        if (result.reason === 'sold_out') {
+          setCheckoutError(checkoutT.soldOutErrorLabel);
+          setAvailabilityByEvent((prev) => ({
+            ...prev,
+            [eventId]: {
+              capacity: prev[eventId]?.capacity ?? selectedRow.capacity,
+              soldQty: prev[eventId]?.soldQty ?? 0,
+              remaining: 0,
+              soldOut: true,
+            },
+          }));
+          setCheckoutLoading(false);
+          return;
+        }
+
+        if (result.reason === 'qty_exceeds_remaining' && typeof result.remaining === 'number') {
+          const safeRemaining = Math.max(1, result.remaining);
+          setTicketQty(safeRemaining);
+          setCheckoutError(formatQtyExceedsError(result.remaining));
+          setCheckoutLoading(false);
+          return;
+        }
+
+        throw new Error(result.reason ?? 'checkout_create_failed');
+      }
+
+      window.location.href = result.paymentUrl;
+    } catch (error) {
+      console.error('Checkout create failed:', error);
+      setCheckoutError(checkoutT.createErrorLabel);
+      setCheckoutLoading(false);
+    }
+  };
+
+  const selectedUnitPrice = selectedRow?.priceIls ?? null;
+  const selectedAvailability = selectedRow ? getAvailability(selectedRow.id) : null;
+  const selectedRemaining = selectedAvailability?.remaining ?? null;
+  const selectedMaxQty = selectedRemaining === null ? 10 : Math.max(1, Math.min(10, selectedRemaining));
+  const selectedTotalPrice = selectedUnitPrice !== null ? selectedUnitPrice * ticketQty : null;
+
+  useEffect(() => {
+    if (ticketQty > selectedMaxQty) {
+      setTicketQty(selectedMaxQty);
+    }
+  }, [selectedMaxQty, ticketQty]);
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-fixed bg-cover bg-center" style={{ backgroundImage: show.backgroundStyle }}>
@@ -276,6 +676,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                       <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.schedulePlaceLabel}</th>
                       <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleFormatLabel}</th>
                       <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleLanguageLabel}</th>
+                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{checkoutT.buyColumn}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-amber-100/10 text-amber-50/90">
@@ -283,9 +684,61 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                       <tr key={row.id || `${row.date}-${row.time}-${row.place}`}>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.date)}</td>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.time)}</td>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.place)}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>
+                          <div className={`flex flex-col gap-1 ${isRTL ? 'items-end' : 'items-start'}`}>
+                            <span>{parseLinksInText(row.place)}</span>
+                            {row.wazeUrl && (
+                              <a
+                                href={row.wazeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer nofollow"
+                                className="text-xs underline hover:text-amber-300 transition"
+                              >
+                                {checkoutT.directionsLabel}
+                              </a>
+                            )}
+                          </div>
+                        </td>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.format)}</td>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.language)}</td>
+                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>
+                          {isClosedShow(row.format) ? (
+                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
+                          ) : isPastShowDate(row.dateIso) ? (
+                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.passedShowLabel}</span>
+                          ) : isSoldOut(row.id) ? (
+                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.soldOutLabel}</span>
+                          ) : row.ticketMode === 'venue' && !row.ticketUrl ? (
+                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
+                          ) : row.ticketMode === 'venue' && row.ticketUrl ? (
+                            <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
+                              {typeof row.priceIls === 'number' && (
+                                <span className="text-xs md:text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
+                              )}
+                              <a
+                                href={row.ticketUrl}
+                                target="_blank"
+                                rel="noopener noreferrer nofollow"
+                                className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
+                              >
+                                {checkoutT.buyButton}
+                              </a>
+                            </div>
+                          ) : (
+                            <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
+                              {typeof row.priceIls === 'number' && (
+                                <span className="text-xs md:text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => openCheckout(row)}
+                                className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
+                              >
+                                {checkoutT.buyButton}
+                              </button>
+                            </div>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -386,6 +839,124 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
           </section>
         </main>
       </div>
+      {selectedRow && (
+        <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className={`w-full max-w-md ${darkCardBg} border border-amber-100/20 rounded-2xl p-5 space-y-4`}>
+            <h3 className="text-xl font-semibold text-amber-100">{checkoutT.modalTitle}</h3>
+            <div className="text-xs md:text-sm text-amber-100/85 space-y-1 rounded-xl border border-amber-100/20 bg-black/30 px-3 py-3">
+              <p>
+                <span className="text-amber-100/60">{checkoutT.showLabel}: </span>
+                {t.title}
+              </p>
+              <p>
+                <span className="text-amber-100/60">{checkoutT.dateTimeLabel}: </span>
+                {selectedRow.date} {selectedRow.time}
+              </p>
+              <p>
+                <span className="text-amber-100/60">{checkoutT.placeLabel}: </span>
+                {selectedRow.place}
+              </p>
+              <p>
+                <span className="text-amber-100/60">{checkoutT.unitPriceLabel}: </span>
+                {selectedRow.priceIls !== null ? `₪ ${formatIlsAmount(selectedRow.priceIls)}` : '—'}
+              </p>
+            </div>
+
+            {isClosedShow(selectedRow.format) ? (
+              <p className="text-sm text-amber-100/80">{checkoutT.closedShowLabel}</p>
+            ) : isSoldOut(selectedRow.id) ? (
+              <p className="text-sm text-amber-100/80">{checkoutT.soldOutErrorLabel}</p>
+            ) : (
+              <form className="space-y-3" onSubmit={submitCheckout}>
+                <label className="block space-y-1">
+                  <span className="text-xs text-amber-100/80">{checkoutT.nameLabel}</span>
+                  <input
+                    required
+                    value={buyerName}
+                    onChange={(event) => setBuyerName(event.target.value)}
+                    placeholder={checkoutT.namePlaceholder}
+                    className="w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 placeholder:text-amber-50/40 outline-none focus:border-amber-300/60"
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs text-amber-100/80">{checkoutT.emailLabel}</span>
+                  <input
+                    required
+                    type="email"
+                    value={buyerEmail}
+                    onChange={(event) => setBuyerEmail(event.target.value)}
+                    placeholder={checkoutT.emailPlaceholder}
+                    className="w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 placeholder:text-amber-50/40 outline-none focus:border-amber-300/60"
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs text-amber-100/80">{checkoutT.qtyLabel}</span>
+                  <input
+                    required
+                    min={1}
+                    max={selectedMaxQty}
+                    type="number"
+                    value={ticketQty}
+                    onChange={(event) =>
+                      setTicketQty(Math.max(1, Math.min(selectedMaxQty, Number.parseInt(event.target.value || '1', 10))))
+                    }
+                    className="w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 outline-none focus:border-amber-300/60"
+                  />
+                </label>
+                <div className="rounded-xl border border-amber-100/20 bg-black/30 px-3 py-2 text-sm text-amber-100/90">
+                  <span className="text-amber-100/70">{checkoutT.totalLabel}: </span>
+                  {selectedTotalPrice !== null ? `₪ ${formatIlsAmount(selectedTotalPrice)}` : '—'}
+                </div>
+                <label className="flex items-start gap-2 text-xs md:text-sm text-amber-100/85">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(event) => setTermsAccepted(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-amber-100/30 bg-black/40"
+                  />
+                  <span>
+                    {checkoutT.termsConsentPrefix}{' '}
+                    <Link href="/terms" target="_blank" className="underline hover:text-amber-200">
+                      {checkoutT.termsLinkLabel}
+                    </Link>{' '}
+                    {checkoutT.termsAndLabel}{' '}
+                    <Link href="/privacy" target="_blank" className="underline hover:text-amber-200">
+                      {checkoutT.privacyLinkLabel}
+                    </Link>
+                    {checkoutT.termsConsentSuffix}
+                  </span>
+                </label>
+                <label className="flex items-start gap-2 text-xs md:text-sm text-amber-100/85">
+                  <input
+                    type="checkbox"
+                    checked={marketingAccepted}
+                    onChange={(event) => setMarketingAccepted(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-amber-100/30 bg-black/40"
+                  />
+                  <span>{checkoutT.marketingConsentLabel}</span>
+                </label>
+                {checkoutError && <p className="text-xs text-red-300">{checkoutError}</p>}
+                <div className={`flex gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <button
+                    type="button"
+                    onClick={closeCheckout}
+                    className="inline-flex rounded-full bg-black/40 hover:bg-black/60 text-amber-50 text-xs md:text-sm font-medium px-4 py-2 transition"
+                  >
+                    {checkoutT.cancelLabel}
+                  </button>
+                  <button
+                    disabled={checkoutLoading}
+                    type="submit"
+                    className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-4 py-2 shadow-md shadow-black/40 transition disabled:opacity-60`}
+                  >
+                    {checkoutLoading ? checkoutT.submittingLabel : checkoutT.submitLabel}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -620,19 +1191,75 @@ function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayE
     .map((event) => {
       const entry = event.entries[lang];
       if (!entry) return null;
+      const dateIso = normalizeDateIso(event.date_iso);
+      if (!dateIso) return null;
 
       return {
         id: event.id,
-        dateIso: event.date_iso,
-        date: entry.date_text || formatDate(event.date_iso, lang),
+        dateIso,
+        date: entry.date_text || formatDate(dateIso, lang),
         time: entry.time,
         place: entry.place,
         format: entry.format,
         language: entry.language,
+        priceIls: parsePriceIls(event.price_ils),
+        capacity: parseCapacity(event.capacity),
+        ticketMode: isVenueTicketingMode(event.ticket_mode) ? 'venue' : 'self',
+        ticketUrl: typeof event.ticket_url === 'string' && event.ticket_url.trim() ? event.ticket_url.trim() : null,
+        wazeUrl: typeof event.waze_url === 'string' && event.waze_url.trim() ? event.waze_url.trim() : null,
       };
     })
     .filter((item): item is ScheduleDisplayEntry => item !== null)
     .sort((a, b) => new Date(a.dateIso).getTime() - new Date(b.dateIso).getTime());
+}
+
+function parseCapacity(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) return value;
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isInteger(parsed) && parsed > 0) return parsed;
+  }
+  return null;
+}
+
+function normalizeDateIso(value: unknown): string {
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    return match ? match[1] : '';
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  return '';
+}
+
+function parsePriceIls(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return Number.isInteger(value) ? value : Number.parseFloat(value.toFixed(2));
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value
+      .trim()
+      .replace(/\s+/g, '')
+      .replace(/[^\d.,-]/g, '')
+      .replace(',', '.');
+    const parsed = Number.parseFloat(normalized);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return Number.isInteger(parsed) ? parsed : Number.parseFloat(parsed.toFixed(2));
+    }
+  }
+
+  return null;
+}
+
+function formatIlsAmount(amount: number): string {
+  if (Number.isInteger(amount)) {
+    return String(amount);
+  }
+  return amount.toFixed(2).replace(/\.00$/, '');
 }
 
 function formatDate(dateIso: string, lang: Lang): string {
@@ -717,4 +1344,3 @@ function parseLinksInText(text: string): React.ReactNode {
 
   return parts.length > 0 ? parts : text;
 }
-

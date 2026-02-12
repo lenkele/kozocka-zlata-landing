@@ -103,4 +103,3 @@ export type ShowConfig = {
   headerBg?: string; // Цвет хедера
   headingColor?: string; // Цвет заголовков на карточках
 };
-

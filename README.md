@@ -19,6 +19,17 @@ npm run dev
 - `http://localhost:3000/zlata`
 - `http://localhost:3000/marita`
 
+## Email (билеты)
+
+- Настройка отправки с вашего домена на любые адреса: `docs/email-delivery-setup.md`.
+- Операционный runbook: `docs/operations-runbook.md`.
+- Операционный чеклист (1 страница): `docs/ops-checklist-onepage.md`.
+
+## Расписание (автоматизация)
+
+- Редактирование CSV и генерация YAML: `docs/schedule-automation.md`.
+- Google Sheets + кнопка обновления: `docs/google-sheets-sync.md`.
+
 Корневая `/` редиректит на спектакль по умолчанию (`DEFAULT_SHOW_SLUG` в `shows/index.ts`).
 
 ## Домены и middleware
@@ -46,3 +57,5 @@ const HOST_TO_SHOW = {
 2. Добавь `shows/<новый_slug>/content.ts` (тексты на трёх языках) и `shows/<новый_slug>/index.ts` (описание ассетов).
 3. Экспортируй конфиг в `shows/index.ts`, обнови `ShowSlug`.
 4. При необходимости расширь `HOST_TO_SHOW` новым доменом.
+
+5. deploy test
