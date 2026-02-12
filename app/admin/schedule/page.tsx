@@ -570,17 +570,18 @@ export default function AdminSchedulePage() {
           <div className="grid gap-3 md:grid-cols-3">
             <label className="block text-sm">
               <span className="font-medium">Место (RU)</span>
-              <input value={placeRu} onChange={(e) => setPlaceRu(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+              <input value={placeRu} onChange={(e) => setPlaceRu(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
             </label>
             <label className="block text-sm">
               <span className="font-medium">Место (EN)</span>
-              <input value={placeEn} onChange={(e) => setPlaceEn(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+              <input value={placeEn} onChange={(e) => setPlaceEn(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
             </label>
             <label className="block text-sm">
               <span className="font-medium">Место (HE)</span>
-              <input value={placeHe} onChange={(e) => setPlaceHe(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+              <input value={placeHe} onChange={(e) => setPlaceHe(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
             </label>
           </div>
+          <p className="text-xs text-slate-600">Достаточно заполнить хотя бы одно поле «Место». Остальные подтянутся автоматически.</p>
 
           <label className="block text-sm">
             <span className="font-medium">Ссылка на Вэйз (опционально)</span>
@@ -710,15 +711,23 @@ export default function AdminSchedulePage() {
           ) : filteredEvents.length === 0 ? (
             <p className="mt-3 text-sm text-slate-600">Пока нет событий.</p>
           ) : (
-            <div className="mt-3 overflow-x-auto">
+            <>
+              <div className="mt-2 flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                <span>Если часть таблицы не видна, прокрутите влево/вправо.</span>
+                <span className="font-semibold text-slate-700">⇄ Горизонтальный скролл</span>
+              </div>
+              <div className="relative mt-3 overflow-x-auto rounded-lg border border-slate-200">
+              <div className="pointer-events-none absolute inset-y-0 left-[530px] z-30 w-px bg-slate-500/80" />
+              <div className="pointer-events-none absolute inset-y-0 left-[530px] z-30 w-4 bg-gradient-to-r from-slate-300/35 to-transparent" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 z-30 w-8 bg-gradient-to-l from-slate-100 to-transparent" />
               <table className="min-w-[1320px] table-fixed text-sm">
                 <thead className="bg-slate-100 text-left">
                   <tr>
                     <th className="sticky left-0 z-20 w-[170px] min-w-[170px] bg-slate-100 px-2 py-2">Спектакль</th>
                     <th className="sticky left-[170px] z-20 w-[170px] min-w-[170px] bg-slate-100 px-2 py-2">ID</th>
                     <th className="sticky left-[340px] z-20 w-[100px] min-w-[100px] bg-slate-100 px-2 py-2">Дата</th>
-                    <th className="sticky left-[440px] z-20 w-[90px] min-w-[90px] bg-slate-100 px-2 py-2 shadow-[2px_0_0_0_rgba(148,163,184,0.35)]">Время</th>
-                    <th className="w-[360px] min-w-[360px] max-w-[360px] px-2 py-2">Место (RU)</th>
+                    <th className="sticky left-[440px] z-20 w-[90px] min-w-[90px] bg-slate-100 px-2 py-2 border-r-2 border-slate-400">Время</th>
+                    <th className="w-[340px] min-w-[340px] max-w-[340px] px-2 py-2">Место (RU)</th>
                     <th className="w-[70px] min-w-[70px] px-2 py-2">Вэйз</th>
                     <th className="w-[120px] min-w-[120px] px-2 py-2">Формат</th>
                     <th className="w-[90px] min-w-[90px] px-2 py-2">Язык</th>
@@ -734,14 +743,16 @@ export default function AdminSchedulePage() {
                       <td className="sticky left-0 z-10 w-[170px] min-w-[170px] bg-white px-2 py-2">{SHOWS[item.show_slug].content.ru?.title ?? item.show_slug}</td>
                       <td className="sticky left-[170px] z-10 w-[170px] min-w-[170px] bg-white px-2 py-2">{item.event_id}</td>
                       <td className="sticky left-[340px] z-10 w-[100px] min-w-[100px] bg-white px-2 py-2">{item.date_iso}</td>
-                      <td className="sticky left-[440px] z-10 w-[90px] min-w-[90px] bg-white px-2 py-2 shadow-[2px_0_0_0_rgba(148,163,184,0.25)]">{item.time}</td>
-                      <td className="w-[360px] min-w-[360px] max-w-[360px] px-2 py-2">
-                        <div className="break-all">{item.place_ru}</div>
+                      <td className="sticky left-[440px] z-10 w-[90px] min-w-[90px] bg-white px-2 py-2 border-r-2 border-slate-300">{item.time}</td>
+                      <td className="w-[340px] min-w-[340px] max-w-[340px] px-2 py-2">
+                        <div className="whitespace-normal break-words">{item.place_ru}</div>
                       </td>
                       <td className="w-[70px] min-w-[70px] px-2 py-2">{item.waze_url ? 'Есть' : '—'}</td>
                       <td className="w-[120px] min-w-[120px] px-2 py-2">{item.format_ru}</td>
                       <td className="w-[90px] min-w-[90px] px-2 py-2">{item.language_ru}</td>
-                      <td className="w-[80px] min-w-[80px] px-2 py-2">{typeof item.price_ils === 'number' ? `₪ ${item.price_ils}` : '—'}</td>
+                      <td className="w-[80px] min-w-[80px] px-2 py-2">
+                        {item.ticket_mode === 'venue' ? '—' : typeof item.price_ils === 'number' ? `₪ ${item.price_ils}` : '—'}
+                      </td>
                       <td className="w-[80px] min-w-[80px] px-2 py-2">{item.capacity ?? '∞'}</td>
                       <td className="w-[95px] min-w-[95px] px-2 py-2">{item.ticket_mode === 'venue' ? 'Площадка' : 'Сайт'}</td>
                       <td className="w-[210px] min-w-[210px] px-2 py-2">
@@ -767,7 +778,8 @@ export default function AdminSchedulePage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </section>
       </div>
@@ -853,17 +865,18 @@ export default function AdminSchedulePage() {
               <div className="grid gap-3 md:grid-cols-3">
                 <label className="block text-sm">
                   <span className="font-medium">Место (RU)</span>
-                  <input value={editPlaceRu} onChange={(e) => setEditPlaceRu(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                  <input value={editPlaceRu} onChange={(e) => setEditPlaceRu(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
                 </label>
                 <label className="block text-sm">
                   <span className="font-medium">Место (EN)</span>
-                  <input value={editPlaceEn} onChange={(e) => setEditPlaceEn(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                  <input value={editPlaceEn} onChange={(e) => setEditPlaceEn(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
                 </label>
                 <label className="block text-sm">
                   <span className="font-medium">Место (HE)</span>
-                  <input value={editPlaceHe} onChange={(e) => setEditPlaceHe(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                  <input value={editPlaceHe} onChange={(e) => setEditPlaceHe(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
                 </label>
               </div>
+              <p className="text-xs text-slate-600">Достаточно заполнить хотя бы одно поле «Место». Остальные подтянутся автоматически.</p>
 
               <label className="block text-sm">
                 <span className="font-medium">Ссылка на Вэйз (опционально)</span>

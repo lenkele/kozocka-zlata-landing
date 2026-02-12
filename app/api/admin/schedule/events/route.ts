@@ -139,6 +139,20 @@ function parseTicketMode(value: unknown): 'self' | 'venue' {
   return normalized === 'venue' ? 'venue' : 'self';
 }
 
+function resolvePlaces(placeRuRaw: string, placeEnRaw: string, placeHeRaw: string) {
+  const placeRu = placeRuRaw.trim();
+  const placeEn = placeEnRaw.trim();
+  const placeHe = placeHeRaw.trim();
+  const fallback = placeRu || placeEn || placeHe;
+
+  return {
+    placeRu: placeRu || fallback,
+    placeEn: placeEn || fallback,
+    placeHe: placeHe || fallback,
+    hasAtLeastOne: Boolean(fallback),
+  };
+}
+
 function normalizeTicketUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
@@ -236,9 +250,10 @@ export async function POST(request: Request) {
 
   const dateIso = body.dateIso?.trim() ?? '';
   const time = body.time?.trim() ?? '';
-  const placeRu = body.placeRu?.trim() ?? '';
-  const placeEn = body.placeEn?.trim() ?? '';
-  const placeHe = body.placeHe?.trim() ?? '';
+  const places = resolvePlaces(body.placeRu ?? '', body.placeEn ?? '', body.placeHe ?? '');
+  const placeRu = places.placeRu;
+  const placeEn = places.placeEn;
+  const placeHe = places.placeHe;
   const formatRu = body.formatRu?.trim() ?? '';
   const languageRu = body.languageRu?.trim() ?? '';
   const priceIls = parsePriceIls(body.priceIls);
@@ -255,7 +270,7 @@ export async function POST(request: Request) {
   if (!time || !isValidTime(time)) {
     return NextResponse.json({ ok: false, reason: 'invalid_time' }, { status: 400 });
   }
-  if (!placeRu || !placeEn || !placeHe) {
+  if (!places.hasAtLeastOne) {
     return NextResponse.json({ ok: false, reason: 'place_required' }, { status: 400 });
   }
   if (!formatRu) {
@@ -357,9 +372,10 @@ export async function PATCH(request: Request) {
 
   const dateIso = body.dateIso?.trim() ?? '';
   const time = body.time?.trim() ?? '';
-  const placeRu = body.placeRu?.trim() ?? '';
-  const placeEn = body.placeEn?.trim() ?? '';
-  const placeHe = body.placeHe?.trim() ?? '';
+  const places = resolvePlaces(body.placeRu ?? '', body.placeEn ?? '', body.placeHe ?? '');
+  const placeRu = places.placeRu;
+  const placeEn = places.placeEn;
+  const placeHe = places.placeHe;
   const formatRu = body.formatRu?.trim() ?? '';
   const languageRu = body.languageRu?.trim() ?? '';
   const priceIls = parsePriceIls(body.priceIls);
@@ -376,7 +392,7 @@ export async function PATCH(request: Request) {
   if (!time || !isValidTime(time)) {
     return NextResponse.json({ ok: false, reason: 'invalid_time' }, { status: 400 });
   }
-  if (!placeRu || !placeEn || !placeHe) {
+  if (!places.hasAtLeastOne) {
     return NextResponse.json({ ok: false, reason: 'place_required' }, { status: 400 });
   }
   if (!formatRu) {

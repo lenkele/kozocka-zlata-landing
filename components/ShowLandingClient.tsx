@@ -712,9 +712,6 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                             <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
                           ) : row.ticketMode === 'venue' && row.ticketUrl ? (
                             <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
-                              {typeof row.priceIls === 'number' && (
-                                <span className="text-xs md:text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
-                              )}
                               <a
                                 href={row.ticketUrl}
                                 target="_blank"
