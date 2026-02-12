@@ -279,14 +279,14 @@ export async function POST(request: Request) {
   if (!languageRu) {
     return NextResponse.json({ ok: false, reason: 'language_required' }, { status: 400 });
   }
-  if (!privateFormat && ticketMode === 'self' && priceIls === null) {
+  if (!privateFormat && priceIls === null) {
     return NextResponse.json({ ok: false, reason: 'invalid_price' }, { status: 400 });
   }
   if (!privateFormat && ticketMode === 'venue' && !ticketUrl) {
     return NextResponse.json({ ok: false, reason: 'ticket_url_required' }, { status: 400 });
   }
 
-  const effectivePrice = privateFormat ? null : ticketMode === 'self' ? priceIls : null;
+  const effectivePrice = privateFormat ? null : priceIls;
   const effectiveCapacity = privateFormat ? null : capacity;
   const effectiveTicketUrl = privateFormat ? null : ticketMode === 'venue' ? ticketUrl : null;
 
@@ -401,14 +401,14 @@ export async function PATCH(request: Request) {
   if (!languageRu) {
     return NextResponse.json({ ok: false, reason: 'language_required' }, { status: 400 });
   }
-  if (!privateFormat && ticketMode === 'self' && priceIls === null) {
+  if (!privateFormat && priceIls === null) {
     return NextResponse.json({ ok: false, reason: 'invalid_price' }, { status: 400 });
   }
   if (!privateFormat && ticketMode === 'venue' && !ticketUrl) {
     return NextResponse.json({ ok: false, reason: 'ticket_url_required' }, { status: 400 });
   }
 
-  const effectivePrice = privateFormat ? null : ticketMode === 'self' ? priceIls : null;
+  const effectivePrice = privateFormat ? null : priceIls;
   const effectiveCapacity = privateFormat ? null : capacity;
   const effectiveTicketUrl = privateFormat ? null : ticketMode === 'venue' ? ticketUrl : null;
 
