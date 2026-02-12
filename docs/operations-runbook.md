@@ -74,7 +74,7 @@
 
 - `POST /api/checkout/create`
 - `POST /api/payment/allpay-callback`
-- `GET /api/schedule?show=zlata|marita|demo`
-- `GET /api/schedule/availability?show=zlata|marita|demo`
+- `GET /api/schedule?show=zlata|marita`
+- `GET /api/schedule/availability?show=zlata|marita`
 - `GET /api/admin/schedule/events?show=all`
 - `POST /api/admin/schedule/events`
