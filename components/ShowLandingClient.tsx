@@ -451,7 +451,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
           lang,
           returnPath:
             typeof window !== 'undefined'
-              ? `${window.location.pathname}${window.location.search}`
+              ? `${window.location.origin}${window.location.pathname}${window.location.search}`
               : `/${show.slug}`,
           buyer: {
             name: safeName,

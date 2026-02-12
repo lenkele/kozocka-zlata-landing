@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { createAllpayPayment } from '@/lib/allpay';
 import { createPendingOrder, getPaidQtyForEvent, markOrderFailed } from '@/lib/ordersStore';
+import { resolveSafeReturnUrl } from '@/lib/returnUrl';
 import { loadScheduleForShow, resolveCapacity, resolveUnitPrice } from '@/lib/schedule';
 import { resolveCheckoutItemName } from '@/lib/showEventDetails';
 
@@ -38,14 +39,6 @@ function isClosedFormat(value: unknown): boolean {
   if (typeof value !== 'string') return false;
   const normalized = value.trim().toLowerCase();
   return normalized.includes('закрыт') || normalized.includes('private') || normalized.includes('סגור');
-}
-
-function resolveSafeReturnPath(value: unknown, fallbackPath: string): string {
-  if (typeof value !== 'string') return fallbackPath;
-  const trimmed = value.trim();
-  if (!trimmed.startsWith('/')) return fallbackPath;
-  if (trimmed.startsWith('//')) return fallbackPath;
-  return trimmed;
 }
 
 export async function POST(request: Request) {
@@ -88,7 +81,7 @@ export async function POST(request: Request) {
 
   const showSlug = body.showSlug?.trim() || 'unknown-show';
   const eventId = body.eventId?.trim() || 'unknown-event';
-  const returnPath = resolveSafeReturnPath(body.returnPath, `/${showSlug}`);
+  const returnPath = resolveSafeReturnUrl(body.returnPath, `/${showSlug}`);
   const itemName = resolveCheckoutItemName(showSlug, lang) || process.env.DEFAULT_TICKET_NAME || 'Ticket';
   const defaultUnitPrice = parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, 1);
   let unitPrice = defaultUnitPrice;

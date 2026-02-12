@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 
+import { resolveSafeReturnUrl } from '@/lib/returnUrl';
+
 type SuccessLang = 'ru' | 'en' | 'he';
 
 type SuccessContent = {
@@ -49,18 +51,6 @@ function normalizeLang(value: string | null): SuccessLang | null {
   return null;
 }
 
-function resolveSafeReturnPath(raw: string | undefined): string {
-  if (!raw) return '/';
-  let decoded = raw.trim();
-  try {
-    decoded = decodeURIComponent(raw);
-  } catch {
-    decoded = raw;
-  }
-  if (!decoded.startsWith('/') || decoded.startsWith('//')) return '/';
-  return decoded;
-}
-
 function detectFallbackLangFromHeaders(acceptLanguage: string): SuccessLang {
   const browserLang = acceptLanguage.toLowerCase();
   if (browserLang.startsWith('he') || browserLang.startsWith('iw') || browserLang.includes(',he') || browserLang.includes(',iw')) return 'he';
@@ -86,7 +76,7 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
   const headersList = await headers();
   const acceptLanguage = headersList.get('accept-language') ?? '';
   const lang = normalizeLang(langParam ?? null) ?? detectFallbackLangFromHeaders(acceptLanguage);
-  const returnPath = resolveSafeReturnPath(returnParam);
+  const returnUrl = resolveSafeReturnUrl(returnParam, '/');
 
   const content = SUCCESS_CONTENT[lang];
   const rtl = content.dir === 'rtl';
@@ -112,7 +102,7 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
 
           <div className={`mt-8 ${rtl ? 'text-right' : ''}`}>
             <Link
-              href={returnPath}
+              href={returnUrl}
               className="inline-flex items-center justify-center rounded-full bg-amber-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-amber-500"
             >
               {content.button}
