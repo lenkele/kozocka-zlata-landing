@@ -215,13 +215,6 @@ function getTodayIsoLocal(): string {
   return `${year}-${month}-${day}`;
 }
 
-function getCurrentYearMonthLocal(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-}
-
 function isPastShowDate(dateIso: string): boolean {
   if (!dateIso || !/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) {
     return false;
@@ -230,22 +223,7 @@ function isPastShowDate(dateIso: string): boolean {
 }
 
 function pickVisibleScheduleRows(rows: ScheduleDisplayEntry[]): ScheduleDisplayEntry[] {
-  if (rows.length === 0) return rows;
-
-  const currentYearMonth = getCurrentYearMonthLocal();
-  const currentMonthRows = rows.filter((row) => row.dateIso.startsWith(`${currentYearMonth}-`));
-  if (currentMonthRows.length > 0) {
-    return currentMonthRows;
-  }
-
-  const todayIso = getTodayIsoLocal();
-  const futureRows = rows.filter((row) => row.dateIso >= todayIso);
-  if (futureRows.length > 0) {
-    return futureRows.slice(0, 7);
-  }
-
-  const recentPastRows = rows.slice(-7);
-  return recentPastRows;
+  return rows;
 }
 
 export default function ShowLandingClient({ show }: { show: ShowConfig }) {
