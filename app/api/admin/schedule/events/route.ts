@@ -19,6 +19,9 @@ type CreateEventBody = {
   languageRu?: string;
   languageEn?: string;
   languageHe?: string;
+  commentRu?: string;
+  commentEn?: string;
+  commentHe?: string;
   priceIls?: number | string;
   capacity?: number | string | null;
   ticketMode?: 'self' | 'venue' | string;
@@ -40,6 +43,9 @@ type ScheduleEventRow = {
   language_ru: string;
   language_en: string;
   language_he: string;
+  comment_ru?: string | null;
+  comment_en?: string | null;
+  comment_he?: string | null;
   price_ils: number | null;
   capacity: number | null;
   ticket_mode: 'self' | 'venue';
@@ -180,6 +186,23 @@ function isLegacyPriceNotNullError(errorText: string): boolean {
   return text.includes('price_ils') && text.includes('null value') && text.includes('not-null constraint');
 }
 
+function isMissingCommentColumnError(errorText: string): boolean {
+  const text = errorText.toLowerCase();
+  return text.includes('comment_ru') || text.includes('comment_en') || text.includes('comment_he');
+}
+
+function normalizeOptionalText(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+const SELECT_FIELDS_WITH_COMMENTS =
+  'show_slug,event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,comment_ru,comment_en,comment_he,price_ils,capacity,ticket_mode,ticket_url';
+
+const SELECT_FIELDS_BASE =
+  'show_slug,event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url';
+
 function buildBaseEventId(dateIso: string, time: string): string {
   const date = dateIso.replaceAll('-', '');
   const hhmm = time.replace(':', '');
@@ -215,14 +238,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, reason: 'invalid_show' }, { status: 400 });
   }
 
-  const basePath =
-    '/schedule_events?is_active=eq.true&select=show_slug,event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.desc,time.desc';
-  const queryPath = loadAll
-    ? basePath
-    : `/schedule_events?show_slug=eq.${encodeURIComponent(showParam)}&is_active=eq.true&select=show_slug,event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.desc,time.desc`;
+  const queryWithComments = loadAll
+    ? `/schedule_events?is_active=eq.true&select=${SELECT_FIELDS_WITH_COMMENTS}&order=date_iso.desc,time.desc`
+    : `/schedule_events?show_slug=eq.${encodeURIComponent(showParam)}&is_active=eq.true&select=${SELECT_FIELDS_WITH_COMMENTS}&order=date_iso.desc,time.desc`;
+  const queryWithoutComments = loadAll
+    ? `/schedule_events?is_active=eq.true&select=${SELECT_FIELDS_BASE}&order=date_iso.desc,time.desc`
+    : `/schedule_events?show_slug=eq.${encodeURIComponent(showParam)}&is_active=eq.true&select=${SELECT_FIELDS_BASE}&order=date_iso.desc,time.desc`;
 
-  const response = await supabaseRequest(queryPath, { method: 'GET' });
-  const text = await response.text();
+  let response = await supabaseRequest(queryWithComments, { method: 'GET' });
+  let text = await response.text();
+  if (!response.ok && isMissingCommentColumnError(text)) {
+    response = await supabaseRequest(queryWithoutComments, { method: 'GET' });
+    text = await response.text();
+  }
   if (!response.ok) {
     return NextResponse.json({ ok: false, reason: 'db_select_failed', message: text }, { status: 500 });
   }
@@ -294,6 +322,9 @@ export async function POST(request: Request) {
   const formatHe = body.formatHe?.trim() || mapFormatFromRu(formatRu, 'he');
   const languageEn = body.languageEn?.trim() || mapLanguageFromRu(languageRu, 'en');
   const languageHe = body.languageHe?.trim() || mapLanguageFromRu(languageRu, 'he');
+  const commentRu = normalizeOptionalText(body.commentRu);
+  const commentEn = normalizeOptionalText(body.commentEn);
+  const commentHe = normalizeOptionalText(body.commentHe);
   const baseEventId = buildBaseEventId(dateIso, time);
   const eventId = await ensureUniqueEventId(showSlug, baseEventId);
 
@@ -312,6 +343,9 @@ export async function POST(request: Request) {
     language_ru: languageRu,
     language_en: languageEn,
     language_he: languageHe,
+    comment_ru: commentRu,
+    comment_en: commentEn,
+    comment_he: commentHe,
     price_ils: effectivePrice,
     capacity: effectiveCapacity,
     ticket_mode: ticketMode,
@@ -334,6 +368,19 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         ...insertPayload,
         price_ils: 1,
+      }),
+    });
+    responseText = await response.text();
+  }
+  if (!response.ok && isMissingCommentColumnError(responseText)) {
+    response = await supabaseRequest('/schedule_events', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({
+        ...insertPayload,
+        comment_ru: undefined,
+        comment_en: undefined,
+        comment_he: undefined,
       }),
     });
     responseText = await response.text();
@@ -416,6 +463,9 @@ export async function PATCH(request: Request) {
   const formatHe = body.formatHe?.trim() || mapFormatFromRu(formatRu, 'he');
   const languageEn = body.languageEn?.trim() || mapLanguageFromRu(languageRu, 'en');
   const languageHe = body.languageHe?.trim() || mapLanguageFromRu(languageRu, 'he');
+  const commentRu = normalizeOptionalText(body.commentRu);
+  const commentEn = normalizeOptionalText(body.commentEn);
+  const commentHe = normalizeOptionalText(body.commentHe);
 
   const updatePayload = {
     date_iso: dateIso,
@@ -430,6 +480,9 @@ export async function PATCH(request: Request) {
     language_ru: languageRu,
     language_en: languageEn,
     language_he: languageHe,
+    comment_ru: commentRu,
+    comment_en: commentEn,
+    comment_he: commentHe,
     price_ils: effectivePrice,
     capacity: effectiveCapacity,
     ticket_mode: ticketMode,
@@ -451,6 +504,19 @@ export async function PATCH(request: Request) {
       body: JSON.stringify({
         ...updatePayload,
         price_ils: 1,
+      }),
+    });
+    responseText = await response.text();
+  }
+  if (!response.ok && isMissingCommentColumnError(responseText)) {
+    response = await supabaseRequest(query, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({
+        ...updatePayload,
+        comment_ru: undefined,
+        comment_en: undefined,
+        comment_he: undefined,
       }),
     });
     responseText = await response.text();

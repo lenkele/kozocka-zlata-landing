@@ -11,6 +11,7 @@ export type ScheduleEntry = {
   time: string;
   place: string;
   format: string;
+  format_original?: string;
   language: string;
   date_text?: string;
 };
@@ -43,6 +44,9 @@ type ScheduleEventRow = {
   language_ru: string;
   language_en: string;
   language_he: string;
+  comment_ru?: string | null;
+  comment_en?: string | null;
+  comment_he?: string | null;
   price_ils: number | string | null;
   capacity: number | string | null;
   ticket_mode: 'self' | 'venue' | string | null;
@@ -126,19 +130,22 @@ function mapSupabaseRowToEvent(row: ScheduleEventRow): ScheduleEvent {
       ru: {
         time: row.time,
         place: row.place_ru,
-        format: row.format_ru,
+        format: row.comment_ru?.trim() || row.format_ru,
+        format_original: row.format_ru,
         language: row.language_ru,
       },
       he: {
         time: row.time,
         place: row.place_he,
-        format: row.format_he,
+        format: row.comment_he?.trim() || row.format_he,
+        format_original: row.format_he,
         language: row.language_he,
       },
       en: {
         time: row.time,
         place: row.place_en,
-        format: row.format_en,
+        format: row.comment_en?.trim() || row.format_en,
+        format_original: row.format_en,
         language: row.language_en,
       },
     },
@@ -146,11 +153,15 @@ function mapSupabaseRowToEvent(row: ScheduleEventRow): ScheduleEvent {
 }
 
 async function loadSupabaseSchedule(showSlug: ShowSlug): Promise<ScheduleEvent[]> {
-  const response = await supabaseRequest(
-    `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.asc,time.asc`,
-    { method: 'GET' },
-  );
-  const text = await response.text();
+  const queryWithComments = `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,comment_ru,comment_en,comment_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.asc,time.asc`;
+  const queryWithoutComments = `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.asc,time.asc`;
+
+  let response = await supabaseRequest(queryWithComments, { method: 'GET' });
+  let text = await response.text();
+  if (!response.ok && text.toLowerCase().includes('comment_ru')) {
+    response = await supabaseRequest(queryWithoutComments, { method: 'GET' });
+    text = await response.text();
+  }
   if (!response.ok) {
     throw new Error(`failed to fetch schedule events from Supabase: ${response.status} ${text}`);
   }

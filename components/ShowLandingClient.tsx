@@ -13,6 +13,7 @@ type ScheduleDisplayEntry = {
   time: string;
   place: string;
   format: string;
+  formatOriginal: string;
   language: string;
   priceIls: number | null;
   capacity: number | null;
@@ -37,6 +38,7 @@ type ScheduleYaml = {
           time: string;
           place: string;
           format: string;
+          format_original?: string;
           language: string;
           date_text?: string;
         }
@@ -380,6 +382,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     time: row.time,
     place: row.place,
     format: row.format,
+    formatOriginal: row.format,
     language: row.language,
     priceIls: null,
     capacity: null,
@@ -421,7 +424,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   };
 
   const openCheckout = (row: ScheduleDisplayEntry) => {
-    if (isClosedShow(row.format) || isPastShowDate(row.dateIso) || isSoldOut(row.id) || row.ticketMode === 'venue') {
+    if (isClosedShow(row.formatOriginal) || isPastShowDate(row.dateIso) || isSoldOut(row.id) || row.ticketMode === 'venue') {
       return;
     }
     setSelectedRow(row);
@@ -702,7 +705,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.format)}</td>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.language)}</td>
                         <td className={`px-4 py-3 ${scheduleAlignClass}`}>
-                          {isClosedShow(row.format) ? (
+                          {isClosedShow(row.formatOriginal) ? (
                             <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
                           ) : isPastShowDate(row.dateIso) ? (
                             <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.passedShowLabel}</span>
@@ -862,7 +865,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
               </p>
             </div>
 
-            {isClosedShow(selectedRow.format) ? (
+            {isClosedShow(selectedRow.formatOriginal) ? (
               <p className="text-sm text-amber-100/80">{checkoutT.closedShowLabel}</p>
             ) : isSoldOut(selectedRow.id) ? (
               <p className="text-sm text-amber-100/80">{checkoutT.soldOutErrorLabel}</p>
@@ -1201,6 +1204,7 @@ function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayE
         time: entry.time,
         place: entry.place,
         format: entry.format,
+        formatOriginal: entry.format_original || entry.format,
         language: entry.language,
         priceIls: parsePriceIls(event.price_ils),
         capacity: parseCapacity(event.capacity),

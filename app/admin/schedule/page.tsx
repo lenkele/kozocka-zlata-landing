@@ -18,6 +18,9 @@ type EventRow = {
   waze_url: string | null;
   format_ru: string;
   language_ru: string;
+  comment_ru?: string | null;
+  comment_en?: string | null;
+  comment_he?: string | null;
   price_ils: number | null;
   capacity: number | null;
   ticket_mode: 'self' | 'venue';
@@ -73,6 +76,9 @@ export default function AdminSchedulePage() {
   const [wazeUrl, setWazeUrl] = useState('');
   const [formatRu, setFormatRu] = useState<(typeof FORMAT_OPTIONS)[number]>('Открытый показ');
   const [languageRu, setLanguageRu] = useState<(typeof LANGUAGE_OPTIONS)[number]>('Русский');
+  const [commentRu, setCommentRu] = useState('');
+  const [commentEn, setCommentEn] = useState('');
+  const [commentHe, setCommentHe] = useState('');
   const [priceIls, setPriceIls] = useState('');
   const [capacity, setCapacity] = useState('');
   const [ticketMode, setTicketMode] = useState<TicketMode>('self');
@@ -91,6 +97,9 @@ export default function AdminSchedulePage() {
   const [editWazeUrl, setEditWazeUrl] = useState('');
   const [editFormatRu, setEditFormatRu] = useState<(typeof FORMAT_OPTIONS)[number]>('Открытый показ');
   const [editLanguageRu, setEditLanguageRu] = useState<(typeof LANGUAGE_OPTIONS)[number]>('Русский');
+  const [editCommentRu, setEditCommentRu] = useState('');
+  const [editCommentEn, setEditCommentEn] = useState('');
+  const [editCommentHe, setEditCommentHe] = useState('');
   const [editPriceIls, setEditPriceIls] = useState('');
   const [editCapacity, setEditCapacity] = useState('');
   const [editTicketMode, setEditTicketMode] = useState<TicketMode>('self');
@@ -176,6 +185,9 @@ export default function AdminSchedulePage() {
       'waze_url',
       'format_ru',
       'language_ru',
+      'comment_ru',
+      'comment_en',
+      'comment_he',
       'price_ils',
       'capacity',
       'ticket_mode',
@@ -192,6 +204,9 @@ export default function AdminSchedulePage() {
       item.waze_url ?? '',
       item.format_ru,
       item.language_ru,
+      item.comment_ru ?? '',
+      item.comment_en ?? '',
+      item.comment_he ?? '',
       item.price_ils === null ? '' : String(item.price_ils),
       item.capacity === null ? '' : String(item.capacity),
       item.ticket_mode,
@@ -316,6 +331,9 @@ export default function AdminSchedulePage() {
           languageRu,
           languageEn: derivedLanguage.en,
           languageHe: derivedLanguage.he,
+          commentRu,
+          commentEn,
+          commentHe,
           priceIls,
           capacity,
           ticketMode: effectiveTicketMode,
@@ -342,6 +360,9 @@ export default function AdminSchedulePage() {
       setPlaceEn('');
       setPlaceHe('');
       setWazeUrl('');
+      setCommentRu('');
+      setCommentEn('');
+      setCommentHe('');
       setPriceIls('');
       setCapacity('');
       setTicketMode('self');
@@ -366,6 +387,9 @@ export default function AdminSchedulePage() {
     setEditWazeUrl(item.waze_url ?? '');
     setEditFormatRu((item.format_ru as (typeof FORMAT_OPTIONS)[number]) ?? 'Открытый показ');
     setEditLanguageRu((item.language_ru as (typeof LANGUAGE_OPTIONS)[number]) ?? 'Русский');
+    setEditCommentRu(item.comment_ru ?? '');
+    setEditCommentEn(item.comment_en ?? '');
+    setEditCommentHe(item.comment_he ?? '');
     setEditPriceIls(item.price_ils == null ? '' : String(item.price_ils));
     setEditCapacity(item.capacity == null ? '' : String(item.capacity));
     setEditTicketMode(item.ticket_mode);
@@ -406,6 +430,9 @@ export default function AdminSchedulePage() {
           languageRu: editLanguageRu,
           languageEn: editDerivedLanguage.en,
           languageHe: editDerivedLanguage.he,
+          commentRu: editCommentRu,
+          commentEn: editCommentEn,
+          commentHe: editCommentHe,
           priceIls: editPriceIls,
           capacity: editCapacity,
           ticketMode: effectiveTicketMode,
@@ -593,6 +620,25 @@ export default function AdminSchedulePage() {
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
             />
           </label>
+
+          <div className="space-y-2 rounded-lg border border-slate-300 p-3">
+            <p className="text-sm font-medium">Комментарий (опционально)</p>
+            <p className="text-xs text-slate-600">Показывается на публичной странице вместо поля «Формат». Если пусто, используется формат показа.</p>
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="block text-sm">
+                <span className="font-medium">Комментарий (RU)</span>
+                <input value={commentRu} onChange={(e) => setCommentRu(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium">Комментарий (EN)</span>
+                <input value={commentEn} onChange={(e) => setCommentEn(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium">Комментарий (HE)</span>
+                <input value={commentHe} onChange={(e) => setCommentHe(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+              </label>
+            </div>
+          </div>
 
           {!isPrivate && (
             <div className="space-y-2 rounded-lg border border-slate-300 p-3">
@@ -886,6 +932,25 @@ export default function AdminSchedulePage() {
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                 />
               </label>
+
+              <div className="space-y-2 rounded-lg border border-slate-300 p-3">
+                <p className="text-sm font-medium">Комментарий (опционально)</p>
+                <p className="text-xs text-slate-600">Показывается на публичной странице вместо поля «Формат». Если пусто, используется формат показа.</p>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <label className="block text-sm">
+                    <span className="font-medium">Комментарий (RU)</span>
+                    <input value={editCommentRu} onChange={(e) => setEditCommentRu(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="font-medium">Комментарий (EN)</span>
+                    <input value={editCommentEn} onChange={(e) => setEditCommentEn(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="font-medium">Комментарий (HE)</span>
+                    <input value={editCommentHe} onChange={(e) => setEditCommentHe(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                  </label>
+                </div>
+              </div>
 
               {!isEditPrivate && (
                 <div className="space-y-2 rounded-lg border border-slate-300 p-3">
