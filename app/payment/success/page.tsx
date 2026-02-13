@@ -80,6 +80,7 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
   const lang = normalizeLang(langParam ?? null) ?? detectFallbackLangFromHeaders(acceptLanguage);
   const showSlug = showParam && isShowSlug(showParam) ? showParam : undefined;
   const returnUrl = resolveSafeReturnUrl(returnParam, '/', { showSlug });
+  // debug: returnUrl resolved from returnParam, showSlug
 
   const content = SUCCESS_CONTENT[lang];
   const rtl = content.dir === 'rtl';
