@@ -3,7 +3,12 @@ import { NextResponse } from 'next/server';
 import { sendTicketEmail } from '@/lib/email';
 import type { StoredOrder } from '@/lib/ordersStore';
 import { markOrderPaidOnce } from '@/lib/ordersStore';
-import { getAllpaySignature, getAllpaySignatureCandidates, secureSignatureMatch } from './signature';
+import {
+  getAllpayRawFormSignatureCandidates,
+  getAllpaySignature,
+  getAllpaySignatureCandidates,
+  secureSignatureMatch,
+} from './signature';
 
 type CallbackPayload = Record<string, unknown> & {
   sign?: unknown;
@@ -99,12 +104,20 @@ export async function POST(request: Request) {
   for (const secretEntry of secrets) {
     const primaryExpectedSign = getAllpaySignature(payload, secretEntry.value).toLowerCase();
     const candidateMap = getAllpaySignatureCandidates(payload, secretEntry.value);
+    const rawCandidateMap =
+      contentType.includes('application/x-www-form-urlencoded') || rawBody.includes('&')
+        ? getAllpayRawFormSignatureCandidates(rawBody, secretEntry.value)
+        : {};
+    const mergedCandidateMap = {
+      ...candidateMap,
+      ...rawCandidateMap,
+    };
     signatureDebug.push({
       secret: secretEntry.name,
       primary: primaryExpectedSign,
-      candidates: candidateMap,
+      candidates: mergedCandidateMap,
     });
-    const matchedCandidate = Object.entries(candidateMap).find(([, candidate]) =>
+    const matchedCandidate = Object.entries(mergedCandidateMap).find(([, candidate]) =>
       secureSignatureMatch(incomingSign, candidate.toLowerCase())
     );
 

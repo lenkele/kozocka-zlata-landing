@@ -81,6 +81,64 @@ function hash(base: string): string {
   return crypto.createHash('sha256').update(base).digest('hex');
 }
 
+function safeDecodeFormComponent(value: string): string {
+  try {
+    return decodeURIComponent(value.replace(/\+/g, ' '));
+  } catch {
+    return value;
+  }
+}
+
+export function getAllpayRawFormSignatureCandidates(
+  rawBody: string,
+  secret: string
+): Record<string, string> {
+  if (!rawBody.trim()) return {};
+
+  const segments = rawBody
+    .split('&')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  const withoutSign = segments.filter((segment) => {
+    const [rawKey = ''] = segment.split('=');
+    const key = safeDecodeFormComponent(rawKey).trim().toLowerCase();
+    return key !== 'sign';
+  });
+
+  const rawValues: string[] = [];
+  const decodedValues: string[] = [];
+  const rawPairs: string[] = [];
+  const decodedPairs: string[] = [];
+
+  for (const segment of withoutSign) {
+    const eqIndex = segment.indexOf('=');
+    const rawKey = eqIndex >= 0 ? segment.slice(0, eqIndex) : segment;
+    const rawValue = eqIndex >= 0 ? segment.slice(eqIndex + 1) : '';
+    const decodedKey = safeDecodeFormComponent(rawKey);
+    const decodedValue = safeDecodeFormComponent(rawValue);
+
+    rawValues.push(rawValue);
+    decodedValues.push(decodedValue);
+    rawPairs.push(`${rawKey}=${rawValue}`);
+    decodedPairs.push(`${decodedKey}=${decodedValue}`);
+  }
+
+  return {
+    raw_values_colon_secret: hash(`${rawValues.join(':')}:${secret}`),
+    raw_values_plain_secret: hash(`${rawValues.join('')}${secret}`),
+    raw_values_colon_with_amp_secret: hash(`${rawValues.join('&')}:${secret}`),
+    raw_values_amp_secret: hash(`${rawValues.join('&')}${secret}`),
+    decoded_values_colon_secret: hash(`${decodedValues.join(':')}:${secret}`),
+    decoded_values_plain_secret: hash(`${decodedValues.join('')}${secret}`),
+    raw_pairs_amp_secret_key: hash(`${rawPairs.join('&')}&secret_key=${secret}`),
+    decoded_pairs_amp_secret_key: hash(`${decodedPairs.join('&')}&secret_key=${secret}`),
+    raw_body_without_sign_plus_secret: hash(`${withoutSign.join('&')}${secret}`),
+    raw_body_without_sign_colon_secret: hash(`${withoutSign.join('&')}:${secret}`),
+    secret_plus_raw_body_without_sign: hash(`${secret}${withoutSign.join('&')}`),
+  };
+}
+
 export function getAllpaySignatureCandidates(
   payload: Record<string, unknown>,
   secret: string,
