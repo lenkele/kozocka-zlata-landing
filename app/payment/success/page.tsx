@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 
+import { isShowSlug } from '@/shows';
 import { resolveSafeReturnUrl } from '@/lib/returnUrl';
 
 type SuccessLang = 'ru' | 'en' | 'he';
@@ -72,11 +73,13 @@ function getQueryParam(params: Record<string, string | string[] | undefined>, ke
 export default async function PaymentSuccessPage({ searchParams }: PaymentSuccessPageProps) {
   const params = searchParams ? await searchParams : {};
   const langParam = getQueryParam(params, 'lang');
+  const showParam = getQueryParam(params, 'show');
   const returnParam = getQueryParam(params, 'return');
   const headersList = await headers();
   const acceptLanguage = headersList.get('accept-language') ?? '';
   const lang = normalizeLang(langParam ?? null) ?? detectFallbackLangFromHeaders(acceptLanguage);
-  const returnUrl = resolveSafeReturnUrl(returnParam, '/');
+  const showSlug = showParam && isShowSlug(showParam) ? showParam : undefined;
+  const returnUrl = resolveSafeReturnUrl(returnParam, '/', { showSlug });
 
   const content = SUCCESS_CONTENT[lang];
   const rtl = content.dir === 'rtl';

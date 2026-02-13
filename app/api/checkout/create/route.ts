@@ -81,7 +81,7 @@ export async function POST(request: Request) {
 
   const showSlug = body.showSlug?.trim() || 'unknown-show';
   const eventId = body.eventId?.trim() || 'unknown-event';
-  const returnPath = resolveSafeReturnUrl(body.returnPath, `/${showSlug}`);
+  const returnPath = resolveSafeReturnUrl(body.returnPath, `/${showSlug}`, { showSlug });
   const itemName = resolveCheckoutItemName(showSlug, lang) || process.env.DEFAULT_TICKET_NAME || 'Ticket';
   const defaultUnitPrice = parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, 1);
   let unitPrice = defaultUnitPrice;
@@ -155,8 +155,8 @@ export async function POST(request: Request) {
     clientName: buyerName,
     clientEmail: buyerEmail,
     lang: resolveAllpayLang(),
-    successUrl: `${appBaseUrl}/payment/success?lang=${encodeURIComponent(lang)}&return=${encodeURIComponent(returnPath)}`,
-    backlinkUrl: `${appBaseUrl}/payment/return?lang=${encodeURIComponent(lang)}&return=${encodeURIComponent(returnPath)}`,
+    successUrl: `${appBaseUrl}/payment/success?lang=${encodeURIComponent(lang)}&show=${encodeURIComponent(showSlug)}&return=${encodeURIComponent(returnPath)}`,
+    backlinkUrl: `${appBaseUrl}/payment/return?lang=${encodeURIComponent(lang)}&show=${encodeURIComponent(showSlug)}&return=${encodeURIComponent(returnPath)}`,
     webhookUrl: `${appBaseUrl}/api/payment/allpay-callback`,
   });
 
