@@ -522,7 +522,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
       <div className={`min-h-screen ${textColor} ${textDirectionClass}`}>
         <header className={`sticky top-0 z-50 ${headerBg} backdrop-blur-sm border-b border-[rgba(255,255,255,0.1)]`}>
           <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 md:gap-4">
-            <div className={`flex items-center gap-2 md:gap-3 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink min-w-0`}>
+            <div className={`flex flex-col items-center md:flex-row md:items-center gap-1 md:gap-3 ${isRTL ? 'md:flex-row-reverse' : ''} flex-shrink min-w-0`}>
               <div className="flex flex-col gap-0.5">
                 <div className="text-[0.65rem] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-amber-200/80 whitespace-nowrap">{t.theatreLabel}</div>
                 {t.theatreSubtitle && (
@@ -530,7 +530,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                 )}
               </div>
               <div
-                className={`inline-flex items-center bg-[rgba(0,0,0,0.3)] rounded-full px-2 md:px-3 py-1 text-[0.5rem] md:text-[0.55rem] uppercase tracking-[0.15em] md:tracking-[0.18em] text-amber-100/85 whitespace-nowrap ${badgeSpacingClass}`}
+                className={`inline-flex items-center bg-[rgba(0,0,0,0.3)] rounded-full px-2 md:px-3 py-1 text-[0.45rem] md:text-[0.55rem] uppercase tracking-[0.1em] md:tracking-[0.18em] text-amber-100/85 text-center whitespace-normal md:whitespace-nowrap ${badgeSpacingClass}`}
               >
                 <span>{t.heroBadge}</span>
               </div>
@@ -617,7 +617,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
               <SectionTitle color={headingColor}>{t.sectionAbout}</SectionTitle>
               <div className="grid md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-8">
                 <div className={`space-y-4 text-sm md:text-base leading-relaxed whitespace-pre-line ${textDirectionClass}`}>{t.aboutText}</div>
-              <aside className="space-y-4 text-xs md:text-sm">
+              <aside className="hidden md:block space-y-4 text-xs md:text-sm">
                 <PhotoCarousel
                   photos={show.carouselPhotos}
                   labels={{
