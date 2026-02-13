@@ -518,7 +518,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   }, [selectedMaxQty, ticketQty]);
 
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-fixed bg-cover bg-center" style={{ backgroundImage: show.backgroundStyle }}>
+    <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-fixed bg-cover bg-center overflow-x-hidden" style={{ backgroundImage: show.backgroundStyle }}>
       <div className={`min-h-screen ${textColor} ${textDirectionClass}`}>
         <header className={`sticky top-0 z-50 ${headerBg} backdrop-blur-sm border-b border-[rgba(255,255,255,0.1)]`}>
           <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 md:gap-4">
@@ -535,7 +535,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                 <span>{t.heroBadge}</span>
               </div>
             </div>
-            <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink-0`}>
+            <div className={`flex items-center gap-1 sm:gap-2 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink min-w-0`}>
               {availableLanguages.length > 1 && (
                 <div className="flex items-center gap-1 text-xs md:text-sm bg-[rgba(0,0,0,0.35)] rounded-full px-2 py-1">
                   {availableLanguages.includes('ru') && (
@@ -557,11 +557,11 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
               )}
               <button
                 onClick={scrollToSchedule}
-                className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-3 md:px-4 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
+                className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
               >
                 {t.menuSchedule}
               </button>
-              <a href={whatsappLink} className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-3 md:px-4 py-2 shadow-md shadow-black/40 transition whitespace-nowrap`}>
+              <a href={whatsappLink} className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 shadow-md shadow-black/40 transition whitespace-nowrap`}>
                 {t.menuInvite}
               </a>
             </div>
@@ -574,7 +574,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
               <div className="flex items-start gap-4">
                 {show.slug === 'zlata' && <HanukkiahIcon className="w-12 h-12 md:w-16 md:h-16 text-amber-300 flex-shrink-0" />}
                 <div>
-                  <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-amber-100 drop-shadow-[0_0_20px_rgba(0,0,0,0.6)]">{t.title}</h1>
+                  <h1 className="text-2xl sm:text-3xl md:text-5xl font-semibold tracking-tight text-amber-100 drop-shadow-[0_0_20px_rgba(0,0,0,0.6)]">{t.title}</h1>
                 </div>
               </div>
 
@@ -595,7 +595,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                 ))}
               </p>
 
-              <div className="grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm text-amber-100/90">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm text-amber-100/90">
                 <InfoBadge label={t.ageLabel} value={t.infoAgeValue} cardBg={darkCardBg} />
                 <InfoBadge label={t.durationLabel} value={t.infoDurationValue} cardBg={darkCardBg} />
                 <InfoBadge label={t.formatLabel} value={t.infoFormatValue} cardBg={darkCardBg} />
@@ -604,7 +604,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
 
             <div className="flex flex-col items-center gap-4">
               <div className={`rounded-2xl overflow-hidden border border-amber-100/20 shadow-[0_18px_45px_rgba(0,0,0,0.75)] ${darkCardBg}`}>
-                <Image src={t.posterImage} alt={`Афиша спектакля «${t.title}»`} width={640} height={960} className="w-full max-w-xs md:max-w-sm object-cover" />
+                <Image src={t.posterImage} alt={`Афиша спектакля «${t.title}»`} width={640} height={960} className="w-full max-w-[280px] sm:max-w-xs md:max-w-sm object-cover" />
               </div>
               <a href={t.posterPdf} className="text-xs md:text-sm underline-offset-4 hover:underline text-amber-100/90" download>
                 {t.posterDownload}
@@ -658,83 +658,145 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                 {lang === 'en' && 'Loading schedule...'}
               </p>
             ) : displaySchedule.length > 0 ? (
-              <div className={`overflow-x-auto rounded-2xl border border-amber-100/15 ${darkCardBg}`}>
-                <table className="min-w-full text-sm md:text-base">
-                  <thead className="bg-[rgba(0,0,0,0.6)] text-amber-100/90">
-                    <tr>
-                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleDateLabel}</th>
-                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleTimeLabel}</th>
-                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.schedulePlaceLabel}</th>
-                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleFormatLabel}</th>
-                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleLanguageLabel}</th>
-                      <th className={`px-4 py-3 ${scheduleAlignClass}`}>{checkoutT.buyColumn}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-amber-100/10 text-amber-50/90">
-                    {displaySchedule.map((row) => (
-                      <tr key={row.id || `${row.date}-${row.time}-${row.place}`}>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.date)}</td>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.time)}</td>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>
-                          <div className={`flex flex-col gap-1 ${isRTL ? 'items-end' : 'items-start'}`}>
-                            <span>{parseLinksInText(row.place)}</span>
-                            {row.wazeUrl && (
-                              <a
-                                href={row.wazeUrl}
-                                target="_blank"
-                                rel="noopener noreferrer nofollow"
-                                className="text-xs underline hover:text-amber-300 transition"
-                              >
-                                {checkoutT.directionsLabel}
-                              </a>
-                            )}
-                          </div>
-                        </td>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.format)}</td>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.language)}</td>
-                        <td className={`px-4 py-3 ${scheduleAlignClass}`}>
-                          {isClosedShow(row.formatOriginal) ? (
-                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
-                          ) : isPastShowDate(row.dateIso) ? (
-                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.passedShowLabel}</span>
-                          ) : isSoldOut(row.id) ? (
-                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.soldOutLabel}</span>
-                          ) : row.ticketMode === 'venue' && !row.ticketUrl ? (
-                            <span className="text-xs md:text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
-                          ) : row.ticketMode === 'venue' && row.ticketUrl ? (
-                            <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
-                              {typeof row.priceIls === 'number' && (
-                                <span className="text-xs md:text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
-                              )}
-                              <a
-                                href={row.ticketUrl}
-                                target="_blank"
-                                rel="noopener noreferrer nofollow"
-                                className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
-                              >
-                                {checkoutT.buyButton}
-                              </a>
-                            </div>
-                          ) : (
-                            <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
-                              {typeof row.priceIls === 'number' && (
-                                <span className="text-xs md:text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => openCheckout(row)}
-                                className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
-                              >
-                                {checkoutT.buyButton}
-                              </button>
-                            </div>
-                          )}
-                        </td>
+              <>
+                {/* Мобильные карточки (< md) */}
+                <div className="md:hidden space-y-3">
+                  {displaySchedule.map((row) => (
+                    <div
+                      key={row.id || `m-${row.date}-${row.time}-${row.place}`}
+                      className={`rounded-2xl border border-amber-100/15 ${darkCardBg} p-4 space-y-2 ${textDirectionClass}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-amber-100">{parseLinksInText(row.date)}</span>
+                        <span className="text-sm text-amber-50/90">{parseLinksInText(row.time)}</span>
+                      </div>
+                      <p className="text-sm text-amber-50/90">{parseLinksInText(row.place)}</p>
+                      {row.wazeUrl && (
+                        <a
+                          href={row.wazeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="text-xs underline hover:text-amber-300 transition text-amber-100/70"
+                        >
+                          {checkoutT.directionsLabel}
+                        </a>
+                      )}
+                      <p className="text-xs text-amber-100/60">
+                        {parseLinksInText(row.format)} · {parseLinksInText(row.language)}
+                      </p>
+                      <div className="flex items-center justify-between gap-2 pt-1">
+                        {typeof row.priceIls === 'number' && (
+                          <span className="text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
+                        )}
+                        {isClosedShow(row.formatOriginal) ? (
+                          <span className="text-xs text-amber-100/60">{checkoutT.unavailableLabel}</span>
+                        ) : isPastShowDate(row.dateIso) ? (
+                          <span className="text-xs text-amber-100/60">{checkoutT.passedShowLabel}</span>
+                        ) : isSoldOut(row.id) ? (
+                          <span className="text-xs text-amber-100/60">{checkoutT.soldOutLabel}</span>
+                        ) : row.ticketMode === 'venue' && !row.ticketUrl ? (
+                          <span className="text-xs text-amber-100/60">{checkoutT.unavailableLabel}</span>
+                        ) : row.ticketMode === 'venue' && row.ticketUrl ? (
+                          <a
+                            href={row.ticketUrl}
+                            target="_blank"
+                            rel="noopener noreferrer nofollow"
+                            className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
+                          >
+                            {checkoutT.buyButton}
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openCheckout(row)}
+                            className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
+                          >
+                            {checkoutT.buyButton}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Десктопная таблица (>= md) */}
+                <div className={`hidden md:block overflow-x-auto rounded-2xl border border-amber-100/15 ${darkCardBg}`}>
+                  <table className="min-w-full text-base">
+                    <thead className="bg-[rgba(0,0,0,0.6)] text-amber-100/90">
+                      <tr>
+                        <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleDateLabel}</th>
+                        <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleTimeLabel}</th>
+                        <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.schedulePlaceLabel}</th>
+                        <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleFormatLabel}</th>
+                        <th className={`px-4 py-3 ${scheduleAlignClass}`}>{t.scheduleLanguageLabel}</th>
+                        <th className={`px-4 py-3 ${scheduleAlignClass}`}>{checkoutT.buyColumn}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-amber-100/10 text-amber-50/90">
+                      {displaySchedule.map((row) => (
+                        <tr key={row.id || `${row.date}-${row.time}-${row.place}`}>
+                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.date)}</td>
+                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.time)}</td>
+                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>
+                            <div className={`flex flex-col gap-1 ${isRTL ? 'items-end' : 'items-start'}`}>
+                              <span>{parseLinksInText(row.place)}</span>
+                              {row.wazeUrl && (
+                                <a
+                                  href={row.wazeUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer nofollow"
+                                  className="text-xs underline hover:text-amber-300 transition"
+                                >
+                                  {checkoutT.directionsLabel}
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.format)}</td>
+                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.language)}</td>
+                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>
+                            {isClosedShow(row.formatOriginal) ? (
+                              <span className="text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
+                            ) : isPastShowDate(row.dateIso) ? (
+                              <span className="text-sm text-amber-100/60">{checkoutT.passedShowLabel}</span>
+                            ) : isSoldOut(row.id) ? (
+                              <span className="text-sm text-amber-100/60">{checkoutT.soldOutLabel}</span>
+                            ) : row.ticketMode === 'venue' && !row.ticketUrl ? (
+                              <span className="text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
+                            ) : row.ticketMode === 'venue' && row.ticketUrl ? (
+                              <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
+                                {typeof row.priceIls === 'number' && (
+                                  <span className="text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
+                                )}
+                                <a
+                                  href={row.ticketUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer nofollow"
+                                  className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
+                                >
+                                  {checkoutT.buyButton}
+                                </a>
+                              </div>
+                            ) : (
+                              <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
+                                {typeof row.priceIls === 'number' && (
+                                  <span className="text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => openCheckout(row)}
+                                  className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
+                                >
+                                  {checkoutT.buyButton}
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             ) : (
               <p className="text-sm md:text-base text-amber-50/85 text-center py-8">
                 {lang === 'ru' && 'Расписание пока не заполнено. Следите за обновлениями!'}
@@ -831,8 +893,8 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
         </main>
       </div>
       {selectedRow && (
-        <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4">
-          <div className={`w-full max-w-md ${darkCardBg} border border-amber-100/20 rounded-2xl p-5 space-y-4`}>
+        <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4 py-4 overflow-y-auto">
+          <div className={`w-full max-w-md ${darkCardBg} border border-amber-100/20 rounded-2xl p-5 space-y-4 my-auto`}>
             <h3 className="text-xl font-semibold text-amber-100">{checkoutT.modalTitle}</h3>
             <div className="text-xs md:text-sm text-amber-100/85 space-y-1 rounded-xl border border-amber-100/20 bg-black/30 px-3 py-3">
               <p>
@@ -927,18 +989,18 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                   <span>{checkoutT.marketingConsentLabel}</span>
                 </label>
                 {checkoutError && <p className="text-xs text-red-300">{checkoutError}</p>}
-                <div className={`flex gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex flex-col sm:flex-row gap-2 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
                   <button
                     type="button"
                     onClick={closeCheckout}
-                    className="inline-flex rounded-full bg-black/40 hover:bg-black/60 text-amber-50 text-xs md:text-sm font-medium px-4 py-2 transition"
+                    className="inline-flex justify-center rounded-full bg-black/40 hover:bg-black/60 text-amber-50 text-xs md:text-sm font-medium px-4 py-2 transition"
                   >
                     {checkoutT.cancelLabel}
                   </button>
                   <button
                     disabled={checkoutLoading}
                     type="submit"
-                    className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-4 py-2 shadow-md shadow-black/40 transition disabled:opacity-60`}
+                    className={`inline-flex justify-center rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-4 py-2 shadow-md shadow-black/40 transition disabled:opacity-60`}
                   >
                     {checkoutLoading ? checkoutT.submittingLabel : checkoutT.submitLabel}
                   </button>
