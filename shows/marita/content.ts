@@ -11,7 +11,7 @@ const RU_CONTENT: Content = {
   teaserVideoUrl: 'https://www.youtube.com/embed/X5kZOSKk6z0',
   heroBadge: 'Кукольный мюзикл с живой музыкой и песнями',
   theatreLabel: 'Театр «Рыба Кива»',
-  theatreSubtitle: 'Волшебный спектакль для всей семьи на новогодние каникулы',
+  theatreSubtitle: 'Волшебный спектакль для всей семьи на Пурим!',
   menuInvite: 'Пригласить театр',
   menuAbout: 'О спектакле',
   menuSchedule: 'Афиша',
