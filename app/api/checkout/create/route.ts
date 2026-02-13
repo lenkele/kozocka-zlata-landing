@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { createAllpayPayment } from '@/lib/allpay';
 import { createPendingOrder, getPaidQtyForEvent, markOrderFailed } from '@/lib/ordersStore';
 import { resolveSafeReturnUrl } from '@/lib/returnUrl';
+import { isShowSlug } from '@/shows';
 import { loadScheduleForShow, resolveCapacity, resolveUnitPrice } from '@/lib/schedule';
 import { resolveCheckoutItemName } from '@/lib/showEventDetails';
 
@@ -81,7 +82,9 @@ export async function POST(request: Request) {
 
   const showSlug = body.showSlug?.trim() || 'unknown-show';
   const eventId = body.eventId?.trim() || 'unknown-event';
-  const returnPath = resolveSafeReturnUrl(body.returnPath, `/${showSlug}`, { showSlug });
+  const returnPath = resolveSafeReturnUrl(body.returnPath, `/${showSlug}`, {
+    showSlug: isShowSlug(showSlug) ? showSlug : undefined,
+  });
   const itemName = resolveCheckoutItemName(showSlug, lang) || process.env.DEFAULT_TICKET_NAME || 'Ticket';
   const defaultUnitPrice = parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, 1);
   let unitPrice = defaultUnitPrice;
