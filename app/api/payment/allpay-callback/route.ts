@@ -3,7 +3,12 @@ import { NextResponse } from 'next/server';
 import { sendTicketEmail } from '@/lib/email';
 import type { StoredOrder } from '@/lib/ordersStore';
 import { markOrderPaidOnce } from '@/lib/ordersStore';
-import { getAllpaySignature, getAllpaySignatureCandidates, secureSignatureMatch } from './signature';
+import {
+  getAllpayRawFormSignatureCandidates,
+  getAllpaySignature,
+  getAllpaySignatureCandidates,
+  secureSignatureMatch,
+} from './signature';
 
 type CallbackPayload = Record<string, unknown> & {
   sign?: unknown;
@@ -55,6 +60,12 @@ function parseAmount(value: unknown): number | undefined {
   return undefined;
 }
 
+function maskSignature(value: string): string {
+  if (!value) return '';
+  if (value.length <= 16) return value;
+  return `${value.slice(0, 8)}...${value.slice(-8)}`;
+}
+
 export async function POST(request: Request) {
   const contentType = request.headers.get('content-type') ?? '';
   const rawBody = await request.text();
@@ -84,11 +95,29 @@ export async function POST(request: Request) {
   let isValid = false;
   let matchedSecretName = '';
   let matchedCandidateName = '';
+  const signatureDebug: Array<{
+    secret: string;
+    primary: string;
+    candidates: Record<string, string>;
+  }> = [];
 
   for (const secretEntry of secrets) {
     const primaryExpectedSign = getAllpaySignature(payload, secretEntry.value).toLowerCase();
     const candidateMap = getAllpaySignatureCandidates(payload, secretEntry.value);
-    const matchedCandidate = Object.entries(candidateMap).find(([, candidate]) =>
+    const rawCandidateMap =
+      contentType.includes('application/x-www-form-urlencoded') || rawBody.includes('&')
+        ? getAllpayRawFormSignatureCandidates(rawBody, secretEntry.value)
+        : {};
+    const mergedCandidateMap = {
+      ...candidateMap,
+      ...rawCandidateMap,
+    };
+    signatureDebug.push({
+      secret: secretEntry.name,
+      primary: primaryExpectedSign,
+      candidates: mergedCandidateMap,
+    });
+    const matchedCandidate = Object.entries(mergedCandidateMap).find(([, candidate]) =>
       secureSignatureMatch(incomingSign, candidate.toLowerCase())
     );
 
@@ -110,8 +139,29 @@ export async function POST(request: Request) {
   if (!isValid) {
     // Invalid signatures happen regularly from third-party retries/probes.
     // Treat as an auth reject without polluting error-level logs.
+    const candidatePreview = signatureDebug.map((entry) => {
+      const trimmedCandidates = Object.entries(entry.candidates)
+        .slice(0, 5)
+        .map(([name, sign]) => [name, maskSignature(sign.toLowerCase())]);
+      return {
+        secret: entry.secret,
+        primary: maskSignature(entry.primary),
+        sampleCandidates: Object.fromEntries(trimmedCandidates),
+      };
+    });
+
     console.warn('[allpay-callback] signature rejected', {
       orderId: payload.order_id,
+      paymentId: payload.payment_id,
+      status: payload.status,
+      login: payload.login,
+      contentType,
+      payloadKeys: Object.keys(payload).sort((a, b) => a.localeCompare(b)),
+      rawBodyLength: rawBody.length,
+      incomingSignLength: incomingSign.length,
+      incomingSign: maskSignature(incomingSign),
+      triedSecrets: secrets.map((entry) => ({ name: entry.name, length: entry.value.length })),
+      candidatePreview,
     });
     return NextResponse.json({ ok: false, reason: 'invalid_sign' }, { status: 401 });
   }

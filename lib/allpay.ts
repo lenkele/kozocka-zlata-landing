@@ -123,8 +123,7 @@ export async function createAllpayPayment(input: CreatePaymentInput): Promise<Al
     allpay_token: '',
     inst: '',
     success_url: input.successUrl,
-    // Keep payload aligned with the official API tester request.
-    // backlink_url can be handled by success_url flow in MVP.
+    backlink_url: input.backlinkUrl,
     webhook_url: input.webhookUrl,
     login: input.login,
   };

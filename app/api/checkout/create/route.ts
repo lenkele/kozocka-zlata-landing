@@ -98,7 +98,8 @@ export async function POST(request: Request) {
     unitPrice = resolveUnitPrice(scheduleEvent?.price_ils, defaultUnitPrice);
     eventCapacity = resolveCapacity(scheduleEvent?.capacity);
     eventTicketMode = scheduleEvent?.ticket_mode === 'venue' ? 'venue' : 'self';
-    eventIsClosed = isClosedFormat(scheduleEvent?.entries?.ru?.format);
+    const ruEntry = scheduleEvent?.entries?.ru;
+    eventIsClosed = isClosedFormat(ruEntry?.format_original ?? ruEntry?.format);
   } catch (error) {
     console.error('[checkout-create] failed to resolve event data from schedule', { showSlug, eventId, error });
   }
