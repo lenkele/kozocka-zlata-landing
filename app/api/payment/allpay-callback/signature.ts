@@ -1,22 +1,38 @@
 import crypto from 'node:crypto';
 
+type Scalar = string | number | boolean;
+
+function isScalar(value: unknown): value is Scalar {
+  return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
+}
+
+function scalarToString(value: Scalar): string {
+  return typeof value === 'string' ? value : String(value);
+}
+
+function isEmpty(value: Scalar): boolean {
+  return typeof value === 'string' && value.trim() === '';
+}
+
 /**
  * Canonical AllPay signature algorithm.
  *
- * Implements the exact algorithm from the official documentation:
  * @see https://www.allpay.co.il/api-reference#signature
  *
- * Rules:
+ * Steps:
  * 1. Remove the `sign` parameter.
- * 2. Exclude all parameters with empty values.
- * 3. Sort remaining keys alphabetically (A-Z) — top-level, arrays, and keys inside each item.
- * 4. Take only the parameter **values** and join them with `:`.
- * 5. Append the API key at the end, preceded by `:`.
- * 6. Apply SHA-256.
+ * 2. Exclude parameters with empty string values.
+ * 3. Sort keys alphabetically (A-Z) at every level.
+ * 4. Take parameter values, join with `:`.
+ * 5. Append API key preceded by `:`.
+ * 6. SHA-256.
  *
- * IMPORTANT: Only **string** values are included.
- * Numbers, booleans, nulls, and other types are silently skipped —
- * this matches the reference Node.js implementation provided by AllPay.
+ * Note: both string and numeric scalar values are included in the
+ * signature.  AllPay's documented Node.js example only checks for
+ * strings, but their actual webhook payloads contain JSON numbers
+ * (amount, status, inst, item price/qty) which ARE part of the
+ * signed data.  Arrays (e.g. `items`) are processed recursively —
+ * each object's keys are sorted and scalar values collected.
  */
 export function getAllpaySignature(
   payload: Record<string, unknown>,
@@ -26,6 +42,8 @@ export function getAllpaySignature(
   const chunks: string[] = [];
 
   for (const key of sortedKeys) {
+    if (key === 'sign') continue;
+
     const value = payload[key];
 
     if (Array.isArray(value)) {
@@ -35,16 +53,14 @@ export function getAllpaySignature(
           const sortedItemKeys = Object.keys(record).sort();
           for (const itemKey of sortedItemKeys) {
             const itemVal = record[itemKey];
-            if (typeof itemVal === 'string' && itemVal.trim() !== '') {
-              chunks.push(itemVal);
-            }
+            if (!isScalar(itemVal) || isEmpty(itemVal)) continue;
+            chunks.push(scalarToString(itemVal));
           }
         }
       }
-    } else {
-      if (typeof value === 'string' && value.trim() !== '' && key !== 'sign') {
-        chunks.push(value);
-      }
+    } else if (isScalar(value)) {
+      if (isEmpty(value)) continue;
+      chunks.push(scalarToString(value));
     }
   }
 
