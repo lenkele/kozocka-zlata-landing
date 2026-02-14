@@ -81,6 +81,18 @@ const RU_CONTENT: Content = {
       q: 'Нужно ли взрослым покупать билет?',
       a: 'Да, билет нужен каждому зрителю.',
     },
+    {
+      q: 'Возврат билетов',
+      a: 'Вы можете вернуть билет не позднее 7 дней до мероприятия (за вычетом 5% которые берет платежная система за транзакцию). Позже этого срока билет можно только перенести на любое другое из мероприятий театра, где будут свободные места.',
+    },
+    {
+      q: 'Можно ли купить билет перед спектаклем за наличные?',
+      a: 'Билет перед спектаклем за наличные можно купить всегда, когда есть свободные места. Однако, как правило, билеты, купленные заранее, стоят дешевле.',
+    },
+    {
+      q: 'Можно ли получить скидку?',
+      a: 'Если вы находитесь в сложном финансовом положении или у вас многодетная семья и вы покупаете много билетов, напишите нам в WhatsApp и мы что-нибудь придумаем.',
+    },
   ],
   teamAuthorTitle: 'Автор проекта и сценария',
   teamAuthorName: 'Елена Шамис',
@@ -228,6 +240,18 @@ const HE_CONTENT: Content = {
       q: 'האם המבוגרים צריכים כרטיס?',
       a: 'כן, כל צופה צריך כרטיס.',
     },
+    {
+      q: 'החזרת כרטיסים',
+      a: 'ניתן להחזיר כרטיס לא יאוחר מ-7 ימים לפני האירוע (בניכוי 5% עמלת מערכת התשלום). לאחר מועד זה ניתן רק להעביר את הכרטיס לכל אירוע אחר של התיאטרון בו יש מקומות פנויים.',
+    },
+    {
+      q: 'האם אפשר לקנות כרטיס במזומן לפני ההצגה?',
+      a: 'תמיד אפשר לקנות כרטיס במזומן לפני ההצגה כשיש מקומות פנויים. עם זאת, ככלל, כרטיסים שנרכשים מראש זולים יותר.',
+    },
+    {
+      q: 'האם אפשר לקבל הנחה?',
+      a: 'אם אתם במצב כלכלי קשה או שיש לכם משפחה ברוכת ילדים ואתם קונים הרבה כרטיסים, כתבו לנו ב-WhatsApp ונמצא פתרון.',
+    },
   ],
   teamAuthorTitle: 'מחברת הפרויקט והתסריט',
   teamAuthorName: 'ילנה שמיס',
@@ -374,6 +398,18 @@ Children dive into the fairytale with a happy ending, while its philosophical ov
     {
       q: 'Do adults need a ticket?',
       a: 'Yes, every audience member needs a ticket.',
+    },
+    {
+      q: 'Ticket refunds',
+      a: 'You can return a ticket no later than 7 days before the event (minus a 5% payment-system transaction fee). After that deadline, the ticket can only be transferred to any other performance by the theatre where seats are available.',
+    },
+    {
+      q: 'Can I buy a ticket for cash before the show?',
+      a: 'You can always buy a ticket for cash before the show when seats are available. However, tickets purchased in advance are usually cheaper.',
+    },
+    {
+      q: 'Can I get a discount?',
+      a: 'If you are in a difficult financial situation or you have a large family and are buying many tickets, write to us on WhatsApp and we will work something out.',
     },
   ],
   teamAuthorTitle: 'Project & script author',
