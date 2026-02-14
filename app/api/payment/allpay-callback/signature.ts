@@ -1,25 +1,60 @@
 import crypto from 'node:crypto';
 
-type Scalar = string | number | boolean;
-
-function isScalar(value: unknown): value is Scalar {
-  return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
-}
-
-function normalizeScalar(value: Scalar): string {
-  return typeof value === 'string' ? value.trim() : String(value);
-}
-
+/**
+ * Canonical AllPay signature algorithm.
+ *
+ * Implements the exact algorithm from the official documentation:
+ * @see https://www.allpay.co.il/api-reference#signature
+ *
+ * Rules:
+ * 1. Remove the `sign` parameter.
+ * 2. Exclude all parameters with empty values.
+ * 3. Sort remaining keys alphabetically (A-Z) — top-level, arrays, and keys inside each item.
+ * 4. Take only the parameter **values** and join them with `:`.
+ * 5. Append the API key at the end, preceded by `:`.
+ * 6. Apply SHA-256.
+ *
+ * IMPORTANT: Only **string** values are included.
+ * Numbers, booleans, nulls, and other types are silently skipped —
+ * this matches the reference Node.js implementation provided by AllPay.
+ */
 export function getAllpaySignature(
   payload: Record<string, unknown>,
-  secret: string,
-  skipKeys: string[] = ['sign']
+  secret: string
 ): string {
-  const values = collectValues(payload, Object.keys(payload).sort((a, b) => a.localeCompare(b)), skipKeys);
-  const base = `${values.join(':')}:${secret}`;
-  return crypto.createHash('sha256').update(base).digest('hex');
+  const sortedKeys = Object.keys(payload).sort();
+  const chunks: string[] = [];
+
+  for (const key of sortedKeys) {
+    const value = payload[key];
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+          const record = item as Record<string, unknown>;
+          const sortedItemKeys = Object.keys(record).sort();
+          for (const itemKey of sortedItemKeys) {
+            const itemVal = record[itemKey];
+            if (typeof itemVal === 'string' && itemVal.trim() !== '') {
+              chunks.push(itemVal);
+            }
+          }
+        }
+      }
+    } else {
+      if (typeof value === 'string' && value.trim() !== '' && key !== 'sign') {
+        chunks.push(value);
+      }
+    }
+  }
+
+  const signatureString = chunks.join(':') + ':' + secret;
+  return crypto.createHash('sha256').update(signatureString).digest('hex');
 }
 
+/**
+ * Timing-safe signature comparison to prevent timing attacks.
+ */
 export function secureSignatureMatch(a: string, b: string): boolean {
   const left = Buffer.from(a, 'utf8');
   const right = Buffer.from(b, 'utf8');
@@ -29,148 +64,4 @@ export function secureSignatureMatch(a: string, b: string): boolean {
   }
 
   return crypto.timingSafeEqual(left, right);
-}
-
-function collectValues(
-  payload: Record<string, unknown>,
-  keys: string[],
-  skipKeys: string[] = ['sign'],
-  includeEmpty = false
-): string[] {
-  const values: string[] = [];
-
-  for (const key of keys) {
-    if (skipKeys.includes(key)) continue;
-
-    const value = payload[key];
-    if (!isScalar(value)) continue;
-
-    const normalized = normalizeScalar(value);
-    if (!includeEmpty && !normalized) continue;
-
-    values.push(normalized);
-  }
-
-  return values;
-}
-
-function collectPairs(
-  payload: Record<string, unknown>,
-  keys: string[],
-  skipKeys: string[] = ['sign'],
-  includeEmpty = false
-): string[] {
-  const pairs: string[] = [];
-
-  for (const key of keys) {
-    if (skipKeys.includes(key)) continue;
-
-    const value = payload[key];
-    if (!isScalar(value)) continue;
-
-    const normalized = normalizeScalar(value);
-    if (!includeEmpty && !normalized) continue;
-
-    pairs.push(`${key}=${normalized}`);
-  }
-
-  return pairs;
-}
-
-function hash(base: string): string {
-  return crypto.createHash('sha256').update(base).digest('hex');
-}
-
-function safeDecodeFormComponent(value: string): string {
-  try {
-    return decodeURIComponent(value.replace(/\+/g, ' '));
-  } catch {
-    return value;
-  }
-}
-
-export function getAllpayRawFormSignatureCandidates(
-  rawBody: string,
-  secret: string
-): Record<string, string> {
-  if (!rawBody.trim()) return {};
-
-  const segments = rawBody
-    .split('&')
-    .map((segment) => segment.trim())
-    .filter(Boolean);
-
-  const withoutSign = segments.filter((segment) => {
-    const [rawKey = ''] = segment.split('=');
-    const key = safeDecodeFormComponent(rawKey).trim().toLowerCase();
-    return key !== 'sign';
-  });
-
-  const rawValues: string[] = [];
-  const decodedValues: string[] = [];
-  const rawPairs: string[] = [];
-  const decodedPairs: string[] = [];
-
-  for (const segment of withoutSign) {
-    const eqIndex = segment.indexOf('=');
-    const rawKey = eqIndex >= 0 ? segment.slice(0, eqIndex) : segment;
-    const rawValue = eqIndex >= 0 ? segment.slice(eqIndex + 1) : '';
-    const decodedKey = safeDecodeFormComponent(rawKey);
-    const decodedValue = safeDecodeFormComponent(rawValue);
-
-    rawValues.push(rawValue);
-    decodedValues.push(decodedValue);
-    rawPairs.push(`${rawKey}=${rawValue}`);
-    decodedPairs.push(`${decodedKey}=${decodedValue}`);
-  }
-
-  return {
-    raw_values_colon_secret: hash(`${rawValues.join(':')}:${secret}`),
-    raw_values_plain_secret: hash(`${rawValues.join('')}${secret}`),
-    raw_values_colon_with_amp_secret: hash(`${rawValues.join('&')}:${secret}`),
-    raw_values_amp_secret: hash(`${rawValues.join('&')}${secret}`),
-    decoded_values_colon_secret: hash(`${decodedValues.join(':')}:${secret}`),
-    decoded_values_plain_secret: hash(`${decodedValues.join('')}${secret}`),
-    raw_pairs_amp_secret_key: hash(`${rawPairs.join('&')}&secret_key=${secret}`),
-    decoded_pairs_amp_secret_key: hash(`${decodedPairs.join('&')}&secret_key=${secret}`),
-    raw_body_without_sign_plus_secret: hash(`${withoutSign.join('&')}${secret}`),
-    raw_body_without_sign_colon_secret: hash(`${withoutSign.join('&')}:${secret}`),
-    secret_plus_raw_body_without_sign: hash(`${secret}${withoutSign.join('&')}`),
-  };
-}
-
-export function getAllpaySignatureCandidates(
-  payload: Record<string, unknown>,
-  secret: string,
-  skipKeys: string[] = ['sign']
-): Record<string, string> {
-  const sortedKeys = Object.keys(payload).sort((a, b) => a.localeCompare(b));
-  const insertionKeys = Object.keys(payload);
-  const sortedValues = collectValues(payload, sortedKeys, skipKeys);
-  const insertionValues = collectValues(payload, insertionKeys, skipKeys);
-  const sortedPairs = collectPairs(payload, sortedKeys, skipKeys);
-  const insertionPairs = collectPairs(payload, insertionKeys, skipKeys);
-  const sortedValuesWithEmpty = collectValues(payload, sortedKeys, skipKeys, true);
-  const insertionValuesWithEmpty = collectValues(payload, insertionKeys, skipKeys, true);
-  const sortedPairsWithEmpty = collectPairs(payload, sortedKeys, skipKeys, true);
-  const insertionPairsWithEmpty = collectPairs(payload, insertionKeys, skipKeys, true);
-  const compactJson = JSON.stringify(payload);
-
-  return {
-    values_colon_sorted: hash(`${sortedValues.join(':')}:${secret}`),
-    values_plain_sorted: hash(`${sortedValues.join('')}${secret}`),
-    values_colon_insertion: hash(`${insertionValues.join(':')}:${secret}`),
-    values_plain_insertion: hash(`${insertionValues.join('')}${secret}`),
-    pairs_amp_sorted: hash(`${sortedPairs.join('&')}&secret_key=${secret}`),
-    pairs_amp_insertion: hash(`${insertionPairs.join('&')}&secret_key=${secret}`),
-    values_colon_sorted_with_empty: hash(`${sortedValuesWithEmpty.join(':')}:${secret}`),
-    values_plain_sorted_with_empty: hash(`${sortedValuesWithEmpty.join('')}${secret}`),
-    values_colon_insertion_with_empty: hash(`${insertionValuesWithEmpty.join(':')}:${secret}`),
-    values_plain_insertion_with_empty: hash(`${insertionValuesWithEmpty.join('')}${secret}`),
-    pairs_amp_sorted_with_empty: hash(`${sortedPairsWithEmpty.join('&')}&secret_key=${secret}`),
-    pairs_amp_insertion_with_empty: hash(`${insertionPairsWithEmpty.join('&')}&secret_key=${secret}`),
-    raw_json_plus_secret: hash(`${compactJson}${secret}`),
-    raw_json_colon_secret: hash(`${compactJson}:${secret}`),
-    secret_plus_raw_json: hash(`${secret}${compactJson}`),
-  };
 }

@@ -45,7 +45,7 @@ function isClosedFormat(value: unknown): boolean {
 export async function POST(request: Request) {
   const terminalId = process.env.ALLPAY_TERMINAL_ID;
   const apiKey = process.env.ALLPAY_API_KEY;
-  const appBaseUrl = process.env.APP_BASE_URL;
+  const appBaseUrl = process.env.APP_BASE_URL?.replace(/\/+$/, '');
 
   if (!terminalId || !apiKey || !appBaseUrl) {
     return NextResponse.json(
