@@ -60,7 +60,7 @@ function resolveShowTitle(showSlug: string): Record<Lang, string> {
   };
 }
 
-export function resolveCheckoutItemName(showSlug: string, lang: Lang): string {
+export function resolveCheckoutItemName(showSlug: string, lang: Lang, event?: ScheduleEvent | null): string {
   const titles = resolveShowTitle(showSlug);
   const localized = titles[lang];
   const showTitle = localized && localized !== '-' ? localized : titles.ru !== '-' ? titles.ru : 'Ticket';
@@ -71,7 +71,22 @@ export function resolveCheckoutItemName(showSlug: string, lang: Lang): string {
     he: 'כרטיס למופע',
   };
 
-  return `${showTitle} – ${suffixByLang[lang]}`;
+  let name = `${showTitle} – ${suffixByLang[lang]}`;
+
+  if (event) {
+    const entry = event.entries?.[lang] ?? event.entries?.ru;
+    const dateIso = normalizeDateIso(event.date_iso);
+    const dateText = entry?.date_text || (dateIso ? formatDate(dateIso, lang) : '');
+    const timeText = entry?.time?.trim() || '';
+    const placeText = entry?.place?.trim() || '';
+
+    const parts = [dateText, timeText, placeText].filter(Boolean);
+    if (parts.length > 0) {
+      name += ` | ${parts.join(', ')}`;
+    }
+  }
+
+  return name;
 }
 
 async function loadScheduleEvent(showSlug: string, eventId: string): Promise<ScheduleEvent | null> {

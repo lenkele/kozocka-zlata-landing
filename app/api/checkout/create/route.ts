@@ -85,16 +85,16 @@ export async function POST(request: Request) {
   const returnPath = resolveSafeReturnUrl(body.returnPath, `/${showSlug}`, {
     showSlug: isShowSlug(showSlug) ? showSlug : undefined,
   });
-  const itemName = resolveCheckoutItemName(showSlug, lang) || process.env.DEFAULT_TICKET_NAME || 'Ticket';
   const defaultUnitPrice = parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, 1);
   let unitPrice = defaultUnitPrice;
   let eventCapacity: number | null = null;
   let eventTicketMode: 'self' | 'venue' = 'self';
   let eventIsClosed = false;
+  let scheduleEvent: { id?: string; date_iso?: string | Date; entries?: Record<string, { time?: string; place?: string; date_text?: string; format?: string; format_original?: string }>; price_ils?: number | string; capacity?: number | string; ticket_mode?: string } | undefined;
 
   try {
     const schedule = await loadScheduleForShow(showSlug);
-    const scheduleEvent = schedule.find((item) => item.id === eventId);
+    scheduleEvent = schedule.find((item) => item.id === eventId);
     unitPrice = resolveUnitPrice(scheduleEvent?.price_ils, defaultUnitPrice);
     eventCapacity = resolveCapacity(scheduleEvent?.capacity);
     eventTicketMode = scheduleEvent?.ticket_mode === 'venue' ? 'venue' : 'self';
@@ -103,6 +103,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('[checkout-create] failed to resolve event data from schedule', { showSlug, eventId, error });
   }
+
+  const itemName = resolveCheckoutItemName(showSlug, lang, scheduleEvent) || process.env.DEFAULT_TICKET_NAME || 'Ticket';
 
   if (eventIsClosed) {
     return NextResponse.json({ ok: false, reason: 'closed_show' }, { status: 400 });
