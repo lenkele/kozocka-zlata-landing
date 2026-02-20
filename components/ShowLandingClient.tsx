@@ -248,7 +248,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   const [selectedRow, setSelectedRow] = useState<ScheduleDisplayEntry | null>(null);
   const [buyerName, setBuyerName] = useState('');
   const [buyerEmail, setBuyerEmail] = useState('');
-  const [ticketQty, setTicketQty] = useState(1);
+  const [ticketQtyInput, setTicketQtyInput] = useState('1');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [marketingAccepted, setMarketingAccepted] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -509,13 +509,15 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   const selectedAvailability = selectedRow ? getAvailability(selectedRow.id) : null;
   const selectedRemaining = selectedAvailability?.remaining ?? null;
   const selectedMaxQty = selectedRemaining === null ? 10 : Math.max(1, Math.min(10, selectedRemaining));
+  const ticketQty = Math.max(1, Math.min(selectedMaxQty, Number.parseInt(ticketQtyInput, 10) || 1));
   const selectedTotalPrice = selectedUnitPrice !== null ? selectedUnitPrice * ticketQty : null;
 
   useEffect(() => {
-    if (ticketQty > selectedMaxQty) {
-      setTicketQty(selectedMaxQty);
+    const parsed = Number.parseInt(ticketQtyInput, 10) || 1;
+    if (parsed > selectedMaxQty) {
+      setTicketQtyInput(String(selectedMaxQty));
     }
-  }, [selectedMaxQty, ticketQty]);
+  }, [selectedMaxQty, ticketQtyInput]);
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-fixed bg-cover bg-center overflow-x-hidden" style={{ backgroundImage: show.backgroundStyle }}>
@@ -949,10 +951,19 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                     min={1}
                     max={selectedMaxQty}
                     type="number"
-                    value={ticketQty}
-                    onChange={(event) =>
-                      setTicketQty(Math.max(1, Math.min(selectedMaxQty, Number.parseInt(event.target.value || '1', 10))))
-                    }
+                    inputMode="numeric"
+                    value={ticketQtyInput}
+                    onChange={(e) => setTicketQtyInput(e.target.value)}
+                    onBlur={() => {
+                      const parsed = Number.parseInt(ticketQtyInput, 10);
+                      if (!parsed || parsed < 1) {
+                        setTicketQtyInput('1');
+                      } else if (parsed > selectedMaxQty) {
+                        setTicketQtyInput(String(selectedMaxQty));
+                      } else {
+                        setTicketQtyInput(String(parsed));
+                      }
+                    }}
                     className="w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 outline-none focus:border-amber-300/60"
                   />
                 </label>
