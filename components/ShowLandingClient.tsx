@@ -417,7 +417,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     }
     setSelectedRow(row);
     setCheckoutError(null);
-    setTicketQty(1);
+    setTicketQtyInput('1');
     setTermsAccepted(false);
     setMarketingAccepted(false);
   };
@@ -488,7 +488,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
 
         if (result.reason === 'qty_exceeds_remaining' && typeof result.remaining === 'number') {
           const safeRemaining = Math.max(1, result.remaining);
-          setTicketQty(safeRemaining);
+          setTicketQtyInput(String(safeRemaining));
           setCheckoutError(formatQtyExceedsError(result.remaining));
           setCheckoutLoading(false);
           return;
