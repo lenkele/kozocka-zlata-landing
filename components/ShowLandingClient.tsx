@@ -1234,11 +1234,17 @@ function HanukkiahIcon({ className }: { className?: string }) {
   );
 }
 
-/** Язык из списка браузера (приоритет), затем localStorage, затем ru / первый доступный. */
+/** Явный выбор пользователя (localStorage) > языки браузера > английский / первый доступный. */
 function resolvePreferredLang(available: Lang[]): Lang {
-  if (available.length === 0) return 'ru';
+  if (available.length === 0) return 'en';
+  const fallback: Lang = available.includes('en') ? 'en' : available[0];
   if (typeof window === 'undefined') {
-    return available.includes('ru') ? 'ru' : available[0];
+    return fallback;
+  }
+
+  const saved = localStorage.getItem('preferredLang') as Lang | null;
+  if (saved && ['ru', 'he', 'en'].includes(saved) && available.includes(saved)) {
+    return saved;
   }
 
   const tags = navigator.languages?.length ? [...navigator.languages] : [navigator.language];
@@ -1253,12 +1259,7 @@ function resolvePreferredLang(available: Lang[]): Lang {
     }
   }
 
-  const saved = localStorage.getItem('preferredLang') as Lang | null;
-  if (saved && ['ru', 'he', 'en'].includes(saved) && available.includes(saved)) {
-    return saved;
-  }
-
-  return available.includes('ru') ? 'ru' : available[0];
+  return fallback;
 }
 
 function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayEntry[] {
