@@ -347,10 +347,10 @@ const EN_CONTENT: Content = {
   flyerDownload: 'Download flyer',
   posterDownload: 'Download poster',
   photosDownload: 'Download photo pack',
-  posterImage: `${FILES_BASE}/poster-kozocka-zlata-en.png`,
-  posterPdf: `${FILES_BASE}/poster-kozocka-zlata-en.pdf`,
-  flyerPdf: `${FILES_BASE}/flyer-kozocka-zlata-en.pdf`,
-  photosArchive: `${FILES_BASE}/photos-kozocka-zlata-en.zip`,
+  posterImage: `${FILES_BASE}/poster-kozocka-zlata-ru.png`,
+  posterPdf: `${FILES_BASE}/poster-kozocka-zlata-ru.pdf`,
+  flyerPdf: `${FILES_BASE}/flyer-kozocka-zlata-ru.pdf`,
+  photosArchive: `${FILES_BASE}/photos-kozocka-zlata-ru.zip`,
   aboutText: `In a tiny house,
 On an evening by the stove
 A mother sits on a small bench

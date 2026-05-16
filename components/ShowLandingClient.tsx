@@ -290,11 +290,8 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   const buyCellItemsClass = isRTL ? 'items-end' : 'items-start';
 
   useEffect(() => {
-    const preferred = detectBrowserLanguage();
-    // Устанавливаем предпочитаемый язык только если он доступен
-    if (availableLanguages.includes(preferred)) {
-      setLang(preferred);
-    }
+    const preferred = resolvePreferredLang(availableLanguages);
+    setLang(preferred);
   }, [availableLanguages]);
 
   useEffect(() => {
@@ -1236,23 +1233,31 @@ function HanukkiahIcon({ className }: { className?: string }) {
   );
 }
 
-function detectBrowserLanguage(): Lang {
-  if (typeof window === 'undefined') return 'ru';
-  const savedLang = localStorage.getItem('preferredLang') as Lang | null;
-  if (savedLang && ['ru', 'he', 'en'].includes(savedLang)) {
-    return savedLang;
+/** Язык из списка браузера (приоритет), затем localStorage, затем ru / первый доступный. */
+function resolvePreferredLang(available: Lang[]): Lang {
+  if (available.length === 0) return 'ru';
+  if (typeof window === 'undefined') {
+    return available.includes('ru') ? 'ru' : available[0];
   }
-  const browserLang = navigator.language.toLowerCase();
-  if (browserLang.startsWith('he') || browserLang.startsWith('iw')) {
-    return 'he';
+
+  const tags = navigator.languages?.length ? [...navigator.languages] : [navigator.language];
+  for (const tag of tags) {
+    const lower = tag.toLowerCase();
+    let candidate: Lang | null = null;
+    if (lower.startsWith('he') || lower.startsWith('iw')) candidate = 'he';
+    else if (lower.startsWith('ru')) candidate = 'ru';
+    else if (lower.startsWith('en')) candidate = 'en';
+    if (candidate && available.includes(candidate)) {
+      return candidate;
+    }
   }
-  if (browserLang.startsWith('ru')) {
-    return 'ru';
+
+  const saved = localStorage.getItem('preferredLang') as Lang | null;
+  if (saved && ['ru', 'he', 'en'].includes(saved) && available.includes(saved)) {
+    return saved;
   }
-  if (browserLang.startsWith('en')) {
-    return 'en';
-  }
-  return 'ru';
+
+  return available.includes('ru') ? 'ru' : available[0];
 }
 
 function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayEntry[] {
