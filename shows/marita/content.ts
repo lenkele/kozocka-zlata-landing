@@ -159,6 +159,164 @@ const RU_CONTENT: Content = {
   ],
 };
 
+const EN_CONTENT: Content = {
+  title: 'Marita’s Magic',
+  seoSubtitle:
+    'A vivid, warm multi-layered story with a gripping plot: fairytale and philosophy, laughter and sorrow, death and love, framed by live Sephardic music, original puppets and sets.',
+  heroSecondary:
+    'With two suitcases of wondrous props the theatre will come to your venue and bring real magic to a kindergarten, school, studio or even an apartment.\nIt is a show for the whole family—children from about six, teenagers and parents all find something for themselves.',
+  teaserVideoUrl: 'https://www.youtube.com/embed/X5kZOSKk6z0',
+  heroBadge: 'Puppet musical with live music and songs',
+  theatreLabel: 'Ryba Kiva Theatre',
+  theatreSubtitle: 'A magical family show for Purim!',
+  menuInvite: 'Invite the theatre',
+  menuAbout: 'About the show',
+  menuSchedule: 'Shows',
+  menuMedia: 'Video & photos',
+  menuTeam: 'Team',
+  sectionAbout: 'About the show',
+  sectionFlyer: 'Flyer',
+  sectionPoster: 'Poster',
+  sectionSchedule: 'Performance schedule',
+  sectionTeaser: 'Teaser video',
+  sectionFragments: 'Video fragments',
+  sectionPhotos: 'Photos',
+  sectionTeam: 'About the team',
+  sectionContact: 'Contact',
+  sectionDownloads: 'Downloads',
+  flyerDownload: 'Download flyer',
+  posterDownload: 'Download poster',
+  photosDownload: 'Download photo pack',
+  posterImage: `${FILES_BASE}/poster.jpg`,
+  posterPdf: `${FILES_BASE}/poster.pdf`,
+  flyerPdf: `${FILES_BASE}/flyer-kozocka-zlata-ru.pdf`,
+  photosArchive: `${FILES_BASE}/photos-kozocka-zlata-ru.zip`,
+  aboutText: `A castle, a king, a princess, magic—everything as it should be, and you would think the tale should roll along the rails of a classic Sephardic legend about a princess, a poor young man, an evil stepmother and love.
+In “Marita’s Magic” we look at that archetypal story from an unexpected angle and, together with the audience, try to understand: what is this love that conquers death?
+A miracle, magic, sorcery—or perhaps the fruit of a selfless, pure heart?
+Children will laugh, get a little scared, almost cry and rejoice at the happy ending.
+Adults will have something to discuss with their children—and perhaps, who knows, something to think about themselves.`,
+  contactText:
+    'To invite the show to your venue, write to us on WhatsApp. Tell us who the audience will be and we will suggest a convenient date and format.',
+  contactWhatsappLabel: 'Write on WhatsApp',
+  ageLabel: 'Age',
+  durationLabel: 'Duration',
+  formatLabel: 'Format',
+  infoAgeValue: 'Ages 6 and up',
+  infoDurationValue: '1 hour 20 minutes',
+  infoFormatValue: 'For adults in the presence of children 🙂',
+  faqTitle: 'FAQ',
+  faqItems: [
+    {
+      q: 'What do we need to host the show?',
+      a: 'You need a small hall, studio or classroom that can be darkened. Message us on WhatsApp and we will coordinate the details.',
+    },
+    {
+      q: 'Can you perform in a large theatre hall?',
+      a: 'In theory the show can be played on a large stage—we have done it—but it sounds best in an intimate setting with the audience directly opposite the centre of the stage, within about four metres. Ideally children sit closer and in tiers—on cushions or mats, for example.',
+    },
+    {
+      q: 'Do you require any special equipment?',
+      a: 'We need dimming, a 220V socket and free space in front of the audience. Everything else—light, sound, puppets and set—we bring with us.',
+    },
+    {
+      q: 'Can we bring a child younger than the recommended age?',
+      a: 'We recommend the show from age six. You may bring a younger child, but please stay nearby and watch how they feel so it is not too scary, boring or tiring. You can always step out briefly so as not to disturb other audience members.',
+    },
+    {
+      q: 'Can I leave my child alone at the show?',
+      a: 'From about age nine a child can stay alone, but it matters to us that most parents are in the room too—and not for discipline. Many layers of meaning are addressed to adults, and when there is no one to speak to, we are genuinely sad. We believe the show should be a shared experience and a topic for conversation for your whole family.',
+    },
+    {
+      q: 'Do adults need a ticket?',
+      a: 'Yes, every audience member needs a ticket.',
+    },
+    {
+      q: 'Ticket refunds',
+      a: 'You can return a ticket no later than 7 days before the event (minus a 5% payment-system transaction fee). After that, a ticket can only be moved to any other performance by the theatre where seats are available.',
+    },
+    {
+      q: 'Can I buy a ticket for cash before the show?',
+      a: 'You can always buy a ticket for cash before the show when seats are available. However, tickets bought in advance are usually cheaper.',
+    },
+    {
+      q: 'Can I get a discount?',
+      a: 'If you are in a difficult financial situation or you have a large family and are buying many tickets, write to us on WhatsApp and we will see what we can do.',
+    },
+  ],
+  teamAuthorTitle: 'Project & script author',
+  teamAuthorName: 'Elena Shamis',
+  songsTitle: 'Songs',
+  songsName: 'Elena Shamis and Mikhail Starodubtsev',
+  teamDirectorTitle: 'Designers',
+  teamDirectorName: 'Olga Filippova and Varvara Darevskaya',
+  masterTitle: 'Complex set construction',
+  masterName: 'Mikhail Starodubtsev',
+  teamActorsTitle: 'Cast',
+  teamActors: [
+    { name: 'Maria Geskina', role: 'guitar, vocals, puppetry' },
+    { name: 'Mikhail Starodubtsev', role: 'guitar, vocals, puppetry' },
+    { name: 'Sasha Skvortsova', role: 'violin, puppetry' },
+    { name: 'Elena Shamis', role: 'vocals, puppetry' },
+  ],
+  photoDownloadLabel: 'Download',
+  carouselOpenLabel: 'View larger',
+  carouselDownloadLabel: 'Download photo',
+  carouselPrevLabel: 'Previous photo',
+  carouselNextLabel: 'Next photo',
+  carouselCloseLabel: 'Close',
+  scheduleDateLabel: 'Date',
+  scheduleTimeLabel: 'Time',
+  schedulePlaceLabel: 'Venue',
+  scheduleFormatLabel: 'Comment',
+  scheduleLanguageLabel: 'Language',
+  scheduleRows: [
+    {
+      date: '28 ноября',
+      time: '09:00',
+      place: 'Иерусалим, школа',
+      format: 'Закрытый показ',
+      language: 'Иврит',
+    },
+    {
+      date: '09 декабря',
+      time: '18:00',
+      place: 'Иерусалим, Матнас Гило',
+      format: 'Закрытый показ',
+      language: 'Русский',
+    },
+    {
+      date: '11 декабря',
+      time: '17:00',
+      place: 'Нагария',
+      format: 'Открытый показ',
+      language: 'Русский',
+    },
+    {
+      date: '18 декабря',
+      time: '18:00',
+      place: 'Хайфа, фестиваль «В Чемодане»',
+      format: 'Открытый показ',
+      language: 'Иврит',
+    },
+    {
+      date: '19 декабря',
+      time: '11:00',
+      place: 'Хайфа, Матнас Адар',
+      format: 'Открытый показ',
+      language: 'Русский',
+    },
+    {
+      date: '21 декабря',
+      time: '17:00',
+      place: 'Хайфа',
+      format: 'Открытый показ',
+      language: 'Иврит',
+    },
+  ],
+};
+
 export const MARITA_CONTENT: Partial<Record<Lang, Content>> = {
   ru: RU_CONTENT,
+  en: EN_CONTENT,
 };

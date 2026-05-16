@@ -551,7 +551,13 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                     </LangButton>
                   )}
                   {availableLanguages.includes('en') && (
-                    <LangButton current={lang} target="en" onClick={changeLang} disabled title="English version coming soon">
+                    <LangButton
+                      current={lang}
+                      target="en"
+                      onClick={changeLang}
+                      disabled={!show.content.en}
+                      title={!show.content.en ? 'English version coming soon' : undefined}
+                    >
                       Eng
                     </LangButton>
                   )}
@@ -1243,6 +1249,9 @@ function detectBrowserLanguage(): Lang {
   if (browserLang.startsWith('ru')) {
     return 'ru';
   }
+  if (browserLang.startsWith('en')) {
+    return 'en';
+  }
   return 'ru';
 }
 
@@ -1253,7 +1262,7 @@ function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayE
 
   return yamlData.schedule
     .map((event) => {
-      const entry = event.entries[lang];
+      const entry = event.entries?.[lang] ?? event.entries?.ru ?? event.entries?.he;
       if (!entry) return null;
       const dateIso = normalizeDateIso(event.date_iso);
       if (!dateIso) return null;

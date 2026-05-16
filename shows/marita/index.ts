@@ -7,7 +7,8 @@ const IMAGES_BASE = `${ASSET_BASE}/images`;
 const DATA_BASE = `${ASSET_BASE}/data`;
 
 const WHATSAPP_MESSAGES: Partial<Record<Lang, string>> = {
-  ru: 'Здравствуйте! Хочу пригласить спектакль «Козочка Злата». Напишите, пожалуйста, какие есть даты и условия.',
+  ru: 'Здравствуйте! Хочу пригласить спектакль «Колдовство Мариты». Напишите, пожалуйста, какие есть даты и условия.',
+  en: 'Hello! I would like to invite “Marita’s Magic”. Please let me know what dates and conditions are available.',
 };
 
 const CAROUSEL_PHOTOS: CarouselPhoto[] = [
@@ -57,7 +58,7 @@ export const MARITA_SHOW: ShowConfig = {
   whatsappLinkBase: 'https://wa.me/972533219998?text=',
   whatsappMessages: WHATSAPP_MESSAGES,
   content: MARITA_CONTENT,
-  availableLanguages: ['ru'], // Только русский язык для этого спектакля
+  availableLanguages: ['ru', 'en'],
   buttonColors: {
     bg: 'bg-[#4A6B9D]',
     hover: 'hover:bg-[#3D5A85]',
