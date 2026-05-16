@@ -237,8 +237,9 @@ function pickVisibleScheduleRows(rows: ScheduleDisplayEntry[]): ScheduleDisplayE
 }
 
 export default function ShowLandingClient({ show }: { show: ShowConfig }) {
-  // Определяем доступные языки для спектакля (по умолчанию все)
-  const availableLanguages: Lang[] = show.availableLanguages ?? ['ru', 'he', 'en'];
+  // Стабильная ссылка: иначе `?? ['ru','he','en']` даёт новый массив каждый рендер и
+  // useEffect([availableLanguages]) каждый раз сбрасывает язык через resolvePreferredLang.
+  const availableLanguages = useMemo<Lang[]>(() => show.availableLanguages ?? ['ru', 'he', 'en'], [show.availableLanguages]);
   const defaultLang = availableLanguages.includes('ru') ? 'ru' : availableLanguages[0];
 
   const [lang, setLang] = useState<Lang>(defaultLang);
