@@ -6,7 +6,7 @@ import path from 'node:path';
 import yaml from 'js-yaml';
 
 const ROOT = process.cwd();
-const SHOWS_TO_SYNC = ['zlata', 'marita'];
+const SHOWS_TO_SYNC = ['zlata', 'marita', 'gefilte-lid'];
 
 const FORMAT_FROM_RU = {
   'открытый показ': { en: 'Public performance', he: 'מופע פתוח' },

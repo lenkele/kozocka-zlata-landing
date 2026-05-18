@@ -9,6 +9,8 @@ const HOST_TO_SHOW: Record<string, ShowSlug> = {
   'ryba-kiva-zlata.com': 'zlata',
   'www.ryba-kiva-marita.com': 'marita',
   'ryba-kiva-marita.com': 'marita',
+  'www.ryba-kiva-gefilte-lid.com': 'gefilte-lid',
+  'ryba-kiva-gefilte-lid.com': 'gefilte-lid',
   localhost: DEFAULT_SHOW_SLUG,
   '127.0.0.1': DEFAULT_SHOW_SLUG,
 };

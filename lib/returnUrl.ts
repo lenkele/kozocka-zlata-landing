@@ -15,6 +15,8 @@ const ALLOWED_RETURN_HOSTS = new Set([
   'www.ryba-kiva-zlata.com',
   'ryba-kiva-marita.com',
   'www.ryba-kiva-marita.com',
+  'ryba-kiva-gefilte-lid.com',
+  'www.ryba-kiva-gefilte-lid.com',
   'localhost',
   '127.0.0.1',
   'kozocka-zlata-landing-coral.vercel.app',
@@ -25,6 +27,7 @@ const ALLOWED_RETURN_HOSTS = new Set([
 const SHOW_CANONICAL_ORIGIN: Record<ShowSlug, string> = {
   zlata: 'https://ryba-kiva-zlata.com',
   marita: 'https://ryba-kiva-marita.com',
+  'gefilte-lid': 'https://ryba-kiva-gefilte-lid.com',
 };
 
 function getHostFromUrl(url: string): string | null {

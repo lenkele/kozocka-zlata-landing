@@ -74,7 +74,7 @@ export type Content = {
   }[];
 };
 
-export type ShowSlug = 'zlata' | 'marita';
+export type ShowSlug = 'zlata' | 'marita' | 'gefilte-lid';
 
 export type CarouselPhoto = { src: string; alt: string };
 
