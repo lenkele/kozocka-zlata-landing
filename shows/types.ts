@@ -102,4 +102,8 @@ export type ShowConfig = {
   darkCardBg?: string; // Цвет фона темных карточек
   headerBg?: string; // Цвет хедера
   headingColor?: string; // Цвет заголовков на карточках
+  // Если true — список фото для карусели и галереи собирается автоматически
+  // из public/shows/<slug>/photos/ при server-render `[show]/page.tsx`.
+  // carouselPhotos/galleryPhotos в этом случае игнорируются.
+  autoDiscoverPhotos?: boolean;
 };
