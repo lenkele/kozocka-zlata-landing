@@ -12,7 +12,7 @@ const PHOTOS_ARCHIVE = `${FILES_BASE}/photos-gefilte-lid-ru.zip`;
 const RU_CONTENT: Content = {
   title: 'Гефилте Лид',
   seoSubtitle:
-    'Баржа летает в небе, уж ползает на спине, субботний карп спасает портного и ослика от волшебных маков: эти и другие удивительные события происходят в спектакле «Гефилте лид», или фаршированная песня от театра Рыба Кива.\nЭто весёлый, красивый и тёплый спектакль для всей семьи, где будут и куклы, и проекции, и живая музыка, и немного волшебства.',
+    'Весёлый и трогательный спектакль про путешествие портного и ослика за самым красивым карпом.\nКуклы, тени, проекции, весёлое взаимодействие и моменты погружения, песни разных времён, живые голоса, скрипка и гитара.',
   heroSecondary:
     'С двумя чемоданами удивительных предметов театр приедет к вам в гости и привезёт настоящее волшебство в детский сад, школу, студию и даже квартиру.\nЭто спектакль для всей семьи, интересный по-разному детям примерно с 5 лет, подросткам и родителям.',
   teaserVideoUrl: 'https://www.youtube.com/embed/FpH1vNgcemg',
@@ -41,7 +41,8 @@ const RU_CONTENT: Content = {
   posterPdf: POSTER_DOWNLOAD,
   flyerPdf: FLYER_DOWNLOAD,
   photosArchive: PHOTOS_ARCHIVE,
-  aboutText: '',
+  aboutText:
+    'Баржа летает в небе, уж ползает на спине, субботний карп спасает портного и ослика от волшебных маков: эти и другие удивительные события происходят в спектакле «Гефилте лид», или фаршированная песня от театра Рыба Кива.\nЭто весёлый, красивый и тёплый спектакль для всей семьи, где будут и куклы, и проекции, и живая музыка, и немного волшебства.',
   contactText:
     'Чтобы пригласить спектакль к вам в гости, напишите нам в WhatsApp. Расскажите, для кого вы планируете показ, и мы подберём удобную дату и формат.',
   contactWhatsappLabel: 'Написать в WhatsApp',
@@ -121,7 +122,7 @@ const RU_CONTENT: Content = {
 const EN_CONTENT: Content = {
   title: 'Gefilte Lid',
   seoSubtitle:
-    'A barge flies through the sky, a snake crawls on its back, a Shabbat carp rescues a tailor and a donkey from enchanted poppies: these and other wondrous events happen in “Gefilte Lid” — the stuffed song — by Ryba Kiva theatre.\nIt is a cheerful, beautiful and warm show for the whole family, with puppets, projections, live music and a little bit of magic.',
+    'A cheerful, touching play about a tailor and a donkey on a journey after the loveliest carp.\nPuppets, shadows, projections, playful interaction and moments of immersion, songs from different eras, live voices, violin and guitar.',
   heroSecondary:
     'With two suitcases of wondrous props the theatre will come to your venue and bring real magic to a kindergarten, school, studio or even an apartment.\nIt is a show for the whole family — children from about five, teenagers and parents all find something for themselves.',
   teaserVideoUrl: 'https://www.youtube.com/embed/FpH1vNgcemg',
@@ -150,7 +151,8 @@ const EN_CONTENT: Content = {
   posterPdf: POSTER_DOWNLOAD,
   flyerPdf: FLYER_DOWNLOAD,
   photosArchive: PHOTOS_ARCHIVE,
-  aboutText: '',
+  aboutText:
+    'A barge flies through the sky, a snake crawls on its back, a Shabbat carp rescues a tailor and a donkey from enchanted poppies: these and other wondrous events happen in “Gefilte Lid” — the stuffed song — by Ryba Kiva theatre.\nIt is a cheerful, beautiful and warm show for the whole family, with puppets, projections, live music and a little bit of magic.',
   contactText:
     'To invite the show to your venue, write to us on WhatsApp. Tell us who the audience will be and we will suggest a convenient date and format.',
   contactWhatsappLabel: 'Write on WhatsApp',
