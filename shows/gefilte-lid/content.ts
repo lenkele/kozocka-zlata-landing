@@ -122,13 +122,13 @@ const RU_CONTENT: Content = {
 const EN_CONTENT: Content = {
   title: 'Gefilte Lid',
   seoSubtitle:
-    'A cheerful, touching play about a tailor and a donkey on a journey after the loveliest carp.\nPuppets, shadows, projections, playful interaction and moments of immersion, songs from different eras, live voices, violin and guitar.',
+    'A cheerful and touching puppet performance about a tailor and a donkey on a journey to find the most beautiful carp.\nPuppets, shadows, projections, playful audience interaction, moments of quiet wonder, songs from different eras, live voices, violin, and guitar.',
   heroSecondary:
-    'With two suitcases of wondrous props the theatre will come to your venue and bring real magic to a kindergarten, school, studio or even an apartment.\nIt is a show for the whole family — children from about five, teenagers and parents all find something for themselves.',
+    'With two suitcases of wondrous props Ryba Kiva Theatre can come to your kindergarten, school, studio, community space, or even your home.\nIt is a performance for the whole family — children from about five, teenagers and parents all find something for themselves.',
   teaserVideoUrl: 'https://www.youtube.com/embed/FpH1vNgcemg',
-  heroBadge: 'A cheerful tale of a tailor and a donkey who went after a carp',
+  heroBadge: 'A cheerful tale of a tailor and a donkey and a very special carp',
   theatreLabel: 'Ryba Kiva Theatre',
-  theatreSubtitle: 'A warm musical show for the whole family',
+  theatreSubtitle: 'A warm musical performance for the whole family',
   menuInvite: 'Invite the theatre',
   menuAbout: 'About the show',
   menuSchedule: 'Shows',
@@ -139,9 +139,9 @@ const EN_CONTENT: Content = {
   sectionPoster: 'Poster',
   sectionSchedule: 'Performance schedule',
   sectionTeaser: 'Teaser video',
-  sectionFragments: 'Video fragments',
+  sectionFragments: 'Video excerpts',
   sectionPhotos: 'Photos',
-  sectionTeam: 'About the team',
+  sectionTeam: 'Creative team',
   sectionContact: 'Contact',
   sectionDownloads: 'Downloads',
   flyerDownload: 'Download flyer',
@@ -152,16 +152,16 @@ const EN_CONTENT: Content = {
   flyerPdf: FLYER_DOWNLOAD,
   photosArchive: PHOTOS_ARCHIVE,
   aboutText:
-    'A barge flies through the sky, a snake crawls on its back, a Shabbat carp rescues a tailor and a donkey from enchanted poppies: these and other wondrous events happen in “Gefilte Lid” — the stuffed song — by Ryba Kiva theatre.\nIt is a cheerful, beautiful and warm show for the whole family, with puppets, projections, live music and a little bit of magic.',
+    'A barge flies through the sky, a snake crawls on its back, a Shabbat carp rescues a tailor and a donkey from enchanted poppies: these and other wondrous events happen in “Gefilte Lid” — the stuffed song — by Ryba Kiva theatre.\nIt is a cheerful, beautiful and warm performance for the whole family, with puppets, projections, live music and a little bit of magic.',
   contactText:
-    'To invite the show to your venue, write to us on WhatsApp. Tell us who the audience will be and we will suggest a convenient date and format.',
-  contactWhatsappLabel: 'Write on WhatsApp',
+    'To invite the performance to your venue, write to us on WhatsApp. Tell us who the audience will be and we will suggest a convenient date and format.',
+  contactWhatsappLabel: 'Message us on WhatsApp',
   ageLabel: 'Age',
   durationLabel: 'Duration',
   formatLabel: 'Format',
-  infoAgeValue: 'Ages 5 and up',
+  infoAgeValue: 'Recommended for ages 5+',
   infoDurationValue: '1 hour',
-  infoFormatValue: 'For adults in the presence of children 🙂',
+  infoFormatValue: 'Best enjoyed by children and adults together',
   faqTitle: 'FAQ',
   faqItems: [
     {
@@ -170,19 +170,19 @@ const EN_CONTENT: Content = {
     },
     {
       q: 'Can you perform in a large theatre hall?',
-      a: 'In theory the show can be played on a large stage—we have done it—but it sounds best in an intimate setting with the audience directly opposite the centre of the stage, within about four metres. Ideally children sit closer and in tiers—on cushions or mats, for example.',
+      a: 'In theory the performance can be played on a large stage—we have done it—but it sounds best in an intimate setting with the audience directly opposite the centre of the stage, within about four metres. Ideally children sit closer and in tiers—on cushions or mats, for example.',
     },
     {
       q: 'Do you require any special equipment?',
-      a: 'We need dimming, a 220V socket and free space in front of the audience. Everything else—light, sound, puppets and set—we bring with us.',
+      a: 'We need dimming, a 220V socket and free space in front of the audience. Everything else — lighting, sound, puppets, and set pieces — we bring with us.',
     },
     {
       q: 'Can we bring a child younger than the recommended age?',
-      a: 'We recommend the show from age five. You may bring a younger child, but please stay nearby and watch how they feel so it is not too scary, boring or tiring. You can always step out briefly so as not to disturb other audience members.',
+      a: 'We recommend the performance from age five. You may bring a younger child, but please stay nearby and watch how they feel so it is not too scary, boring or tiring. You can always step out briefly so as not to disturb other audience members.',
     },
     {
       q: 'Can I leave my child alone at the show?',
-      a: 'From about age nine a child can stay alone, but it matters to us that most parents are in the room too—and not for discipline. Many layers of meaning are addressed to adults, and when there is no one to speak to, we are genuinely sad. We believe the show should be a shared experience and a topic for conversation for your whole family.',
+      a: 'From about age nine a child can stay alone, but it matters to us that most parents are in the room too—and not for discipline. Many layers of meaning are addressed to adults, and when there is no one to speak to, we are genuinely sad. We believe the performance should be a shared experience and a topic for conversation for your whole family.',
     },
     {
       q: 'Do adults need a ticket?',
@@ -194,18 +194,18 @@ const EN_CONTENT: Content = {
     },
     {
       q: 'Can I buy a ticket for cash before the show?',
-      a: 'You can always buy a ticket for cash before the show when seats are available. However, tickets bought in advance are usually cheaper.',
+      a: 'You can always buy a ticket for cash before the performance when seats are available. However, tickets bought in advance are usually cheaper.',
     },
     {
       q: 'Can I get a discount?',
       a: 'If you are in a difficult financial situation or you have a large family and are buying many tickets, write to us on WhatsApp and we will see what we can do.',
     },
   ],
-  teamAuthorTitle: 'Script & part of songs by',
+  teamAuthorTitle: 'Script and some songs by',
   teamAuthorName: 'Igor Bely and Evgeniya Slavina',
   songsTitle: 'Set design',
   songsName: 'Elena Shamis',
-  teamDirectorTitle: 'Artist',
+  teamDirectorTitle: 'Designer',
   teamDirectorName: 'Lena Shapiro',
   masterTitle: 'Puppets',
   masterName: 'Yulia Gubkina',

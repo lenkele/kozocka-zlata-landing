@@ -321,9 +321,9 @@ const HE_CONTENT: Content = {
 };
 
 const EN_CONTENT: Content = {
-  title: 'Little Goat Zlata',
+  title: 'Zlata the Goat',
   seoSubtitle:
-    'A touching, joyful and slightly bittersweet performance based on a story by Isaac Bashevis Singer and Jewish parables.\nOn the small stage puppets, shadows and tiny houses with glowing windows come alive, accompanied by Jewish melodies, violin, guitar and kalimba.',
+    'A tender, playful, and slightly bittersweet puppet performance inspired by Isaac Bashevis Singer and Jewish parables.\nOn a small stage, puppets, shadows, and tiny houses with glowing windows come to life, accompanied by Jewish melodies, violin, guitar, and kalimba.',
   heroSecondary:
     'With two suitcases of wondrous props the theatre will come to your venue and bring a truly magical Hanukkah to a kindergarten, school, studio or even an apartment.',
   teaserVideoUrl: 'https://www.youtube.com/embed/BKbsaDnkzJA',
@@ -339,9 +339,9 @@ const EN_CONTENT: Content = {
   sectionPoster: 'Poster',
   sectionSchedule: 'Performance schedule',
   sectionTeaser: 'Teaser video',
-  sectionFragments: 'Video fragments',
+  sectionFragments: 'Video excerpts',
   sectionPhotos: 'Photos',
-  sectionTeam: 'About the team',
+  sectionTeam: 'Creative team',
   sectionContact: 'Contact',
   sectionDownloads: 'Downloads',
   flyerDownload: 'Download flyer',
@@ -352,27 +352,27 @@ const EN_CONTENT: Content = {
   flyerPdf: `${FILES_BASE}/flyer-kozocka-zlata-ru.pdf`,
   photosArchive: `${FILES_BASE}/photos-kozocka-zlata-ru.zip`,
   aboutText: `In a tiny house,
-On an evening by the stove
-A mother sits on a small bench
+On an evening by the stove,
+A mother sits on a little bench,
 Spinning dreams for the children...
 
-What are those dreams about? As in every Jewish fairytale:
+What are those dreams about? As in any Jewish fairytale:
 
-About a cloud and a drizzle,
+About a little cloud and a drizzle,
 About a little white goat...
 
-And about a dangerous adventure and true love, about trust, fear and courage, and about a miracle that suddenly happens on the darkest winter evening.
+And also about a dangerous adventure and true love; about trust, fear, and courage; and about a miracle that suddenly happens on the darkest winter evening.
 
-Children dive into the fairytale with a happy ending, while its philosophical overtones stay with adults as well.`,
+Children are drawn into a fairytale with a happy ending, while the performance’s philosophical overtones will resonate with adults as well.`,
   contactText:
-    'To invite the show to your organisation, please write to us on WhatsApp or by e-mail. Tell us about your audience and we will suggest dates and format.',
-  contactWhatsappLabel: 'Write on WhatsApp',
+    'To invite the performance to your organisation, please write to us on WhatsApp or by e-mail. Tell us about your audience and we will suggest dates and format.',
+  contactWhatsappLabel: 'Message us on WhatsApp',
   ageLabel: 'Age',
   durationLabel: 'Duration',
   formatLabel: 'Format',
-  infoAgeValue: 'Ages 4–5 to 10–12 and adults',
+  infoAgeValue: 'Recommended for ages 5–12 and adults',
   infoDurationValue: '45 minutes',
-  infoFormatValue: 'For adults in the presence of children 🙂',
+  infoFormatValue: 'Best enjoyed by children and adults together',
   faqTitle: 'FAQ',
   faqItems: [
     {
@@ -381,19 +381,19 @@ Children dive into the fairytale with a happy ending, while its philosophical ov
     },
     {
       q: 'Can you perform in a large theatre hall?',
-      a: 'It is possible — we have done it — but the show feels best in an intimate setting with the audience no farther than about four metres from the screen and kids seated close on cushions or risers.',
+      a: 'It is possible — we have done it — but the performance feels best in an intimate setting with the audience no farther than about four metres from the screen and kids seated close on cushions or risers.',
     },
     {
       q: 'Do you require any special equipment?',
-      a: 'We only need partial darkness, a 220V socket and free space in front of the audience. Lighting, sound, puppets and set travel with us.',
+      a: 'We only need partial darkness, a 220V socket and free space in front of the audience. Everything else — lighting, sound, puppets, and set pieces — we bring with us.',
     },
     {
       q: 'Can we bring younger children under four?',
-      a: 'We recommend the show from ages 4–5, ideally from 6. You may bring a younger child, just stay nearby and watch if the experience feels comfortable, and step out briefly if needed.',
+      a: 'We recommend the performance from ages 4–5, ideally from 6. You may bring a younger child, just stay nearby and watch if the experience feels comfortable, and step out briefly if needed.',
     },
     {
       q: 'Can children attend without parents?',
-      a: 'From about age nine they can, but we truly love when adults are in the room: many emotional nuances are addressed to you, so the show becomes a shared family experience.',
+      a: 'From about age nine they can, but we truly love when adults are in the room: many emotional nuances are addressed to you, so the performance becomes a shared family experience.',
     },
     {
       q: 'Do adults need a ticket?',
@@ -405,14 +405,14 @@ Children dive into the fairytale with a happy ending, while its philosophical ov
     },
     {
       q: 'Can I buy a ticket for cash before the show?',
-      a: 'You can always buy a ticket for cash before the show when seats are available. However, tickets purchased in advance are usually cheaper.',
+      a: 'You can always buy a ticket for cash before the performance when seats are available. However, tickets purchased in advance are usually cheaper.',
     },
     {
       q: 'Can I get a discount?',
       a: 'If you are in a difficult financial situation or you have a large family and are buying many tickets, write to us on WhatsApp and we will work something out.',
     },
   ],
-  teamAuthorTitle: 'Project & script author',
+  teamAuthorTitle: 'Creator and scriptwriter',
   teamAuthorName: 'Elena Shamis',
   teamDirectorTitle: 'Director, designer & prop maker',
   teamDirectorName: 'Sasha Lunyakova',

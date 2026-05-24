@@ -160,15 +160,15 @@ const RU_CONTENT: Content = {
 };
 
 const EN_CONTENT: Content = {
-  title: 'Marita’s Magic',
+  title: 'The Magic of Marita',
   seoSubtitle:
-    'A vivid, warm multi-layered story with a gripping plot: fairytale and philosophy, laughter and sorrow, death and love, framed by live Sephardic music, original puppets and sets.',
+    'A vivid, warm, multilayered story with a captivating plot — part fairy tale, part philosophical journey; filled with laughter and sorrow, death and love, and brought to life through live Sephardic music, original puppets, and handcrafted sets.',
   heroSecondary:
-    'With two suitcases of wondrous props the theatre will come to your venue and bring real magic to a kindergarten, school, studio or even an apartment.\nIt is a show for the whole family—children from about six, teenagers and parents all find something for themselves.',
+    'With two suitcases full of strange and wonderful objects, Ryba Kiva Theatre can bring the performance to your school, kindergarten, studio, community space, or even your home.',
   teaserVideoUrl: 'https://www.youtube.com/embed/X5kZOSKk6z0',
-  heroBadge: 'Puppet musical with live music and songs',
+  heroBadge: 'A puppet musical with live music and original songs',
   theatreLabel: 'Ryba Kiva Theatre',
-  theatreSubtitle: 'A magical family show for Purim!',
+  theatreSubtitle: 'A magical family performance for Purim!',
   menuInvite: 'Invite the theatre',
   menuAbout: 'About the show',
   menuSchedule: 'Shows',
@@ -179,9 +179,9 @@ const EN_CONTENT: Content = {
   sectionPoster: 'Poster',
   sectionSchedule: 'Performance schedule',
   sectionTeaser: 'Teaser video',
-  sectionFragments: 'Video fragments',
+  sectionFragments: 'Video excerpts',
   sectionPhotos: 'Photos',
-  sectionTeam: 'About the team',
+  sectionTeam: 'Creative team',
   sectionContact: 'Contact',
   sectionDownloads: 'Downloads',
   flyerDownload: 'Download flyer',
@@ -191,41 +191,41 @@ const EN_CONTENT: Content = {
   posterPdf: `${FILES_BASE}/poster.pdf`,
   flyerPdf: `${FILES_BASE}/flyer-kozocka-zlata-ru.pdf`,
   photosArchive: `${FILES_BASE}/photos-kozocka-zlata-ru.zip`,
-  aboutText: `A castle, a king, a princess, magic—everything as it should be, and you would think the tale should roll along the rails of a classic Sephardic legend about a princess, a poor young man, an evil stepmother and love.
-In “Marita’s Magic” we look at that archetypal story from an unexpected angle and, together with the audience, try to understand: what is this love that conquers death?
-A miracle, magic, sorcery—or perhaps the fruit of a selfless, pure heart?
-Children will laugh, get a little scared, almost cry and rejoice at the happy ending.
-Adults will have something to discuss with their children—and perhaps, who knows, something to think about themselves.`,
+  aboutText: `A castle, a king, a princess, magic — everything is just as it should be. It seems the story could simply follow the familiar path of an old Sephardic legend about a princess, a poor young man, a wicked stepmother, and love.
+    But in The Magic of Marita, we look at this archetypal tale from an unexpected angle. Together with the audience, we try to understand: what kind of love is strong enough to conquer death?
+    Is it a miracle, magic, sorcery — or perhaps the work of a selfless and pure heart?
+    Children will laugh, get a little frightened, almost cry, and rejoice in the happy ending.
+    And adults will leave with something to talk about with the children — and perhaps something to ponder themselves.`,
   contactText:
-    'To invite the show to your venue, write to us on WhatsApp. Tell us who the audience will be and we will suggest a convenient date and format.',
-  contactWhatsappLabel: 'Write on WhatsApp',
+    'To invite the performance to your venue, write to us on WhatsApp. Tell us who the audience will be and we will suggest a convenient date and format.',
+  contactWhatsappLabel: 'Message us on WhatsApp',
   ageLabel: 'Age',
   durationLabel: 'Duration',
   formatLabel: 'Format',
-  infoAgeValue: 'Ages 6 and up',
+  infoAgeValue: 'Recommended for ages 6+',
   infoDurationValue: '1 hour 20 minutes',
-  infoFormatValue: 'For adults in the presence of children 🙂',
+  infoFormatValue: 'Best enjoyed by children and adults together',
   faqTitle: 'FAQ',
   faqItems: [
     {
       q: 'What do we need to host the show?',
-      a: 'You need a small hall, studio or classroom that can be darkened. Message us on WhatsApp and we will coordinate the details.',
+      a: 'A small hall, studio or classroom that can be darkened. Send us a WhatsApp message and we will coordinate the details.',
     },
     {
       q: 'Can you perform in a large theatre hall?',
-      a: 'In theory the show can be played on a large stage—we have done it—but it sounds best in an intimate setting with the audience directly opposite the centre of the stage, within about four metres. Ideally children sit closer and in tiers—on cushions or mats, for example.',
+      a: 'It is possible — we have done it — but the performance feels best in an intimate setting with the audience no farther than about four metres from the screen and kids seated close on cushions or risers.',
     },
     {
       q: 'Do you require any special equipment?',
-      a: 'We need dimming, a 220V socket and free space in front of the audience. Everything else—light, sound, puppets and set—we bring with us.',
+      a: 'We only need partial darkness, a 220V socket and free space in front of the audience. Everything else — lighting, sound, puppets, and set pieces — we bring with us.',
     },
     {
-      q: 'Can we bring a child younger than the recommended age?',
-      a: 'We recommend the show from age six. You may bring a younger child, but please stay nearby and watch how they feel so it is not too scary, boring or tiring. You can always step out briefly so as not to disturb other audience members.',
+      q: 'Can we bring younger children under four?',
+      a: 'We recommend the performance from ages 4–5, ideally from 6. You may bring a younger child, just stay nearby and watch if the experience feels comfortable, and step out briefly if needed.',
     },
     {
-      q: 'Can I leave my child alone at the show?',
-      a: 'From about age nine a child can stay alone, but it matters to us that most parents are in the room too—and not for discipline. Many layers of meaning are addressed to adults, and when there is no one to speak to, we are genuinely sad. We believe the show should be a shared experience and a topic for conversation for your whole family.',
+      q: 'Can children attend without parents?',
+      a: 'From about age nine they can, but we truly love when adults are in the room: many emotional nuances are addressed to you, so the performance becomes a shared family experience.',
     },
     {
       q: 'Do adults need a ticket?',
@@ -233,18 +233,18 @@ Adults will have something to discuss with their children—and perhaps, who kno
     },
     {
       q: 'Ticket refunds',
-      a: 'You can return a ticket no later than 7 days before the event (minus a 5% payment-system transaction fee). After that, a ticket can only be moved to any other performance by the theatre where seats are available.',
+      a: 'You can return a ticket no later than 7 days before the event (minus a 5% payment-system transaction fee). After that deadline, the ticket can only be transferred to any other performance by the theatre where seats are available.',
     },
     {
       q: 'Can I buy a ticket for cash before the show?',
-      a: 'You can always buy a ticket for cash before the show when seats are available. However, tickets bought in advance are usually cheaper.',
+      a: 'You can always buy a ticket for cash before the performance when seats are available. However, tickets purchased in advance are usually cheaper.',
     },
     {
       q: 'Can I get a discount?',
-      a: 'If you are in a difficult financial situation or you have a large family and are buying many tickets, write to us on WhatsApp and we will see what we can do.',
+      a: 'If you are in a difficult financial situation or you have a large family and are buying many tickets, write to us on WhatsApp and we will work something out.',
     },
   ],
-  teamAuthorTitle: 'Project & script author',
+  teamAuthorTitle: 'Creator and scriptwriter',
   teamAuthorName: 'Elena Shamis',
   songsTitle: 'Songs',
   songsName: 'Elena Shamis and Mikhail Starodubtsev',

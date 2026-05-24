@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: '"Zlata the Goat" - a puppet and musical performance for Hanukkah',
-  description: 'A touching, joyful and slightly bittersweet performance based on a story by Isaac Bashevis Singer and Jewish parables. With puppets, shadows, live music and Hanukkah magic.',
+  description: 'A tender, playful, and slightly bittersweet puppet performance inspired by Isaac Bashevis Singer and Jewish parables. With puppets, shadows, live music and Hanukkah magic.',
   icons: {
     icon: [
       { url: '/favicon.png?v=2', sizes: 'any' },
