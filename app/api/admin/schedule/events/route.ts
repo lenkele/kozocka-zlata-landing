@@ -2,7 +2,8 @@ import { revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
 
 import { getCookieName, getAdminScheduleCredentials, verifySessionToken } from '@/lib/adminScheduleAuth';
-import { isShowSlug } from '@/shows';
+import { createEventSheet, isSheetsIntegrationEnabled } from '@/lib/googleSheet';
+import { isShowSlug, SHOWS } from '@/shows';
 
 type CreateEventBody = {
   showSlug?: string;
@@ -51,6 +52,8 @@ type ScheduleEventRow = {
   ticket_mode: 'self' | 'venue';
   ticket_url: string | null;
   is_active?: boolean;
+  sheet_id?: string | null;
+  sheet_url?: string | null;
 };
 
 const FORMAT_FROM_RU: Record<string, { en: string; he: string }> = {
@@ -191,6 +194,11 @@ function isMissingCommentColumnError(errorText: string): boolean {
   return text.includes('comment_ru') || text.includes('comment_en') || text.includes('comment_he');
 }
 
+function isMissingSheetColumnError(errorText: string): boolean {
+  const text = errorText.toLowerCase();
+  return text.includes('sheet_id') || text.includes('sheet_url');
+}
+
 function normalizeOptionalText(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
@@ -207,6 +215,11 @@ function buildBaseEventId(dateIso: string, time: string): string {
   const date = dateIso.replaceAll('-', '');
   const hhmm = time.replace(':', '');
   return `${date}-${hhmm}`;
+}
+
+function buildSheetTitle(showSlug: string, dateIso: string, time: string, placeRu: string): string {
+  const showTitle = isShowSlug(showSlug) ? SHOWS[showSlug].content.ru?.title ?? showSlug : showSlug;
+  return [showTitle, `${dateIso} ${time}`.trim(), placeRu].filter(Boolean).join(' · ');
 }
 
 async function ensureUniqueEventId(showSlug: string, baseEventId: string): Promise<string> {
@@ -238,20 +251,30 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, reason: 'invalid_show' }, { status: 400 });
   }
 
-  const queryWithComments = loadAll
-    ? `/schedule_events?is_active=eq.true&select=${SELECT_FIELDS_WITH_COMMENTS}&order=date_iso.desc,time.desc`
-    : `/schedule_events?show_slug=eq.${encodeURIComponent(showParam)}&is_active=eq.true&select=${SELECT_FIELDS_WITH_COMMENTS}&order=date_iso.desc,time.desc`;
-  const queryWithoutComments = loadAll
-    ? `/schedule_events?is_active=eq.true&select=${SELECT_FIELDS_BASE}&order=date_iso.desc,time.desc`
-    : `/schedule_events?show_slug=eq.${encodeURIComponent(showParam)}&is_active=eq.true&select=${SELECT_FIELDS_BASE}&order=date_iso.desc,time.desc`;
+  const filter = loadAll
+    ? 'is_active=eq.true'
+    : `show_slug=eq.${encodeURIComponent(showParam)}&is_active=eq.true`;
+  const order = 'order=date_iso.desc,time.desc';
 
-  let response = await supabaseRequest(queryWithComments, { method: 'GET' });
-  let text = await response.text();
-  if (!response.ok && isMissingCommentColumnError(text)) {
-    response = await supabaseRequest(queryWithoutComments, { method: 'GET' });
+  // Try progressively simpler selects so the list keeps working even if the
+  // comment/sheet columns have not been migrated yet.
+  const selectVariants = [
+    `${SELECT_FIELDS_WITH_COMMENTS},sheet_id,sheet_url`,
+    SELECT_FIELDS_WITH_COMMENTS,
+    `${SELECT_FIELDS_BASE},sheet_id,sheet_url`,
+    SELECT_FIELDS_BASE,
+  ];
+
+  let response: Response | null = null;
+  let text = '';
+  for (const select of selectVariants) {
+    response = await supabaseRequest(`/schedule_events?${filter}&select=${select}&${order}`, { method: 'GET' });
     text = await response.text();
+    if (response.ok) break;
+    if (!isMissingCommentColumnError(text) && !isMissingSheetColumnError(text)) break;
   }
-  if (!response.ok) {
+
+  if (!response || !response.ok) {
     return NextResponse.json({ ok: false, reason: 'db_select_failed', message: text }, { status: 500 });
   }
 
@@ -390,10 +413,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: 'db_insert_failed', message: responseText }, { status: 500 });
   }
 
+  const rows = responseText ? (JSON.parse(responseText) as ScheduleEventRow[]) : [];
+  const createdEvent = rows[0] ?? null;
+
+  // Best-effort: create a dedicated Google Sheet for this показ and persist its id.
+  // Sheet creation must never block or fail event creation.
+  if (createdEvent && isSheetsIntegrationEnabled()) {
+    try {
+      const sheet = await createEventSheet({ title: buildSheetTitle(showSlug, dateIso, time, placeRu) });
+      const patchResponse = await supabaseRequest(
+        `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&event_id=eq.${encodeURIComponent(eventId)}`,
+        {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({ sheet_id: sheet.id, sheet_url: sheet.url }),
+        },
+      );
+      if (patchResponse.ok) {
+        createdEvent.sheet_id = sheet.id;
+        createdEvent.sheet_url = sheet.url;
+      } else {
+        console.error('[admin-schedule] failed to persist sheet id', {
+          showSlug,
+          eventId,
+          message: await patchResponse.text(),
+        });
+      }
+    } catch (error) {
+      console.error('[admin-schedule] failed to create google sheet for event', { showSlug, eventId, error });
+    }
+  }
+
   revalidateTag(`schedule-${showSlug}`, 'max');
 
-  const rows = responseText ? (JSON.parse(responseText) as ScheduleEventRow[]) : [];
-  return NextResponse.json({ ok: true, event: rows[0] ?? null });
+  return NextResponse.json({ ok: true, event: createdEvent });
 }
 
 export async function PATCH(request: Request) {

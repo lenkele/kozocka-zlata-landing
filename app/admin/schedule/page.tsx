@@ -25,6 +25,8 @@ type EventRow = {
   capacity: number | null;
   ticket_mode: 'self' | 'venue';
   ticket_url: string | null;
+  sheet_id?: string | null;
+  sheet_url?: string | null;
 };
 
 type TicketMode = 'self' | 'venue';
@@ -36,7 +38,7 @@ const SHOW_ITEMS = SHOW_SLUGS.map((slug) => ({
   label: SHOWS[slug].content.ru?.title ?? slug,
 })) as Array<{ slug: ShowSlug; label: string }>;
 
-const TABLE_MIN_WIDTH = 1595;
+const TABLE_MIN_WIDTH = 1725;
 
 const FORMAT_OPTIONS = ['Открытый показ', 'Закрытый показ'] as const;
 const LANGUAGE_OPTIONS = ['Русский', 'Иврит', 'Английский'] as const;
@@ -212,6 +214,7 @@ export default function AdminSchedulePage() {
       'capacity',
       'ticket_mode',
       'ticket_url',
+      'sheet_url',
     ];
 
     const rows = filteredEvents.map((item) => [
@@ -231,6 +234,7 @@ export default function AdminSchedulePage() {
       item.capacity === null ? '' : String(item.capacity),
       item.ticket_mode,
       item.ticket_url ?? '',
+      item.sheet_url ?? '',
     ]);
 
     const csv = [header, ...rows].map((line) => line.map(escapeCsv).join(',')).join('\n');
@@ -811,6 +815,7 @@ export default function AdminSchedulePage() {
                     <th className="w-[80px] min-w-[80px] px-2 py-2">Цена</th>
                     <th className="w-[80px] min-w-[80px] px-2 py-2">Места</th>
                     <th className="w-[95px] min-w-[95px] px-2 py-2">Продажа</th>
+                    <th className="w-[130px] min-w-[130px] px-2 py-2">Таблица</th>
                     <th className="w-[210px] min-w-[210px] px-2 py-2">Действия</th>
                   </tr>
                 </thead>
@@ -832,6 +837,20 @@ export default function AdminSchedulePage() {
                       <td className="w-[80px] min-w-[80px] px-2 py-2">{typeof item.price_ils === 'number' ? `₪ ${item.price_ils}` : '—'}</td>
                       <td className="w-[80px] min-w-[80px] px-2 py-2">{item.capacity ?? '∞'}</td>
                       <td className="w-[95px] min-w-[95px] px-2 py-2">{item.ticket_mode === 'venue' ? 'Площадка' : 'Сайт'}</td>
+                      <td className="w-[130px] min-w-[130px] px-2 py-2">
+                        {item.sheet_url ? (
+                          <a
+                            href={item.sheet_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-semibold text-emerald-700 underline"
+                          >
+                            Открыть
+                          </a>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
                       <td className="w-[210px] min-w-[210px] px-2 py-2">
                         <div className="flex items-center gap-2">
                           <button

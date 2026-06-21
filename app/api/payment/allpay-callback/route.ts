@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 
 import { sendTicketEmail } from '@/lib/email';
+import { appendOrderRow, isSheetsIntegrationEnabled } from '@/lib/googleSheet';
 import type { StoredOrder } from '@/lib/ordersStore';
-import { markOrderPaidOnce } from '@/lib/ordersStore';
+import { getEventSheetId, markOrderPaidOnce } from '@/lib/ordersStore';
 import { getAllpaySignature, secureSignatureMatch } from './signature';
 
 type CallbackPayload = Record<string, unknown> & {
@@ -175,6 +176,26 @@ export async function POST(request: Request) {
   } catch (error) {
     // Keep webhook idempotent and successful after payment persistence.
     console.error('[allpay-callback] failed to send ticket email', { orderId, paymentId, error });
+  }
+
+  // Best-effort: append the paid order to the per-event Google Sheet.
+  // Runs only after a successful paid transition, so each order is logged once.
+  if (isSheetsIntegrationEnabled()) {
+    try {
+      const sheetId = await getEventSheetId(paidUpdate.order.show_slug, paidUpdate.order.event_id);
+      if (sheetId) {
+        await appendOrderRow(sheetId, paidUpdate.order);
+        console.log('[allpay-callback] order appended to sheet', { orderId, sheetId });
+      } else {
+        console.warn('[allpay-callback] no sheet for event, skip append', {
+          orderId,
+          showSlug: paidUpdate.order.show_slug,
+          eventId: paidUpdate.order.event_id,
+        });
+      }
+    } catch (error) {
+      console.error('[allpay-callback] failed to append order to sheet', { orderId, error });
+    }
   }
 
   return NextResponse.json({ ok: true, accepted: true });

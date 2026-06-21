@@ -4,7 +4,9 @@ import { NextResponse } from 'next/server';
 
 import { getAuthorizedAdminLogin } from '@/lib/adminScheduleAuth';
 import { sendTicketEmail } from '@/lib/email';
+import { appendOrderRow, isSheetsIntegrationEnabled } from '@/lib/googleSheet';
 import type { StoredOrder } from '@/lib/ordersStore';
+import { getEventSheetId } from '@/lib/ordersStore';
 import { loadScheduleForShow } from '@/lib/schedule';
 import { buildTicketArtifacts } from '@/lib/ticket';
 import { isShowSlug } from '@/shows';
@@ -132,6 +134,18 @@ export async function POST(request: Request) {
   const order = rows[0];
   if (!order) {
     return NextResponse.json({ ok: false, reason: 'order_not_returned' }, { status: 500 });
+  }
+
+  // Best-effort: log complimentary ticket into the per-event Google Sheet.
+  if (isSheetsIntegrationEnabled()) {
+    try {
+      const sheetId = await getEventSheetId(order.show_slug, order.event_id);
+      if (sheetId) {
+        await appendOrderRow(sheetId, order);
+      }
+    } catch (error) {
+      console.error('[test-ticket] failed to append order to sheet', { orderId: order.order_id, error });
+    }
   }
 
   if (action === 'issue') {

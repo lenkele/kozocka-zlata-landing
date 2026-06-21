@@ -217,6 +217,23 @@ export async function getPaidQtyForEvent(showSlug: string, eventId: string): Pro
   return rows.reduce((sum, row) => sum + toPositiveInt(row.qty), 0);
 }
 
+export async function getEventSheetId(showSlug: string, eventId: string | null): Promise<string | null> {
+  if (!showSlug || !eventId) return null;
+
+  const response = await supabaseRequest(
+    `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&event_id=eq.${encodeURIComponent(eventId)}&select=sheet_id&limit=1`,
+    { method: 'GET' }
+  );
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`[ordersStore] get event sheet_id failed: ${response.status} ${text}`);
+  }
+
+  const rows = text ? (JSON.parse(text) as Array<{ sheet_id: string | null }>) : [];
+  const sheetId = rows[0]?.sheet_id;
+  return typeof sheetId === 'string' && sheetId.trim() ? sheetId.trim() : null;
+}
+
 export async function getPaidQtyMapForShow(showSlug: string): Promise<Record<string, number>> {
   if (!showSlug) return {};
 
