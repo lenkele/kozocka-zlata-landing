@@ -1,11 +1,21 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 
 import { getCachedScheduleForShow, type ScheduleEvent } from '@/lib/schedule';
 import { SHOWS, SHOW_SLUGS } from '@/shows';
 import type { ShowConfig, ShowSlug } from '@/shows/types';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    url: '/',
+  },
+};
 
 const WHATSAPP_INVITE_URL =
   'https://wa.me/972533219998?text=' +

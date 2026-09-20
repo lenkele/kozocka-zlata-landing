@@ -13,24 +13,13 @@ export type ResolveReturnUrlOptions = {
 const ALLOWED_RETURN_HOSTS = new Set([
   'ryba-kiva.com',
   'www.ryba-kiva.com',
-  'ryba-kiva-zlata.com',
-  'www.ryba-kiva-zlata.com',
-  'ryba-kiva-marita.com',
-  'www.ryba-kiva-marita.com',
-  'ryba-kiva-gefilte-lid.com',
-  'www.ryba-kiva-gefilte-lid.com',
   'localhost',
   '127.0.0.1',
   'kozocka-zlata-landing-coral.vercel.app',
   'kozocka-zlata-landing.vercel.app',
 ]);
 
-// Legacy per-show production domains. Used until CANONICAL_SITE_URL is set.
-const LEGACY_SHOW_CANONICAL_ORIGIN: Record<ShowSlug, string> = {
-  zlata: 'https://ryba-kiva-zlata.com',
-  marita: 'https://ryba-kiva-marita.com',
-  'gefilte-lid': 'https://ryba-kiva-gefilte-lid.com',
-};
+const DEFAULT_CANONICAL_ORIGIN = 'https://ryba-kiva.com';
 
 function normalizeOrigin(value: string | undefined): string | null {
   if (!value) return null;
@@ -47,8 +36,8 @@ function getSharedCanonicalOrigin(): string | null {
   return normalizeOrigin(process.env.CANONICAL_SITE_URL);
 }
 
-function getCanonicalOrigin(showSlug: ShowSlug): string {
-  return getSharedCanonicalOrigin() ?? LEGACY_SHOW_CANONICAL_ORIGIN[showSlug];
+function getCanonicalOrigin(): string {
+  return getSharedCanonicalOrigin() ?? DEFAULT_CANONICAL_ORIGIN;
 }
 
 function getHostFromUrl(url: string): string | null {
@@ -82,7 +71,7 @@ function pathToCanonicalUrl(path: string, showSlug?: ShowSlug): string {
   const search = path.includes('?') ? path.slice(path.indexOf('?')) : '';
   const slug = showSlug ?? getSlugFromPath(pathname);
   const canonicalPath = pathname === '/' ? `/${slug}` : pathname;
-  return `${getCanonicalOrigin(slug)}${canonicalPath}${search}`;
+  return `${getCanonicalOrigin()}${canonicalPath}${search}`;
 }
 
 /** Если URL с preview-домена (*.vercel.app), заменяем на канонический production */
@@ -93,8 +82,7 @@ function rewritePreviewToCanonical(url: string): string {
     if (!host.endsWith('.vercel.app')) return url;
 
     const pathname = parsed.pathname || '/';
-    const slug = getSlugFromPath(pathname);
-    const canonical = getCanonicalOrigin(slug);
+    const canonical = getCanonicalOrigin();
     return `${canonical}${pathname}${parsed.search}`;
   } catch {
     return url;

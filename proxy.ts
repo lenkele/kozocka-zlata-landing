@@ -13,6 +13,8 @@ const LEGACY_HOST_TO_SHOW: Record<string, ShowSlug> = {
   'ryba-kiva-gefilte-lid.com': 'gefilte-lid',
 };
 
+const CANONICAL_ORIGIN = 'https://ryba-kiva.com';
+
 const DEV_HOST_TO_SHOW: Record<string, ShowSlug> = {
   localhost: DEFAULT_SHOW_SLUG,
   '127.0.0.1': DEFAULT_SHOW_SLUG,
@@ -22,6 +24,21 @@ const EXCLUDED_PREFIXES = ['/api', '/_next', '/static', '/favicon.ico', '/shows'
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  const hostHeader = request.headers.get('host')?.toLowerCase() ?? '';
+  const hostname = hostHeader.split(':')[0];
+  const legacyShowSlug = LEGACY_HOST_TO_SHOW[hostname];
+
+  if (legacyShowSlug) {
+    // Keep legacy payment callbacks reachable until the old domains expire.
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.next();
+    }
+
+    const redirectUrl = new URL(pathname === '/' ? `/${legacyShowSlug}` : pathname, CANONICAL_ORIGIN);
+    redirectUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(redirectUrl, 308);
+  }
 
   if (EXCLUDED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.next();
@@ -34,15 +51,13 @@ export default function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const hostHeader = request.headers.get('host')?.toLowerCase() ?? '';
-  const hostname = hostHeader.split(':')[0];
-  const targetSlug = LEGACY_HOST_TO_SHOW[hostname] ?? DEV_HOST_TO_SHOW[hostname];
+  const targetSlug = DEV_HOST_TO_SHOW[hostname];
 
   if (!targetSlug || !isShowSlug(targetSlug)) {
     return NextResponse.next();
   }
 
-  // Rewrite только для корневого пути
+  // Rewrite only the local root route to the default show.
   if (pathname === '/') {
     const url = request.nextUrl.clone();
     url.pathname = `/${targetSlug}`;

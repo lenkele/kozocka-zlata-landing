@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://ryba-kiva.com'),
   title: 'Ryba Kiva Theatre - puppet and musical performances',
   description:
     'Ryba Kiva Theatre creates puppet and musical performances for families, with live music, shadows, and stories for children and adults.',
