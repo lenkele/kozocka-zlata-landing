@@ -577,11 +577,18 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
         <main className="max-w-5xl mx-auto px-4 pb-24 pt-10 md:pt-12 space-y-16 overflow-x-hidden">
           <section className="grid md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-8 items-start">
             <div className="space-y-5">
-              <div className="flex items-start gap-4">
-                {show.slug === 'zlata' && <HanukkiahIcon className="w-12 h-12 md:w-16 md:h-16 text-amber-300 flex-shrink-0" />}
-                <div>
-                  <h1 className="text-2xl sm:text-3xl md:text-5xl font-semibold tracking-tight text-amber-100 drop-shadow-[0_0_20px_rgba(0,0,0,0.6)]">{t.title}</h1>
-                </div>
+              <div className="flex items-center gap-4 md:gap-6">
+                <Image
+                  src="/images/ryba-kiva-logo.jpg"
+                  alt={t.theatreLabel}
+                  width={180}
+                  height={180}
+                  priority
+                  className="h-24 w-24 shrink-0 rounded-[2px] bg-white object-contain shadow-[0_12px_28px_rgba(0,0,0,.35)] md:h-28 md:w-28"
+                />
+                <h1 className="min-w-0 text-2xl font-semibold tracking-tight text-amber-100 drop-shadow-[0_0_20px_rgba(0,0,0,0.6)] sm:text-3xl md:text-[46px] md:leading-[1.05]">
+                  {t.title}
+                </h1>
               </div>
 
               <p className={`text-sm md:text-base text-amber-100/80 leading-relaxed ${darkCardBg} rounded-xl px-4 py-3 border border-amber-100/10`}>
@@ -1220,17 +1227,6 @@ function PhotoCarousel({
         </div>
       )}
     </>
-  );
-}
-
-function HanukkiahIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 64 64" className={className} aria-hidden="true" fill="currentColor">
-      <g>
-        <path d="M30 8h4v8h-4zM14 10h4v8h-4zM22 9h4v8h-4zM38 9h4v8h-4zM46 10h4v8h-4zM10 18c0-1.1.9-2 2-2h40a2 2 0 0 1 0 4H12a2 2 0 0 1-2-2z" />
-        <path d="M18 22a2 2 0 0 1 2 2c0 7.2 4.8 13.2 12 14.7V48h-8a2 2 0 0 0-2 2v4h24v-4a2 2 0 0 0-2-2h-8V38.7C39.2 37.2 44 31.2 44 24a2 2 0 0 1 4 0c0 8.7-5.7 16-14 17.9V52h6a2 2 0 0 1 2 2v4H22v-4a2 2 0 0 1 2-2h6V41.9C21.7 40 16 32.7 16 24a2 2 0 0 1 2-2z" />
-      </g>
-    </svg>
   );
 }
 
