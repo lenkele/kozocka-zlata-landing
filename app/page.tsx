@@ -151,20 +151,30 @@ export default function RootPage() {
           </div>
         </div>
 
-        <div className="relative pt-2">
-          <div className="-rotate-2 rounded-[10px] bg-[#fff8ea] p-2.5 shadow-[0_22px_44px_rgba(47,36,24,.4)]">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-md">
+        <div className="relative mx-auto h-[500px] w-full max-w-[480px] sm:h-[600px] md:h-[690px] md:max-w-none">
+          <div className="absolute left-1 top-2 z-0 w-[61%] -rotate-[4deg] rounded-[4px] bg-[#fff8ea] p-2.5 shadow-[0_22px_44px_rgba(47,36,24,.42)] sm:left-4 sm:top-4 sm:w-[58%] md:left-0 md:top-2 md:w-[64%]">
+            <div className="relative aspect-[2/3] overflow-hidden rounded-[2px]">
               <Image
-                src="/shows/zlata/photos/kozocka-1.jpg"
-                alt="Кадр спектакля «Козочка Злата»"
+                src="/images/theatre-team.JPG"
+                alt="Команда театра «Рыба Кива»"
                 fill
                 priority
-                sizes="(min-width: 768px) 38vw, 100vw"
+                sizes="(min-width: 768px) 24vw, 58vw"
                 className="object-cover"
               />
             </div>
-            <div className="px-1 pb-1 pt-2.5 text-center text-[13.5px] font-bold text-[#5c462a]" style={{ fontFamily: 'Nunito, Arial, sans-serif' }}>
-              «Козочка Злата» - и вдруг пошел снег...
+          </div>
+
+          <div className="absolute bottom-2 right-0 z-10 w-[88%] rotate-[3deg] rounded-[4px] bg-[#fff8ea] p-2.5 shadow-[0_24px_48px_rgba(47,36,24,.5)] sm:bottom-4 sm:w-[84%] md:-right-3 md:bottom-6 md:w-[86%]">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-[2px]">
+              <Image
+                src="/images/theatre-performance.jpg"
+                alt="Спектакль театра «Рыба Кива»"
+                fill
+                priority
+                sizes="(min-width: 768px) 34vw, 84vw"
+                className="object-cover"
+              />
             </div>
           </div>
         </div>
