@@ -126,12 +126,22 @@ export default function RootPage() {
 
       <section className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.15fr_.85fr] md:px-7 md:py-16">
         <div>
-          <h1
-            className="mb-7 text-5xl font-black leading-[1.05] text-[#fdf1d4] [text-wrap:balance] md:text-[58px]"
-            style={{ fontFamily: 'Nunito, Arial, sans-serif', textShadow: '0 3px 18px rgba(47,36,24,.45)' }}
-          >
-            Маленький театр приедет к вам в гости
-          </h1>
+          <div className="mb-7 flex items-center gap-4 sm:gap-5 md:gap-6">
+            <Image
+              src="/images/ryba-kiva-logo.jpg"
+              alt="Логотип театра «Рыба Кива»"
+              width={180}
+              height={180}
+              priority
+              className="h-24 w-24 shrink-0 object-contain mix-blend-multiply md:h-28 md:w-28"
+            />
+            <h1
+              className="min-w-0 text-[34px] font-black leading-[1.05] text-[#fdf1d4] [text-wrap:balance] sm:text-[40px] md:text-[46px]"
+              style={{ fontFamily: 'Nunito, Arial, sans-serif', textShadow: '0 3px 18px rgba(47,36,24,.45)' }}
+            >
+              Рыба Кива вас ждёт
+            </h1>
+          </div>
 
           <div className="space-y-4">
             <TextPanel>
