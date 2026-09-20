@@ -1,8 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { getCachedScheduleForShow, type ScheduleEvent } from '@/lib/schedule';
 import { SHOWS, SHOW_SLUGS } from '@/shows';
 import type { ShowConfig, ShowSlug } from '@/shows/types';
+
+export const dynamic = 'force-dynamic';
 
 const WHATSAPP_INVITE_URL =
   'https://wa.me/972533219998?text=' +
@@ -39,42 +42,134 @@ const SHOW_HOME_COPY: Record<ShowSlug, ShowHomeCopy> = {
   },
 };
 
-const FEATURED_ROWS = [
-  {
-    month: 'октябрь',
-    time: 'вторник, 18:00',
-    showSlug: 'marita' as ShowSlug,
-    showTitle: 'Колдовство Мариты',
-    meta: 'с 4-5 лет · 45 минут',
-    city: 'Тель-Авив',
-    venue: 'площадка уточняется',
-  },
-  {
-    month: 'октябрь',
-    time: 'суббота, 11:30',
-    showSlug: 'marita' as ShowSlug,
-    showTitle: 'Колдовство Мариты',
-    meta: 'С 5 лет · 1 час',
-    city: 'Хайфа',
-    venue: 'площадка уточняется',
-  },
-  {
-    month: 'октябрь',
-    time: 'суббота, 17:00',
-    showSlug: 'marita' as ShowSlug,
-    showTitle: 'Колдовство Мариты',
-    meta: 'С 6 лет · 1 час 20 минут',
-    city: 'Иерусалим',
-    venue: 'площадка уточняется',
-  },
-];
+type HomeScheduleRow = {
+  id: string;
+  showSlug: ShowSlug;
+  showTitle: string;
+  dateIso: string;
+  dateLabel: string;
+  weekday: string;
+  time: string;
+  place: string;
+  details: string;
+  ticketMode: 'self' | 'venue';
+  ticketUrl: string | null;
+  isClosed: boolean;
+};
 
 function getShowPoster(show: ShowConfig): string {
   return show.content.ru?.posterImage ?? show.content.en?.posterImage ?? show.galleryPhotos[0]?.src ?? '/favicon.png';
 }
 
-export default function RootPage() {
+function normalizeScheduleDate(value: ScheduleEvent['date_iso']): string {
+  if (typeof value === 'string') {
+    return value.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? '';
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  return '';
+}
+
+function getTodayIsoInIsrael(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jerusalem',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === 'year')?.value ?? '';
+  const month = parts.find((part) => part.type === 'month')?.value ?? '';
+  const day = parts.find((part) => part.type === 'day')?.value ?? '';
+  return `${year}-${month}-${day}`;
+}
+
+function formatScheduleDate(dateIso: string, options: Intl.DateTimeFormatOptions): string {
+  return new Intl.DateTimeFormat('ru-RU', {
+    ...options,
+    timeZone: 'Asia/Jerusalem',
+  }).format(new Date(`${dateIso}T12:00:00+03:00`));
+}
+
+function parseSchedulePrice(value: ScheduleEvent['price_ils']): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
+  if (typeof value !== 'string') return null;
+  const parsed = Number.parseFloat(value.trim().replace(',', '.').replace(/[^\d.-]/g, ''));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function formatSchedulePrice(price: number): string {
+  return Number.isInteger(price) ? String(price) : price.toFixed(2).replace(/\.00$/, '');
+}
+
+function isClosedSchedule(format: string): boolean {
+  const normalized = format.toLowerCase();
+  return normalized.includes('закрыт') || normalized.includes('סגור') || normalized.includes('private');
+}
+
+function parseScheduleLinks(text: string): React.ReactNode {
+  const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = linkPattern.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    parts.push(
+      <a key={`${match.index}-${match[2]}`} href={match[2]} target="_blank" rel="noopener noreferrer nofollow" className="underline underline-offset-2 hover:text-[#ffd98a]">
+        {match[1]}
+      </a>,
+    );
+    lastIndex = linkPattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts.length > 0 ? parts : text;
+}
+
+async function getHomeScheduleRows(): Promise<HomeScheduleRow[]> {
+  const today = getTodayIsoInIsrael();
+  const schedules = await Promise.all(
+    SHOW_SLUGS.map(async (showSlug) => ({
+      showSlug,
+      events: await getCachedScheduleForShow(showSlug),
+    })),
+  );
+
+  return schedules
+    .flatMap(({ showSlug, events }) =>
+      events.map((event, index): HomeScheduleRow | null => {
+        const entry = event.entries?.ru ?? event.entries?.en ?? event.entries?.he;
+        const dateIso = normalizeScheduleDate(event.date_iso);
+        if (!entry || !dateIso || dateIso < today) return null;
+
+        const formatOriginal = entry.format_original ?? entry.format;
+        const price = parseSchedulePrice(event.price_ils);
+        const details = [entry.format, entry.language, price === null ? '' : `₪ ${formatSchedulePrice(price)}`].filter(Boolean).join(' · ');
+
+        return {
+          id: event.id ?? `${dateIso}-${entry.time}-${index}`,
+          showSlug,
+          showTitle: SHOW_HOME_COPY[showSlug].title,
+          dateIso,
+          dateLabel: formatScheduleDate(dateIso, { day: 'numeric', month: 'long' }),
+          weekday: formatScheduleDate(dateIso, { weekday: 'long' }),
+          time: entry.time,
+          place: entry.place,
+          details,
+          ticketMode: event.ticket_mode === 'venue' ? 'venue' : 'self',
+          ticketUrl: typeof event.ticket_url === 'string' && event.ticket_url.trim() ? event.ticket_url.trim() : null,
+          isClosed: isClosedSchedule(formatOriginal),
+        };
+      }),
+    )
+    .filter((row): row is HomeScheduleRow => row !== null)
+    .sort((a, b) => `${a.dateIso}T${a.time}`.localeCompare(`${b.dateIso}T${b.time}`));
+}
+
+export default async function RootPage() {
   const shows = SHOW_SLUGS.map((slug) => SHOWS[slug]);
+  const scheduleRows = await getHomeScheduleRows();
 
   return (
     <main
@@ -198,37 +293,58 @@ export default function RootPage() {
         </p>
 
         <div className="overflow-hidden rounded-[18px] border border-[#f2c46b2e] bg-[#2f2418cc]">
-          {FEATURED_ROWS.map((row, index) => (
-            <div
-              key={`${row.showSlug}-${index}`}
-              className="flex flex-wrap items-center gap-x-6 gap-y-4 px-5 py-5 md:px-7"
-              style={{ borderBottom: index === FEATURED_ROWS.length - 1 ? undefined : '1px solid rgba(242,196,107,.14)' }}
-            >
-              <div className="w-36">
-                <div className="text-[22px] font-black text-[#f2c46b]" style={{ fontFamily: 'Nunito, Arial, sans-serif' }}>
-                  {row.month}
-                </div>
-                <div className="text-[15px] text-[#c6b699]">{row.time}</div>
-              </div>
-              <div className="min-w-44 flex-1">
-                <Link href={`/${row.showSlug}`} className="text-xl font-black text-[#fdf1d4] hover:text-[#ffd98a]" style={{ fontFamily: 'Nunito, Arial, sans-serif' }}>
-                  {row.showTitle}
-                </Link>
-                <div className="text-[15px] text-[#c6b699]">{row.meta}</div>
-              </div>
-              <div className="min-w-32 flex-1 text-[16.5px]">
-                {row.city}
-                <div className="text-[15px] text-[#c6b699]">{row.venue}</div>
-              </div>
-              <Link
-                href={`/${row.showSlug}#schedule`}
-                className="ml-auto whitespace-nowrap rounded-full bg-[#e8a33d] px-5 py-2.5 text-sm font-black text-[#2f2418] transition hover:bg-[#f6b957]"
-                style={{ fontFamily: 'Nunito, Arial, sans-serif' }}
+          {scheduleRows.length > 0 ? (
+            scheduleRows.map((row, index) => (
+              <div
+                key={`${row.showSlug}-${row.id}`}
+                className="flex flex-wrap items-center gap-x-6 gap-y-4 px-5 py-5 md:px-7"
+                style={{ borderBottom: index === scheduleRows.length - 1 ? undefined : '1px solid rgba(242,196,107,.14)' }}
               >
-                Билеты
-              </Link>
-            </div>
-          ))}
+                <div className="w-40">
+                  <div className="text-[22px] font-black text-[#f2c46b]" style={{ fontFamily: 'Nunito, Arial, sans-serif' }}>
+                    {row.dateLabel}
+                  </div>
+                  <div className="text-[15px] text-[#c6b699]">
+                    {row.weekday}, {row.time}
+                  </div>
+                </div>
+                <div className="min-w-44 flex-1">
+                  <Link href={`/${row.showSlug}`} className="text-xl font-black text-[#fdf1d4] hover:text-[#ffd98a]" style={{ fontFamily: 'Nunito, Arial, sans-serif' }}>
+                    {row.showTitle}
+                  </Link>
+                  <div className="text-[15px] text-[#c6b699]">{parseScheduleLinks(row.details)}</div>
+                </div>
+                <div className="min-w-40 flex-1 text-[16.5px]">{parseScheduleLinks(row.place)}</div>
+                <div className="ml-auto min-w-28 text-right">
+                  {row.isClosed ? (
+                    <span className="text-sm text-[#c6b699]">Закрытый показ</span>
+                  ) : row.ticketMode === 'venue' && row.ticketUrl ? (
+                    <a
+                      href={row.ticketUrl}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="inline-flex whitespace-nowrap rounded-full bg-[#e8a33d] px-5 py-2.5 text-sm font-black text-[#2f2418] transition hover:bg-[#f6b957]"
+                      style={{ fontFamily: 'Nunito, Arial, sans-serif' }}
+                    >
+                      Билеты
+                    </a>
+                  ) : row.ticketMode === 'venue' ? (
+                    <span className="text-sm text-[#c6b699]">Недоступно</span>
+                  ) : (
+                    <Link
+                      href={`/${row.showSlug}#schedule`}
+                      className="inline-flex whitespace-nowrap rounded-full bg-[#e8a33d] px-5 py-2.5 text-sm font-black text-[#2f2418] transition hover:bg-[#f6b957]"
+                      style={{ fontFamily: 'Nunito, Arial, sans-serif' }}
+                    >
+                      Билеты
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="px-5 py-8 text-center text-base text-[#eadfc9] md:px-7">Расписание пока не заполнено. Следите за обновлениями!</p>
+          )}
         </div>
       </section>
 
