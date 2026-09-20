@@ -524,7 +524,12 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
           <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 md:gap-4">
             <div className={`flex flex-col items-center md:flex-row md:items-center gap-1 md:gap-3 ${isRTL ? 'md:flex-row-reverse' : ''} flex-shrink min-w-0`}>
               <div className="flex flex-col gap-0.5">
-                <div className="text-[0.65rem] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-amber-200/80 whitespace-nowrap">{t.theatreLabel}</div>
+                <Link
+                  href="/"
+                  className="text-[0.65rem] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-amber-200/80 whitespace-nowrap transition hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+                >
+                  {t.theatreLabel}
+                </Link>
                 {t.theatreSubtitle && (
                   <div className="text-[0.55rem] md:text-[0.6rem] tracking-wide text-amber-200/80">{t.theatreSubtitle}</div>
                 )}
