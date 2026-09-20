@@ -4,13 +4,16 @@ import type { NextRequest } from 'next/server';
 import { DEFAULT_SHOW_SLUG, isShowSlug } from '@/shows';
 import { type ShowSlug } from '@/shows/types';
 
-const HOST_TO_SHOW: Record<string, ShowSlug> = {
+const LEGACY_HOST_TO_SHOW: Record<string, ShowSlug> = {
   'www.ryba-kiva-zlata.com': 'zlata',
   'ryba-kiva-zlata.com': 'zlata',
   'www.ryba-kiva-marita.com': 'marita',
   'ryba-kiva-marita.com': 'marita',
   'www.ryba-kiva-gefilte-lid.com': 'gefilte-lid',
   'ryba-kiva-gefilte-lid.com': 'gefilte-lid',
+};
+
+const DEV_HOST_TO_SHOW: Record<string, ShowSlug> = {
   localhost: DEFAULT_SHOW_SLUG,
   '127.0.0.1': DEFAULT_SHOW_SLUG,
 };
@@ -33,7 +36,7 @@ export default function proxy(request: NextRequest) {
 
   const hostHeader = request.headers.get('host')?.toLowerCase() ?? '';
   const hostname = hostHeader.split(':')[0];
-  const targetSlug = HOST_TO_SHOW[hostname];
+  const targetSlug = LEGACY_HOST_TO_SHOW[hostname] ?? DEV_HOST_TO_SHOW[hostname];
 
   if (!targetSlug || !isShowSlug(targetSlug)) {
     return NextResponse.next();

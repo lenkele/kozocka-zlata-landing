@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { SHOWS, SHOW_SLUGS } from '@/shows';
 import type { ShowSlug } from '@/shows/types';
@@ -53,7 +54,7 @@ export default function AdminHomePage() {
     }
   }, [showEvents, selectedEventId]);
 
-  const refreshEvents = async () => {
+  const refreshEvents = useCallback(async () => {
     const response = await fetch('/api/admin/schedule/events?show=all', { cache: 'no-store' });
     const result = (await response.json()) as { ok?: boolean; reason?: string; message?: string; events?: EventRow[] };
     if (response.status === 401 || result.reason === 'unauthorized') {
@@ -67,9 +68,9 @@ export default function AdminHomePage() {
       return;
     }
     setEvents(Array.isArray(result.events) ? result.events : []);
-  };
+  }, []);
 
-  const checkSession = async () => {
+  const checkSession = useCallback(async () => {
     setAuthState('loading');
     try {
       const response = await fetch('/api/admin/schedule/session', { cache: 'no-store' });
@@ -94,11 +95,11 @@ export default function AdminHomePage() {
       setAuthState('unauthenticated');
       setAuthMessage('Ошибка сети при проверке сессии.');
     }
-  };
+  }, [refreshEvents]);
 
   useEffect(() => {
     void checkSession();
-  }, []);
+  }, [checkSession]);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -363,9 +364,9 @@ export default function AdminHomePage() {
               >
                 Скачать PDF
               </button>
-              <a href="/admin/schedule" className="rounded-full bg-slate-700 px-4 py-2 text-sm font-semibold text-white">
+              <Link href="/admin/schedule" className="rounded-full bg-slate-700 px-4 py-2 text-sm font-semibold text-white">
                 Перейти к расписанию
-              </a>
+              </Link>
             </div>
           </form>
 

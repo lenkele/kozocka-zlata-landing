@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: '"Zlata the Goat" - a puppet and musical performance for Hanukkah',
+  title: 'Ryba Kiva Theatre - puppet and musical performances',
   description:
-    "A tender, playful, and slightly bittersweet puppet performance inspired by Isaac Bashevis Singer and Jewish parables. With puppets, shadows, live music and Hanukkah magic.",
+    'Ryba Kiva Theatre creates puppet and musical performances for families, with live music, shadows, and stories for children and adults.',
   icons: {
     icon: [
       { url: "/favicon.png?v=2", sizes: "any" },

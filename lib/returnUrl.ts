@@ -8,9 +8,11 @@ export type ResolveReturnUrlOptions = {
 
 /**
  * Whitelist доменов, на которые разрешён возврат после оплаты.
- * Должен совпадать с доменами спектаклей (proxy.ts HOST_TO_SHOW).
+ * Must stay aligned with the show domains handled in proxy.ts.
  */
 const ALLOWED_RETURN_HOSTS = new Set([
+  'ryba-kiva.com',
+  'www.ryba-kiva.com',
   'ryba-kiva-zlata.com',
   'www.ryba-kiva-zlata.com',
   'ryba-kiva-marita.com',
@@ -23,12 +25,31 @@ const ALLOWED_RETURN_HOSTS = new Set([
   'kozocka-zlata-landing.vercel.app',
 ]);
 
-/** Канонические production-домены для спектаклей (proxy.ts HOST_TO_SHOW) */
-const SHOW_CANONICAL_ORIGIN: Record<ShowSlug, string> = {
+// Legacy per-show production domains. Used until CANONICAL_SITE_URL is set.
+const LEGACY_SHOW_CANONICAL_ORIGIN: Record<ShowSlug, string> = {
   zlata: 'https://ryba-kiva-zlata.com',
   marita: 'https://ryba-kiva-marita.com',
   'gefilte-lid': 'https://ryba-kiva-gefilte-lid.com',
 };
+
+function normalizeOrigin(value: string | undefined): string | null {
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+    return parsed.origin.replace(/\/+$/, '');
+  } catch {
+    return null;
+  }
+}
+
+function getSharedCanonicalOrigin(): string | null {
+  return normalizeOrigin(process.env.CANONICAL_SITE_URL);
+}
+
+function getCanonicalOrigin(showSlug: ShowSlug): string {
+  return getSharedCanonicalOrigin() ?? LEGACY_SHOW_CANONICAL_ORIGIN[showSlug];
+}
 
 function getHostFromUrl(url: string): string | null {
   try {
@@ -41,6 +62,9 @@ function getHostFromUrl(url: string): string | null {
 
 function isHostAllowed(host: string): boolean {
   const lower = host.toLowerCase();
+  const sharedCanonicalOrigin = getSharedCanonicalOrigin();
+  const sharedCanonicalHost = sharedCanonicalOrigin ? getHostFromUrl(sharedCanonicalOrigin) : null;
+  if (sharedCanonicalHost && lower === sharedCanonicalHost) return true;
   if (ALLOWED_RETURN_HOSTS.has(lower)) return true;
   if (lower.endsWith('.vercel.app')) return true;
   return false;
@@ -58,7 +82,7 @@ function pathToCanonicalUrl(path: string, showSlug?: ShowSlug): string {
   const search = path.includes('?') ? path.slice(path.indexOf('?')) : '';
   const slug = showSlug ?? getSlugFromPath(pathname);
   const canonicalPath = pathname === '/' ? `/${slug}` : pathname;
-  return `${SHOW_CANONICAL_ORIGIN[slug]}${canonicalPath}${search}`;
+  return `${getCanonicalOrigin(slug)}${canonicalPath}${search}`;
 }
 
 /** Если URL с preview-домена (*.vercel.app), заменяем на канонический production */
@@ -70,7 +94,7 @@ function rewritePreviewToCanonical(url: string): string {
 
     const pathname = parsed.pathname || '/';
     const slug = getSlugFromPath(pathname);
-    const canonical = SHOW_CANONICAL_ORIGIN[slug];
+    const canonical = getCanonicalOrigin(slug);
     return `${canonical}${pathname}${parsed.search}`;
   } catch {
     return url;

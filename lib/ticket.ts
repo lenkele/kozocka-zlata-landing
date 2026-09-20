@@ -204,7 +204,7 @@ async function renderHtmlToPdf(html: string): Promise<Uint8Array> {
 }
 
 export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketArtifacts> {
-  const baseUrl = process.env.APP_BASE_URL ?? 'https://kozocka-zlata-landing-coral.vercel.app';
+  const baseUrl = process.env.APP_BASE_URL ?? process.env.CANONICAL_SITE_URL ?? 'https://ryba-kiva.com';
   const ticketCode = generateTicketCode(order.order_id);
   const verifyUrl = `${baseUrl}/ticket/validate?order_id=${encodeURIComponent(order.order_id)}&ticket=${ticketCode}&show=${encodeURIComponent(order.show_slug)}`;
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(verifyUrl)}`;

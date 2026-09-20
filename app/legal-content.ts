@@ -3,7 +3,7 @@ These Terms and Conditions ("Terms") constitute a binding agreement between the 
 By accessing the website or purchasing a ticket, you confirm that you have read, understood, and agree to be bound by these Terms, together with our Privacy Policy.
 
 1. General Information
-The websites operated under the name Ryba Kiva Theatre are informational websites for theatrical performances and enable the purchase of tickets for specific shows. Each performance may have its own dedicated landing page.
+The website operated under the name Ryba Kiva Theatre is an informational website for theatrical performances and enables the purchase of tickets for specific shows and events. Each performance may have its own dedicated page within the theatre website.
 The Terms are governed by the laws of the State of Israel, including the Consumer Protection Law, 5741-1981, and the regulations enacted thereunder. Where any conflict exists between these Terms and mandatory provisions of law, the provisions of the law shall prevail.
 
 2. Performances and Tickets
@@ -85,7 +85,7 @@ Certain technical data and online identifiers may be considered “Personal Info
 This Policy is intended to comply with applicable Israeli privacy and data protection laws, including the Protection of Privacy Law, 57411981 (including Amendment No. 13), the Protection of Privacy Regulations (Data Security), 57772017, and related regulations, as amended from time to time.
 
 Website and Services
-The websites operated under the Ryba Kiva name are informational websites for theatrical performances and allow users to purchase tickets for specific shows. At present, each performance may have its own dedicated landing page (for example: ryba-kiva-zlata.com and ryba-kiva-marita.com).
+The website operated under the Ryba Kiva name is an informational website for theatrical performances and allows users to purchase tickets for specific shows and events. Each performance may have its own dedicated page within the theatre website.
 The websites do not require user registration and do not include personal user accounts.
 The websites are available in Russian and Hebrew.
 
