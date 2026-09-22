@@ -1,8 +1,14 @@
 import crypto from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 
 import chromium from '@sparticuz/chromium';
+import fontkit from '@pdf-lib/fontkit';
+import { PDFDocument, rgb, StandardFonts, type PDFFont } from 'pdf-lib';
 import puppeteer from 'puppeteer-core';
 
+import { SHOWS, isShowSlug } from '@/shows';
+import type { Lang } from '@/shows/types';
 import type { StoredOrder } from './ordersStore';
 import { resolveOrderDetails } from './showEventDetails';
 
@@ -14,12 +20,20 @@ export type TicketArtifacts = {
   pdfFilename: string;
 };
 
+type PosterAsset = {
+  dataUrl: string;
+  bytes: Uint8Array;
+  mimeType: string;
+  alt: string;
+};
+
+type FontAsset = {
+  dataUrl: string;
+  bytes: Uint8Array;
+};
+
 export function generateTicketCode(orderId: string): string {
   return crypto.createHash('sha256').update(orderId).digest('hex').slice(0, 12).toUpperCase();
-}
-
-function amountLabel(order: StoredOrder): string {
-  return order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
 }
 
 function escapeHtml(input: string): string {
@@ -31,148 +45,318 @@ function escapeHtml(input: string): string {
     .replaceAll("'", '&#39;');
 }
 
-function formatHebrewMixed(input: string): string {
-  const tokens = input.match(/[A-Za-z0-9@:%+./,_'"()\-]+|[^A-Za-z0-9@:%+./,_'"()\-]+/g) ?? [input];
-  const html = tokens
-    .map((token) => {
-      if (/^[A-Za-z0-9@:%+./,_'"()\-]+$/.test(token)) {
-        return `<span class="ltr-token">${escapeHtml(token)}</span>`;
-      }
-      return `<span class="rtl-token">${escapeHtml(token)}</span>`;
-    })
-    .join('');
+function stripMarkdownLinks(input: string): string {
+  return input.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1');
+}
 
-  return `<span class="he-mixed">${html}</span>`;
+function cleanPlaceForTicket(input: string): string {
+  const withoutLinks = stripMarkdownLinks(input);
+  const withoutTicketingNotes = withoutLinks
+    .replace(/\s*,?\s*(?:билеты|заказ билетов|информация и билеты|tickets?|order tickets|details and tickets|כרטיסים|פרטים וכרטיסים).*/iu, '')
+    .trim()
+    .replace(/[,\s]+$/u, '');
+
+  return withoutTicketingNotes || withoutLinks;
+}
+
+function ticketWordRu(qty: number): string {
+  const mod10 = qty % 10;
+  const mod100 = qty % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'билет';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'билета';
+  return 'билетов';
+}
+
+function buildPurchaseMessage(input: {
+  lang: Lang;
+  qty: number;
+  showTitle: string;
+  dateTime: string;
+  place: string;
+}): string {
+  const place = cleanPlaceForTicket(input.place);
+
+  if (input.lang === 'he') {
+    return `רכשתם ${input.qty} כרטיסים למופע ״${input.showTitle}״ בכתובת ${place}, בתאריך ${input.dateTime}. נשמח לראותכם.`;
+  }
+
+  if (input.lang === 'en') {
+    const ticketWord = input.qty === 1 ? 'ticket' : 'tickets';
+    return `You have purchased ${input.qty} ${ticketWord} to "${input.showTitle}" at ${place} on ${input.dateTime}. We look forward to seeing you.`;
+  }
+
+  return `Вы купили ${input.qty} ${ticketWordRu(input.qty)} на спектакль «${input.showTitle}» по адресу ${place} ${input.dateTime}. Ждем вас.`;
+}
+
+function posterPathForOrder(showSlug: string, lang: Lang): string | null {
+  if (!isShowSlug(showSlug)) return null;
+
+  const show = SHOWS[showSlug];
+  const content = show.content[lang] ?? show.content.ru ?? show.content.en ?? show.content.he;
+  const posterImage = content?.posterImage;
+  if (!posterImage) return null;
+
+  const publicPath = posterImage.split('?')[0].replace(/^\/+/, '');
+  return path.join(process.cwd(), 'public', publicPath);
+}
+
+function mimeTypeForFile(filePath: string): string | null {
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  if (ext === '.png') return 'image/png';
+  if (ext === '.webp') return 'image/webp';
+  return null;
+}
+
+async function resolvePosterAsset(showSlug: string, lang: Lang, alt: string): Promise<PosterAsset | null> {
+  const posterPath = posterPathForOrder(showSlug, lang);
+  if (!posterPath) return null;
+
+  const mimeType = mimeTypeForFile(posterPath);
+  if (!mimeType) return null;
+
+  try {
+    const bytes = await readFile(posterPath);
+    return {
+      dataUrl: `data:${mimeType};base64,${bytes.toString('base64')}`,
+      bytes,
+      mimeType,
+      alt,
+    };
+  } catch (error) {
+    console.error('[ticket] failed to load poster image', { showSlug, lang, posterPath, error });
+    return null;
+  }
+}
+
+async function resolveFontAsset(): Promise<FontAsset | null> {
+  const fontPath = path.join(process.cwd(), 'assets', 'fonts', 'DejaVuSans.ttf');
+
+  try {
+    const bytes = await readFile(fontPath);
+    return {
+      dataUrl: `data:font/ttf;base64,${bytes.toString('base64')}`,
+      bytes,
+    };
+  } catch (error) {
+    console.error('[ticket] failed to load ticket font', { fontPath, error });
+    return null;
+  }
 }
 
 function buildTicketHtml(input: {
   ticketCode: string;
   orderId: string;
-  qrImageUrl: string;
-  showRu: string;
-  showEn: string;
-  showHe: string;
-  dateRu: string;
-  dateEn: string;
-  dateHe: string;
-  venueRu: string;
-  venueEn: string;
-  venueHe: string;
-  directionsUrl: string | null;
-  buyerName: string;
-  buyerEmail: string;
-  qty: string;
-  amount: string;
+  verifyUrl: string;
+  lang: Lang;
+  purchaseMessage: string;
+  poster: PosterAsset | null;
+  fontDataUrl: string | null;
 }): string {
+  const direction = input.lang === 'he' ? 'rtl' : 'ltr';
+  const fontFace = input.fontDataUrl
+    ? `@font-face { font-family: "TicketSans"; src: url("${input.fontDataUrl}") format("truetype"); font-weight: 400 800; }`
+    : '';
+
   return `<!doctype html>
-<html lang="en">
+<html lang="${input.lang}" dir="${direction}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
+      ${fontFace}
+      @page { size: A4; margin: 0; }
       * { box-sizing: border-box; }
-      body { margin: 0; font-family: "DejaVu Sans", Arial, sans-serif; color: #111827; background: #eef1f6; }
-      .page { width: 794px; margin: 0 auto; padding: 46px; }
-      .card { background: #fff; border: 1px solid #d6deea; }
-      .header { background: #13233f; color: #f8fafc; padding: 18px 26px 16px; }
-      .header h1 { margin: 0; font-size: 36px; font-weight: 700; line-height: 1.1; }
-      .header .code { margin-top: 8px; font-size: 20px; }
-      .content { padding: 20px 26px 24px; }
-      .top-grid { display: grid; grid-template-columns: 1fr 170px; gap: 18px; align-items: start; }
-      .title-line { font-size: 18px; font-weight: 700; margin: 0 0 8px; line-height: 1.3; }
-      .section { padding: 10px 0 12px; border-top: 1px solid #d6deea; }
-      .section:first-of-type { border-top: none; padding-top: 0; }
-      .section-title { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
-      .row { display: grid; grid-template-columns: 170px 1fr; gap: 14px; margin: 4px 0; align-items: start; }
-      .row .label { color: #6b7280; font-size: 14px; line-height: 1.35; }
-      .row .value { font-size: 16px; line-height: 1.35; }
-      .he .section-title { text-align: right; direction: rtl; }
-      .he .row { grid-template-columns: 1fr 170px; }
-      .he .label { text-align: right; direction: rtl; unicode-bidi: isolate; }
-      .he .value { text-align: right; direction: rtl; unicode-bidi: isolate; }
-      .he-mixed { direction: rtl; unicode-bidi: isolate; display: inline; }
-      .rtl-token { direction: rtl; unicode-bidi: isolate; display: inline; }
-      .ltr-token { direction: ltr; unicode-bidi: isolate; display: inline; }
-      .qr-wrap { text-align: center; }
-      .qr-box { border: 1px solid #d6deea; background: #f8fafc; padding: 10px; display: inline-block; }
-      .qr-box img { width: 150px; height: 150px; display: block; }
-      .qr-note { margin-top: 8px; font-size: 12px; line-height: 1.35; color: #374151; }
-      .qr-note p { margin: 0; }
-      .qr-note .he-note { direction: rtl; unicode-bidi: isolate; }
+      body {
+        margin: 0;
+        font-family: "TicketSans", "DejaVu Sans", Arial, sans-serif;
+        color: #111827;
+        background: #f8fafc;
+      }
+      .page {
+        width: 794px;
+        height: 1123px;
+        margin: 0 auto;
+        background: #ffffff;
+        overflow: hidden;
+      }
+      .ticket-note {
+        height: 180px;
+        padding: 24px 34px 16px;
+        background: #fff7ed;
+        border-bottom: 3px solid #111827;
+        overflow: hidden;
+      }
+      .message {
+        margin: 0;
+        font-size: 23px;
+        font-weight: 800;
+        line-height: 1.26;
+      }
+      .meta {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-top: 13px;
+        color: #374151;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      .meta a { color: #1d4ed8; text-decoration: none; }
+      .poster-wrap {
+        width: 794px;
+        height: 943px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+      }
+      .poster {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .poster-fallback {
+        padding: 48px;
+        text-align: center;
+        font-size: 28px;
+        line-height: 1.35;
+        color: #374151;
+      }
+      [dir="rtl"] .meta {
+        flex-direction: row-reverse;
+      }
     </style>
   </head>
   <body>
     <main class="page">
-      <section class="card">
-        <header class="header">
-          <h1>RYBA KIVA | E-TICKET</h1>
-          <div class="code">Ticket code: ${escapeHtml(input.ticketCode)}</div>
-        </header>
-        <div class="content">
-          <div class="top-grid">
-            <div>
-              <p class="title-line">
-                ${escapeHtml(input.showRu)} | ${escapeHtml(input.showEn)} | ${formatHebrewMixed(input.showHe)}
-              </p>
-
-              <section class="section">
-                <h2 class="section-title">Русский</h2>
-                <div class="row"><div class="label">Спектакль</div><div class="value">${escapeHtml(input.showRu)}</div></div>
-                <div class="row"><div class="label">Дата и время</div><div class="value">${escapeHtml(input.dateRu)}</div></div>
-                <div class="row"><div class="label">Место</div><div class="value">${escapeHtml(input.venueRu)}</div></div>
-                ${input.directionsUrl ? `<div class="row"><div class="label">Как добраться</div><div class="value"><a href="${escapeHtml(input.directionsUrl)}">Waze</a></div></div>` : ''}
-              </section>
-
-              <section class="section">
-                <h2 class="section-title">English</h2>
-                <div class="row"><div class="label">Show</div><div class="value">${escapeHtml(input.showEn)}</div></div>
-                <div class="row"><div class="label">Date &amp; time</div><div class="value">${escapeHtml(input.dateEn)}</div></div>
-                <div class="row"><div class="label">Venue</div><div class="value">${escapeHtml(input.venueEn)}</div></div>
-                ${input.directionsUrl ? `<div class="row"><div class="label">How to get there</div><div class="value"><a href="${escapeHtml(input.directionsUrl)}">Waze</a></div></div>` : ''}
-              </section>
-
-              <section class="section he">
-                <h2 class="section-title">עברית</h2>
-                <div class="row">
-                  <div class="value">${formatHebrewMixed(input.showHe)}</div>
-                  <div class="label">מופע</div>
-                </div>
-                <div class="row">
-                  <div class="value">${formatHebrewMixed(input.dateHe)}</div>
-                  <div class="label">תאריך ושעה</div>
-                </div>
-                <div class="row">
-                  <div class="value">${formatHebrewMixed(input.venueHe)}</div>
-                  <div class="label">מקום</div>
-                </div>
-                ${input.directionsUrl ? `<div class="row"><div class="value"><span class="ltr-token"><a href="${escapeHtml(input.directionsUrl)}">Waze</a></span></div><div class="label">איך מגיעים</div></div>` : ''}
-              </section>
-
-              <section class="section">
-                <h2 class="section-title">Purchase details | Данные покупки | <span dir="rtl">פרטי רכישה</span></h2>
-                <div class="row"><div class="label">Buyer | Покупатель | <span dir="rtl">רוכש/ת</span></div><div class="value">${escapeHtml(input.buyerName)}</div></div>
-                <div class="row"><div class="label">Email | <span dir="rtl">אימייל</span></div><div class="value">${escapeHtml(input.buyerEmail)}</div></div>
-                <div class="row"><div class="label">Qty | Кол-во | <span dir="rtl">כמות</span></div><div class="value">${escapeHtml(input.qty)}</div></div>
-                <div class="row"><div class="label">Amount | Сумма | <span dir="rtl">סכום</span></div><div class="value">${escapeHtml(input.amount)}</div></div>
-              </section>
-            </div>
-
-            <aside class="qr-wrap">
-              <div class="qr-box">
-                <img src="${escapeHtml(input.qrImageUrl)}" alt="QR" />
-              </div>
-              <div class="qr-note">
-                <p>Покажите QR на входе</p>
-                <p>Show QR at the entrance</p>
-                <p class="he-note"><span class="he-mixed"><span class="rtl-token">הראו את קוד ה-</span><span class="ltr-token">QR</span><span class="rtl-token"> בכניסה.</span></span></p>
-              </div>
-            </aside>
-          </div>
+      <section class="ticket-note">
+        <p class="message">${escapeHtml(input.purchaseMessage)}</p>
+        <div class="meta">
+          <span>Ticket code: ${escapeHtml(input.ticketCode)}</span>
+          <span>Order: ${escapeHtml(input.orderId)}</span>
         </div>
+      </section>
+      <section class="poster-wrap">
+        ${
+          input.poster
+            ? `<img class="poster" src="${input.poster.dataUrl}" alt="${escapeHtml(input.poster.alt)}" />`
+            : `<div class="poster-fallback">${escapeHtml(input.purchaseMessage)}</div>`
+        }
       </section>
     </main>
   </body>
 </html>`;
+}
+
+function wrapPdfText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const candidate = currentLine ? `${currentLine} ${word}` : word;
+    if (font.widthOfTextAtSize(candidate, fontSize) <= maxWidth || !currentLine) {
+      currentLine = candidate;
+      continue;
+    }
+
+    lines.push(currentLine);
+    currentLine = word;
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
+function toFallbackVisualText(text: string, lang: Lang): string {
+  if (lang !== 'he') return text;
+  return Array.from(text).reverse().join('');
+}
+
+async function renderTicketToPdfFallback(input: {
+  ticketCode: string;
+  orderId: string;
+  lang: Lang;
+  purchaseMessage: string;
+  poster: PosterAsset | null;
+  fontBytes: Uint8Array | null;
+}): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
+
+  const pageWidth = 595.28;
+  const pageHeight = 841.89;
+  const noteHeight = 138;
+  const marginX = 26;
+  const page = pdfDoc.addPage([pageWidth, pageHeight]);
+
+  const font = input.fontBytes ? await pdfDoc.embedFont(input.fontBytes, { subset: true }) : await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const metaFont = input.fontBytes ? font : await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  page.drawRectangle({
+    x: 0,
+    y: pageHeight - noteHeight,
+    width: pageWidth,
+    height: noteHeight,
+    color: rgb(1, 0.969, 0.929),
+  });
+  page.drawRectangle({
+    x: 0,
+    y: pageHeight - noteHeight - 2,
+    width: pageWidth,
+    height: 2,
+    color: rgb(0.067, 0.094, 0.153),
+  });
+
+  const fontSize = 16;
+  const lines = wrapPdfText(input.purchaseMessage, font, fontSize, pageWidth - marginX * 2).slice(0, 5);
+  let y = pageHeight - 31;
+
+  for (const line of lines) {
+    const visualLine = toFallbackVisualText(line, input.lang);
+    const textWidth = font.widthOfTextAtSize(visualLine, fontSize);
+    page.drawText(visualLine, {
+      x: input.lang === 'he' ? pageWidth - marginX - textWidth : marginX,
+      y,
+      size: fontSize,
+      font,
+      color: rgb(0.067, 0.094, 0.153),
+    });
+    y -= fontSize * 1.35;
+  }
+
+  page.drawText(`Ticket code: ${input.ticketCode}   Order: ${input.orderId}`, {
+    x: marginX,
+    y: pageHeight - noteHeight + 18,
+    size: 8,
+    font: metaFont,
+    color: rgb(0.216, 0.255, 0.318),
+  });
+
+  if (input.poster) {
+    const image =
+      input.poster.mimeType === 'image/png'
+        ? await pdfDoc.embedPng(input.poster.bytes)
+        : await pdfDoc.embedJpg(input.poster.bytes);
+    const posterHeight = pageHeight - noteHeight - 2;
+    const scale = Math.min(pageWidth / image.width, posterHeight / image.height);
+    const width = image.width * scale;
+    const height = image.height * scale;
+
+    page.drawImage(image, {
+      x: (pageWidth - width) / 2,
+      y: (posterHeight - height) / 2,
+      width,
+      height,
+    });
+  }
+
+  return pdfDoc.save();
 }
 
 async function renderHtmlToPdf(html: string): Promise<Uint8Array> {
@@ -207,35 +391,51 @@ export async function buildTicketArtifacts(order: StoredOrder): Promise<TicketAr
   const baseUrl = process.env.APP_BASE_URL ?? process.env.CANONICAL_SITE_URL ?? 'https://ryba-kiva.com';
   const ticketCode = generateTicketCode(order.order_id);
   const verifyUrl = `${baseUrl}/ticket/validate?order_id=${encodeURIComponent(order.order_id)}&ticket=${ticketCode}&show=${encodeURIComponent(order.show_slug)}`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(verifyUrl)}`;
 
   const details = await resolveOrderDetails(order);
+  const lang = details.eventLanguage;
+  const showTitle = details.showTitle[lang] || details.showTitle.ru || details.showTitle.en || order.show_slug;
+  const dateTime = details.eventDateTime[lang] || details.eventDateTime.ru || order.event_id || '-';
+  const place = details.eventPlace[lang] || details.eventPlace.ru || '-';
+  const purchaseMessage = buildPurchaseMessage({
+    lang,
+    qty: order.qty,
+    showTitle,
+    dateTime,
+    place,
+  });
+  const poster = await resolvePosterAsset(order.show_slug, lang, showTitle);
+  const fontAsset = await resolveFontAsset();
+
   const html = buildTicketHtml({
     ticketCode,
     orderId: order.order_id,
-    qrImageUrl,
-    showRu: details.showTitle.ru,
-    showEn: details.showTitle.en,
-    showHe: details.showTitle.he,
-    dateRu: details.eventDateTime.ru,
-    dateEn: details.eventDateTime.en,
-    dateHe: details.eventDateTime.he,
-    venueRu: details.eventPlace.ru,
-    venueEn: details.eventPlace.en,
-    venueHe: details.eventPlace.he,
-    directionsUrl: details.eventDirectionsUrl,
-    buyerName: order.buyer_name || '-',
-    buyerEmail: order.buyer_email,
-    qty: String(order.qty),
-    amount: amountLabel(order),
+    verifyUrl,
+    lang,
+    purchaseMessage,
+    poster,
+    fontDataUrl: fontAsset?.dataUrl ?? null,
   });
 
-  const pdfBytes = await renderHtmlToPdf(html);
+  let pdfBytes: Uint8Array;
+  try {
+    pdfBytes = await renderHtmlToPdf(html);
+  } catch (error) {
+    console.error('[ticket] chromium render failed, falling back to pdf-lib ticket renderer', { orderId: order.order_id, error });
+    pdfBytes = await renderTicketToPdfFallback({
+      ticketCode,
+      orderId: order.order_id,
+      lang,
+      purchaseMessage,
+      poster,
+      fontBytes: fontAsset?.bytes ?? null,
+    });
+  }
 
   return {
     ticketCode,
     verifyUrl,
-    qrImageUrl,
+    qrImageUrl: '',
     pdfBase64: Buffer.from(pdfBytes).toString('base64'),
     pdfFilename: `ticket-${order.order_id}.pdf`,
   };

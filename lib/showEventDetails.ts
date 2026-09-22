@@ -7,6 +7,7 @@ type ScheduleLangEntry = {
   time?: string;
   place?: string;
   date_text?: string;
+  language?: string;
 };
 
 type ScheduleEvent = {
@@ -21,6 +22,7 @@ export type ResolvedOrderDetails = {
   eventDateTime: Record<Lang, string>;
   eventPlace: Record<Lang, string>;
   eventDirectionsUrl: string | null;
+  eventLanguage: Lang;
 };
 
 const EMPTY_TEXT: Record<Lang, string> = { ru: '-', en: '-', he: '-' };
@@ -129,6 +131,28 @@ function buildEventDetails(event: ScheduleEvent | null, fallbackEventId: string)
   return { eventDateTime, eventPlace, eventDirectionsUrl };
 }
 
+function resolveEventLanguage(event: ScheduleEvent | null): Lang {
+  const values = [
+    event?.entries?.en?.language,
+    event?.entries?.ru?.language,
+    event?.entries?.he?.language,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.toLowerCase());
+
+  if (values.some((value) => value.includes('hebrew') || value.includes('иврит') || value.includes('עבר'))) {
+    return 'he';
+  }
+  if (values.some((value) => value.includes('english') || value.includes('англ') || value.includes('אנגל'))) {
+    return 'en';
+  }
+  if (values.some((value) => value.includes('russian') || value.includes('рус') || value.includes('רוס'))) {
+    return 'ru';
+  }
+
+  return 'ru';
+}
+
 export async function resolveOrderDetails(order: StoredOrder): Promise<ResolvedOrderDetails> {
   const showTitle = resolveShowTitle(order.show_slug);
   const event = await loadScheduleEvent(order.show_slug, order.event_id ?? '');
@@ -139,5 +163,6 @@ export async function resolveOrderDetails(order: StoredOrder): Promise<ResolvedO
     eventDateTime,
     eventPlace,
     eventDirectionsUrl,
+    eventLanguage: resolveEventLanguage(event),
   };
 }
