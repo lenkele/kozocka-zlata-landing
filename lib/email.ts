@@ -8,7 +8,7 @@ type SendTicketEmailResult = {
   id?: string;
 };
 
-const THEATRE_EMAIL = 'rybakiva.theatre@gmail.com';
+const THEATRE_EMAIL = 'tickets.rybakiva@gmail.com';
 
 type EmailProvider = 'gmail' | 'resend';
 
