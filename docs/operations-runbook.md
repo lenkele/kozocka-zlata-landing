@@ -7,6 +7,7 @@
 - `ALLPAY_API_KEY`
 - `ALLPAY_WEBHOOK_SECRET`
 - `RESEND_API_KEY`
+- `GMAIL_APP_PASSWORD`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `ADMIN_SCHEDULE_AUTH_SECRET`
 - `ADMIN_SCHEDULE_PASSWORD`
@@ -59,14 +60,14 @@
 
 ### 3.4 Письма не уходят / попадают в спам
 
-1. Проверить `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_REPLY_TO`.
-2. Проверить статус домена в Resend (`Verified`).
-3. Проверить SPF/DKIM/DMARC.
+1. Проверить `EMAIL_PROVIDER`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_REPLY_TO`.
+2. Убедиться, что для Gmail включена двухэтапная аутентификация, а `GMAIL_APP_PASSWORD` является действующим паролем приложения.
+3. Если используется Resend, проверить `RESEND_API_KEY` и статус домена (`Verified`).
 
 ## 4. Обязательные env переменные
 
 - Платежи: `ALLPAY_TERMINAL_ID`, `ALLPAY_API_KEY`, `ALLPAY_WEBHOOK_SECRET`, `APP_BASE_URL`
-- Почта: `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_REPLY_TO`
+- Почта через Gmail: `EMAIL_PROVIDER`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_REPLY_TO`
 - DB: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 - Админка расписания: `ADMIN_SCHEDULE_LOGIN`, `ADMIN_SCHEDULE_PASSWORD`, `ADMIN_SCHEDULE_AUTH_SECRET`
 

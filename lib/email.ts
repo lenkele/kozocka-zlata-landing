@@ -1,3 +1,5 @@
+import nodemailer from 'nodemailer';
+
 import type { StoredOrder } from './ordersStore';
 import { resolveOrderDetails } from './showEventDetails';
 import { buildTicketArtifacts } from './ticket';
@@ -6,16 +8,31 @@ type SendTicketEmailResult = {
   id?: string;
 };
 
-export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEmailResult> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = (process.env.EMAIL_FROM ?? 'onboarding@resend.dev').trim();
-  const fromName = (process.env.EMAIL_FROM_NAME ?? 'RYBA KIVA').trim();
-  const replyTo = process.env.EMAIL_REPLY_TO?.trim();
+const THEATRE_EMAIL = 'rybakiva.theatre@gmail.com';
 
-  if (!apiKey) {
-    throw new Error('RESEND_API_KEY is required');
+type EmailProvider = 'gmail' | 'resend';
+
+function resolveEmailProvider(): EmailProvider {
+  const configured = process.env.EMAIL_PROVIDER?.trim().toLowerCase();
+  if (!configured) return process.env.GMAIL_APP_PASSWORD ? 'gmail' : 'resend';
+  if (configured === 'gmail' || configured === 'resend') return configured;
+  throw new Error(`Unsupported EMAIL_PROVIDER: ${configured}`);
+}
+
+export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEmailResult> {
+  const provider = resolveEmailProvider();
+  const gmailUser = (process.env.GMAIL_USER ?? THEATRE_EMAIL).trim();
+  const fromEmail = (process.env.EMAIL_FROM ?? (provider === 'gmail' ? gmailUser : 'onboarding@resend.dev')).trim();
+  const fromName = (process.env.EMAIL_FROM_NAME ?? 'Театр «Рыба Кива»').trim();
+  const replyTo = (process.env.EMAIL_REPLY_TO ?? (provider === 'gmail' ? gmailUser : '')).trim();
+
+  if (provider === 'resend' && !process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is required when EMAIL_PROVIDER=resend');
   }
-  if (process.env.NODE_ENV === 'production' && fromEmail.toLowerCase() === 'onboarding@resend.dev') {
+  if (provider === 'gmail' && !process.env.GMAIL_APP_PASSWORD) {
+    throw new Error('GMAIL_APP_PASSWORD is required when EMAIL_PROVIDER=gmail');
+  }
+  if (provider === 'resend' && process.env.NODE_ENV === 'production' && fromEmail.toLowerCase() === 'onboarding@resend.dev') {
     throw new Error('EMAIL_FROM must be set to your verified domain mailbox in production');
   }
 
@@ -125,10 +142,43 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     },
   ];
 
+  if (provider === 'gmail') {
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: gmailUser,
+        pass: process.env.GMAIL_APP_PASSWORD!.replaceAll(' ', ''),
+      },
+      connectionTimeout: 15_000,
+      greetingTimeout: 15_000,
+      socketTimeout: 30_000,
+    });
+
+    const result = await transporter.sendMail({
+      from: `${fromName} <${gmailUser}>`,
+      to: order.buyer_email,
+      replyTo: replyTo || gmailUser,
+      subject,
+      html,
+      text: textBody,
+      attachments: [
+        {
+          filename: ticket.pdfFilename,
+          content: Buffer.from(ticket.pdfBase64, 'base64'),
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+
+    return { id: result.messageId };
+  }
+
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

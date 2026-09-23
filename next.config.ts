@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
+  serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core', 'nodemailer'],
   outputFileTracingIncludes: {
     '/*': [
       './node_modules/@sparticuz/chromium/**/*',

@@ -1,24 +1,27 @@
-# Настройка отправки писем с вашего адреса (Resend)
+# Настройка отправки писем с адреса театра
 
-Цель: отправлять билеты с вашего домена на любые email-адреса покупателей.
+Цель: отправлять билеты от `Театр «Рыба Кива» <rybakiva.theatre@gmail.com>`.
 
-## 1. Подтвердить домен в Resend
+## 1. Подготовить Gmail
 
-1. Откройте Resend -> `Domains` -> `Add domain`.
-2. Добавьте домен отправителя (например, `mail.your-domain.com` или `your-domain.com`).
-3. Пропишите DNS-записи, которые даст Resend (SPF/DKIM, иногда MX).
-4. Дождитесь статуса `Verified`.
+1. Войдите в Google-аккаунт `rybakiva.theatre@gmail.com`.
+2. Включите двухэтапную аутентификацию.
+3. Откройте `https://myaccount.google.com/apppasswords`.
+4. Создайте пароль приложения с названием `RYBA KIVA tickets`.
+5. Сохраните выданный 16-значный пароль. Обычный пароль Gmail использовать нельзя.
 
-Пока домен не подтвержден, отправка обычно ограничена тестовыми адресами.
+Пароль приложения является секретом. Его нельзя добавлять в Git, документацию или сообщения покупателям.
 
 ## 2. Настроить переменные окружения в Vercel
 
-В `Project Settings -> Environment Variables` задайте:
+В `Project Settings -> Environment Variables` задайте для Production:
 
-- `RESEND_API_KEY` — рабочий API-ключ Resend.
-- `EMAIL_FROM` — адрес из подтвержденного домена, например `tickets@your-domain.com`.
-- `EMAIL_FROM_NAME` — имя отправителя, например `Театр «Рыба Кива»`.
-- `EMAIL_REPLY_TO` — адрес для ответов (опционально), например `hello@your-domain.com`.
+- `EMAIL_PROVIDER=gmail`
+- `GMAIL_USER=rybakiva.theatre@gmail.com`
+- `GMAIL_APP_PASSWORD=<16-значный пароль приложения>`
+- `EMAIL_FROM=rybakiva.theatre@gmail.com`
+- `EMAIL_FROM_NAME=Театр «Рыба Кива»`
+- `EMAIL_REPLY_TO=rybakiva.theatre@gmail.com`
 
 После этого сделайте Redeploy.
 
@@ -27,10 +30,9 @@
 1. Сделайте тестовую покупку.
 2. Убедитесь, что письмо:
    - пришло на внешний адрес (не только на ваш),
-   - отправитель отображается как ваш домен,
+   - отправитель отображается как `Театр «Рыба Кива» <rybakiva.theatre@gmail.com>`,
    - PDF-билет приложен.
 
-## Важный момент по коду
+## Резервный режим Resend
 
-В production теперь есть защита: если `EMAIL_FROM` не задан и остался `onboarding@resend.dev`, отправка упадет с явной ошибкой.
-Это нужно, чтобы случайно не остаться в тестовом режиме отправителя.
+Для возврата к Resend задайте `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` и адрес подтвержденного в Resend домена в `EMAIL_FROM`. Resend не может отправлять от `@gmail.com`, поскольку этот домен принадлежит Google.
