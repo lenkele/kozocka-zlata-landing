@@ -12,6 +12,27 @@ const THEATRE_EMAIL = 'tickets.rybakiva@gmail.com';
 
 type EmailProvider = 'gmail' | 'resend';
 
+function resolveReceiptUrl(order: StoredOrder): string | null {
+  const receipt = order.allpay_raw?.receipt;
+  if (typeof receipt !== 'string') return null;
+
+  try {
+    const url = new URL(receipt);
+    return url.protocol === 'https:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 function resolveEmailProvider(): EmailProvider {
   const configured = process.env.EMAIL_PROVIDER?.trim().toLowerCase();
   if (!configured) return process.env.GMAIL_APP_PASSWORD ? 'gmail' : 'resend';
@@ -45,6 +66,8 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
   const qtyLabel = String(order.qty ?? 1);
   const amountLabel = order.amount != null ? `${order.amount} ${order.currency ?? 'ILS'}` : `- ${order.currency ?? 'ILS'}`;
   const directions = details.eventDirectionsUrl;
+  const receiptUrl = resolveReceiptUrl(order);
+  const receiptHref = receiptUrl ? escapeHtml(receiptUrl) : null;
 
   const html = [
     `<p><strong>English</strong></p>`,
@@ -52,6 +75,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<p>Your tickets are ready.</p>`,
     `<p><strong>Ticket code:</strong> ${ticket.ticketCode}</p>`,
     `<p><a href="${ticket.verifyUrl}">Verify ticket</a></p>`,
+    receiptHref ? `<p><a href="${receiptHref}">View payment receipt</a></p>` : '',
     `<p><strong>Order:</strong> ${order.order_id}<br/>`,
     `<strong>Show:</strong> ${details.showTitle.en}<br/>`,
     `<strong>Date & time:</strong> ${details.eventDateTime.en}<br/>`,
@@ -65,6 +89,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<p>Ваши билеты готовы.</p>`,
     `<p><strong>Код билета:</strong> ${ticket.ticketCode}</p>`,
     `<p><a href="${ticket.verifyUrl}">Проверить билет</a></p>`,
+    receiptHref ? `<p><a href="${receiptHref}">Открыть чек об оплате</a></p>` : '',
     `<p><strong>Заказ:</strong> ${order.order_id}<br/>`,
     `<strong>Спектакль:</strong> ${details.showTitle.ru}<br/>`,
     `<strong>Дата и время:</strong> ${details.eventDateTime.ru}<br/>`,
@@ -78,6 +103,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     `<p dir="rtl">הכרטיסים שלכם מוכנים.</p>`,
     `<p dir="rtl"><strong>קוד כרטיס:</strong> ${ticket.ticketCode}</p>`,
     `<p dir="rtl"><a href="${ticket.verifyUrl}">אימות כרטיס</a></p>`,
+    receiptHref ? `<p dir="rtl"><a href="${receiptHref}">צפייה בקבלה</a></p>` : '',
     `<p dir="rtl"><strong>הזמנה:</strong> ${order.order_id}<br/>`,
     `<strong>מופע:</strong> ${details.showTitle.he}<br/>`,
     `<strong>תאריך ושעה:</strong> ${details.eventDateTime.he}<br/>`,
@@ -95,6 +121,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     'Your tickets are ready.',
     `Ticket code: ${ticket.ticketCode}`,
     `Verify ticket: ${ticket.verifyUrl}`,
+    ...(receiptUrl ? [`Payment receipt: ${receiptUrl}`] : []),
     `Order: ${order.order_id}`,
     `Show: ${details.showTitle.en}`,
     `Date & time: ${details.eventDateTime.en}`,
@@ -109,6 +136,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     'Ваши билеты готовы.',
     `Код билета: ${ticket.ticketCode}`,
     `Проверить билет: ${ticket.verifyUrl}`,
+    ...(receiptUrl ? [`Чек об оплате: ${receiptUrl}`] : []),
     `Заказ: ${order.order_id}`,
     `Спектакль: ${details.showTitle.ru}`,
     `Дата и время: ${details.eventDateTime.ru}`,
@@ -123,6 +151,7 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     'הכרטיסים שלכם מוכנים.',
     `קוד כרטיס: ${ticket.ticketCode}`,
     `אימות כרטיס: ${ticket.verifyUrl}`,
+    ...(receiptUrl ? [`קבלה: ${receiptUrl}`] : []),
     `הזמנה: ${order.order_id}`,
     `מופע: ${details.showTitle.he}`,
     `תאריך ושעה: ${details.eventDateTime.he}`,
