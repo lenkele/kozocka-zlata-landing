@@ -9,7 +9,8 @@
     "lint": "eslint",
     "schedule:build": "node scripts/build-schedule-from-csv.mjs",
     "schedule:build:zlata": "npm run schedule:build -- --input public/shows/zlata/data/schedule.csv --output public/shows/zlata/data/schedule.yaml",
-    "schedule:sync:yaml": "node --env-file=.env.local scripts/sync-schedule-from-yaml.mjs"
+    "schedule:sync:yaml": "node --env-file=.env.local scripts/sync-schedule-from-yaml.mjs",
+    "ticket:resend": "tsx scripts/resend-paid-ticket.ts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
@@ -32,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.5",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

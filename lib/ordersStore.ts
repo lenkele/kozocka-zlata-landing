@@ -35,6 +35,7 @@ export type StoredOrder = {
   allpay_payment_id: string | null;
   consent_terms_accepted: boolean;
   consent_marketing_accepted: boolean;
+  allpay_raw?: Record<string, unknown> | null;
 };
 
 type PaidQtyRow = {
@@ -75,9 +76,9 @@ async function supabaseRequest(path: string, init: RequestInit): Promise<Respons
   });
 }
 
-async function getOrderByOrderId(orderId: string): Promise<StoredOrder | null> {
+export async function getOrderByOrderId(orderId: string): Promise<StoredOrder | null> {
   const response = await supabaseRequest(
-    `/orders?order_id=eq.${encodeURIComponent(orderId)}&select=order_id,show_slug,event_id,qty,buyer_name,buyer_email,amount,currency,status,paid_at,allpay_payment_id,consent_terms_accepted,consent_marketing_accepted&limit=1`,
+    `/orders?order_id=eq.${encodeURIComponent(orderId)}&select=order_id,show_slug,event_id,qty,buyer_name,buyer_email,amount,currency,status,paid_at,allpay_payment_id,consent_terms_accepted,consent_marketing_accepted,allpay_raw&limit=1`,
     { method: 'GET' }
   );
   const text = await response.text();
@@ -173,7 +174,12 @@ export async function markOrderPaidOnce(input: UpdateOrderInput): Promise<{ upda
         amount: input.amount ?? null,
         currency: input.currency ?? 'ILS',
         paid_at: new Date().toISOString(),
-        allpay_raw: input.raw ?? null,
+        allpay_raw: {
+          ...(input.raw ?? {}),
+          ticket_email: {
+            status: 'pending',
+          },
+        },
       }),
     }
   );
@@ -194,6 +200,30 @@ export async function markOrderPaidOnce(input: UpdateOrderInput): Promise<{ upda
   }
 
   return { updated: false, order: existing };
+}
+
+export function shouldRetryTicketEmail(order: StoredOrder): boolean {
+  const delivery = order.allpay_raw?.ticket_email;
+  return typeof delivery === 'object' && delivery !== null && (delivery as Record<string, unknown>).status === 'pending';
+}
+
+export async function markTicketEmailSent(order: StoredOrder, emailId?: string): Promise<void> {
+  const currentRaw = order.allpay_raw && typeof order.allpay_raw === 'object' ? order.allpay_raw : {};
+
+  await patchOrder(
+    order.order_id,
+    {
+      allpay_raw: {
+        ...currentRaw,
+        ticket_email: {
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          message_id: emailId ?? null,
+        },
+      },
+    },
+    'paid'
+  );
 }
 
 function toPositiveInt(value: number | null): number {

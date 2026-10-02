@@ -142,64 +142,81 @@ export async function sendTicketEmail(order: StoredOrder): Promise<SendTicketEma
     },
   ];
 
-  if (provider === 'gmail') {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: gmailUser,
-        pass: process.env.GMAIL_APP_PASSWORD!.replaceAll(' ', ''),
+  const sendWithResend = async (): Promise<SendTicketEmailResult> => {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY is required for email fallback');
+    }
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
       },
-      connectionTimeout: 15_000,
-      greetingTimeout: 15_000,
-      socketTimeout: 30_000,
+      body: JSON.stringify({
+        from,
+        to: [order.buyer_email],
+        ...(replyTo ? { reply_to: [replyTo] } : {}),
+        subject,
+        html,
+        text: textBody,
+        attachments,
+      }),
     });
 
-    const result = await transporter.sendMail({
-      from: `${fromName} <${gmailUser}>`,
-      to: order.buyer_email,
-      replyTo: replyTo || gmailUser,
-      subject,
-      html,
-      text: textBody,
-      attachments: [
-        {
-          filename: ticket.pdfFilename,
-          content: Buffer.from(ticket.pdfBase64, 'base64'),
-          contentType: 'application/pdf',
+    const text = await response.text();
+    if (!response.ok) {
+      throw new Error(`[email] resend failed: ${response.status} ${text}`);
+    }
+
+    try {
+      return JSON.parse(text) as SendTicketEmailResult;
+    } catch {
+      return {};
+    }
+  };
+
+  if (provider === 'gmail') {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: gmailUser,
+          pass: process.env.GMAIL_APP_PASSWORD!.replaceAll(' ', ''),
         },
-      ],
-    });
+        connectionTimeout: 15_000,
+        greetingTimeout: 15_000,
+        socketTimeout: 30_000,
+      });
 
-    return { id: result.messageId };
+      const result = await transporter.sendMail({
+        from: `${fromName} <${gmailUser}>`,
+        to: order.buyer_email,
+        replyTo: replyTo || gmailUser,
+        subject,
+        html,
+        text: textBody,
+        attachments: [
+          {
+            filename: ticket.pdfFilename,
+            content: Buffer.from(ticket.pdfBase64, 'base64'),
+            contentType: 'application/pdf',
+          },
+        ],
+      });
+
+      return { id: result.messageId };
+    } catch (error) {
+      if (!process.env.RESEND_API_KEY) throw error;
+      console.error('[email] gmail send failed, falling back to resend', {
+        orderId: order.order_id,
+        error,
+      });
+      return sendWithResend();
+    }
   }
 
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from,
-      to: [order.buyer_email],
-      ...(replyTo ? { reply_to: [replyTo] } : {}),
-      subject,
-      html,
-      text: textBody,
-      attachments,
-    }),
-  });
-
-  const text = await response.text();
-  if (!response.ok) {
-    throw new Error(`[email] resend failed: ${response.status} ${text}`);
-  }
-
-  try {
-    return JSON.parse(text) as SendTicketEmailResult;
-  } catch {
-    return {};
-  }
+  return sendWithResend();
 }

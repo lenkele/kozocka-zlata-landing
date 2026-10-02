@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { sendTicketEmail } from '@/lib/email';
 import { appendOrderRow, isSheetsIntegrationEnabled } from '@/lib/googleSheet';
 import type { StoredOrder } from '@/lib/ordersStore';
-import { getEventSheetId, markOrderPaidOnce } from '@/lib/ordersStore';
+import { getEventSheetId, markOrderPaidOnce, markTicketEmailSent, shouldRetryTicketEmail } from '@/lib/ordersStore';
 import { getAllpaySignature, secureSignatureMatch } from './signature';
 
 type CallbackPayload = Record<string, unknown> & {
@@ -161,26 +161,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: 'db_update_failed' }, { status: 500 });
   }
 
-  if (!paidUpdate.updated) {
+  if (!paidUpdate.updated && !shouldRetryTicketEmail(paidUpdate.order)) {
     console.log('[allpay-callback] order already paid, skip duplicate email', { orderId, paymentId });
     return NextResponse.json({ ok: true, accepted: true, duplicated: true });
   }
 
-  try {
-    const emailResult = await sendTicketEmail(paidUpdate.order);
-    console.log('[allpay-callback] ticket email sent', {
-      orderId,
-      to: paidUpdate.order.buyer_email,
-      emailId: emailResult.id ?? null,
-    });
-  } catch (error) {
-    // Keep webhook idempotent and successful after payment persistence.
-    console.error('[allpay-callback] failed to send ticket email', { orderId, paymentId, error });
-  }
-
   // Best-effort: append the paid order to the per-event Google Sheet.
   // Runs only after a successful paid transition, so each order is logged once.
-  if (isSheetsIntegrationEnabled()) {
+  if (paidUpdate.updated && isSheetsIntegrationEnabled()) {
     try {
       const sheetId = await getEventSheetId(paidUpdate.order.show_slug, paidUpdate.order.event_id);
       if (sheetId) {
@@ -196,6 +184,23 @@ export async function POST(request: Request) {
     } catch (error) {
       console.error('[allpay-callback] failed to append order to sheet', { orderId, error });
     }
+  }
+
+  try {
+    const emailResult = await sendTicketEmail(paidUpdate.order);
+    await markTicketEmailSent(paidUpdate.order, emailResult.id);
+    console.log('[allpay-callback] ticket email sent', {
+      orderId,
+      to: paidUpdate.order.buyer_email,
+      emailId: emailResult.id ?? null,
+      retry: !paidUpdate.updated,
+    });
+  } catch (error) {
+    console.error('[allpay-callback] failed to send ticket email', { orderId, paymentId, error });
+    return NextResponse.json(
+      { ok: false, reason: 'email_send_failed', paymentRecorded: true },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ ok: true, accepted: true });
