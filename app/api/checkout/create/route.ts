@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { createAllpayPayment } from '@/lib/allpay';
 import { createPendingOrder, getPaidQtyForEvent, markOrderFailed } from '@/lib/ordersStore';
+import { ALLPAY_MIN_AMOUNT_ILS } from '@/lib/paymentLimits';
 import { resolveSafeReturnUrl } from '@/lib/returnUrl';
 import { isShowSlug } from '@/shows';
 import { loadScheduleForShow, resolveCapacity, resolveUnitPrice } from '@/lib/schedule';
@@ -85,7 +86,10 @@ export async function POST(request: Request) {
   const returnPath = resolveSafeReturnUrl(body.returnPath, `/${showSlug}`, {
     showSlug: isShowSlug(showSlug) ? showSlug : undefined,
   });
-  const defaultUnitPrice = parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, 1);
+  const defaultUnitPrice = Math.max(
+    ALLPAY_MIN_AMOUNT_ILS,
+    parsePositiveInt(process.env.DEFAULT_TICKET_PRICE_ILS, ALLPAY_MIN_AMOUNT_ILS),
+  );
   let unitPrice = defaultUnitPrice;
   let eventCapacity: number | null = null;
   let eventTicketMode: 'self' | 'venue' = 'self';
@@ -130,8 +134,28 @@ export async function POST(request: Request) {
     }
   }
 
-  const orderId = `${showSlug}-${eventId}-${crypto.randomUUID()}`;
   const amount = unitPrice * qty;
+  if (amount < ALLPAY_MIN_AMOUNT_ILS) {
+    console.error('[checkout-create] amount below Allpay minimum', {
+      showSlug,
+      eventId,
+      qty,
+      unitPrice,
+      amount,
+      minimumAmount: ALLPAY_MIN_AMOUNT_ILS,
+    });
+    return NextResponse.json(
+      {
+        ok: false,
+        reason: 'amount_below_minimum',
+        amount,
+        minimumAmount: ALLPAY_MIN_AMOUNT_ILS,
+      },
+      { status: 400 },
+    );
+  }
+
+  const orderId = `${showSlug}-${eventId}-${crypto.randomUUID()}`;
 
   try {
     await createPendingOrder({

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React, { useEffect, useMemo, useState } from 'react';
 
+import { ALLPAY_MIN_AMOUNT_ILS } from '@/lib/paymentLimits';
 import { type Lang, type ShowConfig } from '@/shows/types';
 
 type ScheduleDisplayEntry = {
@@ -77,6 +78,7 @@ type CheckoutLabels = {
   soldOutErrorLabel: string;
   qtyExceedsErrorPrefix: string;
   qtyExceedsErrorSuffix: string;
+  minimumPaymentErrorLabel: string;
   createErrorLabel: string;
   termsRequiredErrorLabel: string;
   namePlaceholder: string;
@@ -121,6 +123,7 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     soldOutErrorLabel: 'На это событие билеты закончились.',
     qtyExceedsErrorPrefix: 'Можно выбрать максимум',
     qtyExceedsErrorSuffix: 'билет(а).',
+    minimumPaymentErrorLabel: 'Минимальная сумма оплаты — {amount} ₪. Обновите страницу и попробуйте снова.',
     createErrorLabel: 'Не удалось создать оплату. Попробуйте ещё раз.',
     termsRequiredErrorLabel: 'Чтобы продолжить, нужно принять Условия и Политику конфиденциальности.',
     namePlaceholder: 'Ваше имя',
@@ -156,6 +159,7 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     soldOutErrorLabel: 'אין יותר כרטיסים לאירוע הזה.',
     qtyExceedsErrorPrefix: 'ניתן לבחור עד',
     qtyExceedsErrorSuffix: 'כרטיסים.',
+    minimumPaymentErrorLabel: 'סכום התשלום המינימלי הוא {amount} ₪. רעננו את העמוד ונסו שוב.',
     createErrorLabel: 'לא הצלחנו ליצור תשלום. נסו שוב.',
     termsRequiredErrorLabel: 'כדי להמשיך צריך לאשר תנאים ומדיניות פרטיות.',
     namePlaceholder: 'השם שלך',
@@ -191,6 +195,7 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     soldOutErrorLabel: 'No tickets left for this event.',
     qtyExceedsErrorPrefix: 'You can select up to',
     qtyExceedsErrorSuffix: 'ticket(s).',
+    minimumPaymentErrorLabel: 'The minimum payment amount is ₪{amount}. Refresh the page and try again.',
     createErrorLabel: 'Could not create payment. Please try again.',
     termsRequiredErrorLabel: 'To continue, you must accept the Terms and Privacy Policy.',
     namePlaceholder: 'Your name',
@@ -467,6 +472,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
         reason?: string;
         paymentUrl?: string;
         remaining?: number;
+        minimumAmount?: number;
       };
       if (!response.ok || !result.ok || !result.paymentUrl) {
         if (result.reason === 'sold_out') {
@@ -488,6 +494,13 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
           const safeRemaining = Math.max(1, result.remaining);
           setTicketQtyInput(String(safeRemaining));
           setCheckoutError(formatQtyExceedsError(result.remaining));
+          setCheckoutLoading(false);
+          return;
+        }
+
+        if (result.reason === 'amount_below_minimum') {
+          const minimumAmount = result.minimumAmount ?? ALLPAY_MIN_AMOUNT_ILS;
+          setCheckoutError(checkoutT.minimumPaymentErrorLabel.replace('{amount}', formatIlsAmount(minimumAmount)));
           setCheckoutLoading(false);
           return;
         }

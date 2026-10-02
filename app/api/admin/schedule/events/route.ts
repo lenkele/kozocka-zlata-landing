@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { getCookieName, getAdminScheduleCredentials, verifySessionToken } from '@/lib/adminScheduleAuth';
 import { createEventSheet, isSheetsIntegrationEnabled } from '@/lib/googleSheet';
+import { ALLPAY_MIN_AMOUNT_ILS } from '@/lib/paymentLimits';
 import { isShowSlug, SHOWS } from '@/shows';
 
 type CreateEventBody = {
@@ -333,6 +334,12 @@ export async function POST(request: Request) {
   if (!privateFormat && priceIls === null) {
     return NextResponse.json({ ok: false, reason: 'invalid_price' }, { status: 400 });
   }
+  if (!privateFormat && ticketMode === 'self' && priceIls !== null && priceIls < ALLPAY_MIN_AMOUNT_ILS) {
+    return NextResponse.json(
+      { ok: false, reason: 'price_below_payment_minimum', minimumAmount: ALLPAY_MIN_AMOUNT_ILS },
+      { status: 400 },
+    );
+  }
   if (!privateFormat && ticketMode === 'venue' && !ticketUrl) {
     return NextResponse.json({ ok: false, reason: 'ticket_url_required' }, { status: 400 });
   }
@@ -503,6 +510,12 @@ export async function PATCH(request: Request) {
   }
   if (!privateFormat && priceIls === null) {
     return NextResponse.json({ ok: false, reason: 'invalid_price' }, { status: 400 });
+  }
+  if (!privateFormat && ticketMode === 'self' && priceIls !== null && priceIls < ALLPAY_MIN_AMOUNT_ILS) {
+    return NextResponse.json(
+      { ok: false, reason: 'price_below_payment_minimum', minimumAmount: ALLPAY_MIN_AMOUNT_ILS },
+      { status: 400 },
+    );
   }
   if (!privateFormat && ticketMode === 'venue' && !ticketUrl) {
     return NextResponse.json({ ok: false, reason: 'ticket_url_required' }, { status: 400 });

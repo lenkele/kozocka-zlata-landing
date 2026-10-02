@@ -2,10 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { ALLPAY_MIN_AMOUNT_ILS } from '@/lib/paymentLimits';
 import { SHOWS, SHOW_SLUGS } from '@/shows';
 import type { ShowSlug } from '@/shows/types';
 
 type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
+
+function formatSaveError(reason: string | undefined, message?: string): string {
+  if (reason === 'price_below_payment_minimum') {
+    return `Для продажи через сайт цена билета должна быть не меньше ${ALLPAY_MIN_AMOUNT_ILS} ILS.`;
+  }
+
+  const reasonText = reason ?? 'save_failed';
+  return `Ошибка сохранения: ${reasonText}.${message ? ` ${message}` : ''}`;
+}
 
 type EventRow = {
   show_slug: ShowSlug;
@@ -372,9 +382,7 @@ export default function AdminSchedulePage() {
         return;
       }
       if (!response.ok || !result.ok) {
-        const reasonText = result.reason ?? 'save_failed';
-        const detail = result.message ? ` ${result.message}` : '';
-        setSaveMessage(`Ошибка сохранения: ${reasonText}.${detail}`);
+        setSaveMessage(formatSaveError(result.reason, result.message));
         return;
       }
 
@@ -471,7 +479,7 @@ export default function AdminSchedulePage() {
         return;
       }
       if (!response.ok || !result.ok) {
-        setEditMessage(`Ошибка сохранения: ${result.reason ?? 'update_failed'}.${result.message ? ` ${result.message}` : ''}`);
+        setEditMessage(formatSaveError(result.reason, result.message));
         return;
       }
 
@@ -680,7 +688,7 @@ export default function AdminSchedulePage() {
                   <span className="font-medium">Стоимость (ILS)</span>
                   <input
                     type="number"
-                    min="1"
+                    min={ticketMode === 'self' ? ALLPAY_MIN_AMOUNT_ILS : 0.01}
                     step="0.01"
                     value={priceIls}
                     onChange={(e) => setPriceIls(e.target.value)}
@@ -1021,7 +1029,7 @@ export default function AdminSchedulePage() {
                       <span className="font-medium">Стоимость (ILS)</span>
                       <input
                         type="number"
-                        min="1"
+                        min={editTicketMode === 'self' ? ALLPAY_MIN_AMOUNT_ILS : 0.01}
                         step="0.01"
                         value={editPriceIls}
                         onChange={(e) => setEditPriceIls(e.target.value)}
