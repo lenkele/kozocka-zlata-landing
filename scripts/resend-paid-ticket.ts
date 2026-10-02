@@ -1,7 +1,12 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { sendTicketEmail } from '../lib/email';
 import { getOrderByOrderId, markTicketEmailSent } from '../lib/ordersStore';
 
 async function main() {
+  process.chdir(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'));
+
   const orderId = process.argv[2]?.trim();
   if (!orderId) {
     throw new Error('Usage: tsx scripts/resend-paid-ticket.ts <order_id>');
