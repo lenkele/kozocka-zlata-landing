@@ -1,11 +1,9 @@
-import { getPaidQtyMapForShow } from '@/lib/ordersStore';
 import {
   getCachedScheduleForShow,
   getTodayIsoInIsrael,
   isClosedSchedule,
   normalizeScheduleDate,
   parseSchedulePrice,
-  resolveCapacity,
 } from '@/lib/schedule';
 import type { ShowConfig } from '@/shows/types';
 
@@ -34,11 +32,7 @@ export async function buildShowEventsJsonLd(show: ShowConfig) {
   const poster = show.content.ru?.posterImage ?? show.content.en?.posterImage;
   const pageUrl = `${SITE_URL}/${show.slug}`;
   const today = getTodayIsoInIsrael();
-  const [events, soldMap] = await Promise.all([
-    getCachedScheduleForShow(show.slug),
-    // Без данных о продажах просто не указываем наличие билетов.
-    getPaidQtyMapForShow(show.slug).catch(() => null),
-  ]);
+  const events = await getCachedScheduleForShow(show.slug);
 
   const theaterEvents = events.flatMap((event) => {
     const entry = event.entries?.ru ?? event.entries?.en ?? event.entries?.he;
@@ -57,19 +51,6 @@ export async function buildShowEventsJsonLd(show: ShowConfig) {
     const price = parseSchedulePrice(event.price_ils);
     const ticketUrl = typeof event.ticket_url === 'string' && event.ticket_url.trim() ? event.ticket_url.trim() : null;
     const offerUrl = event.ticket_mode === 'venue' ? ticketUrl : `${pageUrl}#schedule`;
-
-    // Наличие знаем только для билетов, которые продаём сами (как в /api/schedule/availability).
-    let availability: string | undefined;
-    if (event.ticket_mode !== 'venue' && soldMap) {
-      const capacity = resolveCapacity(event.capacity);
-      const remaining = capacity === null ? null : Math.max(0, capacity - (soldMap[event.id?.trim() ?? ''] ?? 0));
-      availability =
-        remaining === null || remaining > 5
-          ? 'https://schema.org/InStock'
-          : remaining > 0
-            ? 'https://schema.org/LimitedAvailability'
-            : 'https://schema.org/SoldOut';
-    }
 
     return [
       {
@@ -90,7 +71,6 @@ export async function buildShowEventsJsonLd(show: ShowConfig) {
               '@type': 'Offer',
               url: offerUrl,
               ...(price !== null && event.ticket_mode !== 'venue' ? { price, priceCurrency: 'ILS' } : {}),
-              ...(availability ? { availability } : {}),
             }
           : undefined,
       },
