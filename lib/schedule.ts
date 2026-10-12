@@ -206,3 +206,38 @@ export async function getCachedScheduleForShow(showSlug: string): Promise<Schedu
 
   return cached();
 }
+
+export function normalizeScheduleDate(value: ScheduleEvent['date_iso']): string {
+  if (typeof value === 'string') {
+    return value.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? '';
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  return '';
+}
+
+export function getTodayIsoInIsrael(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jerusalem',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === 'year')?.value ?? '';
+  const month = parts.find((part) => part.type === 'month')?.value ?? '';
+  const day = parts.find((part) => part.type === 'day')?.value ?? '';
+  return `${year}-${month}-${day}`;
+}
+
+export function parseSchedulePrice(value: ScheduleEvent['price_ils']): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
+  if (typeof value !== 'string') return null;
+  const parsed = Number.parseFloat(value.trim().replace(',', '.').replace(/[^\d.-]/g, ''));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+export function isClosedSchedule(format: string): boolean {
+  const normalized = format.toLowerCase();
+  return normalized.includes('закрыт') || normalized.includes('סגור') || normalized.includes('private');
+}

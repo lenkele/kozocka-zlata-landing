@@ -2,19 +2,67 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-import { getCachedScheduleForShow, type ScheduleEvent } from '@/lib/schedule';
+import {
+  getCachedScheduleForShow,
+  getTodayIsoInIsrael,
+  isClosedSchedule,
+  normalizeScheduleDate,
+  parseSchedulePrice,
+} from '@/lib/schedule';
 import { SHOWS, SHOW_SLUGS } from '@/shows';
 import type { ShowConfig, ShowSlug } from '@/shows/types';
 
 export const dynamic = 'force-dynamic';
 
+const SITE_URL = 'https://ryba-kiva.com';
+const HOME_TITLE = 'Театр «Рыба Кива» — официальный сайт | Кукольные спектакли';
+const HOME_DESCRIPTION =
+  'Независимый музыкальный кукольный театр «Рыба Кива»: «Колдовство Мариты», «Козочка Злата», «Гефилте Лид». Афиша, билеты, приглашение театра.';
+
 export const metadata: Metadata = {
+  title: HOME_TITLE,
+  description: HOME_DESCRIPTION,
   alternates: {
     canonical: '/',
   },
   openGraph: {
     url: '/',
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
   },
+};
+
+const SOCIAL_LINKS = [
+  { label: 'Facebook', href: 'https://www.facebook.com/rybakiva' },
+  { label: 'Instagram', href: 'https://www.instagram.com/ryba.kiva/' },
+];
+
+// Связывает сайт с театром, который Google уже знает по соцсетям и прессе.
+const HOME_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'PerformingGroup',
+      '@id': `${SITE_URL}/#organization`,
+      name: 'Рыба Кива',
+      alternateName: ['Театр «Рыба Кива»', 'Театрик «Рыба Кива»', 'Ryba Kiva', 'Ryba Kiva Theatre'],
+      description: 'Независимый музыкальный кукольный театр.',
+      url: SITE_URL,
+      logo: `${SITE_URL}/images/ryba-kiva-logo.jpg`,
+      telephone: '+972-53-321-9998',
+      email: 'info@ryba-kiva.com',
+      sameAs: SOCIAL_LINKS.map((link) => link.href),
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: 'Театр «Рыба Кива»',
+      alternateName: ['Рыба Кива', 'Ryba Kiva'],
+      inLanguage: 'ru',
+      publisher: { '@id': `${SITE_URL}/#organization` },
+    },
+  ],
 };
 
 const WHATSAPP_INVITE_URL =
@@ -71,29 +119,6 @@ function getShowPoster(show: ShowConfig): string {
   return show.content.ru?.posterImage ?? show.content.en?.posterImage ?? show.galleryPhotos[0]?.src ?? '/favicon.png';
 }
 
-function normalizeScheduleDate(value: ScheduleEvent['date_iso']): string {
-  if (typeof value === 'string') {
-    return value.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? '';
-  }
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return value.toISOString().slice(0, 10);
-  }
-  return '';
-}
-
-function getTodayIsoInIsrael(date = new Date()): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Jerusalem',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
-  const year = parts.find((part) => part.type === 'year')?.value ?? '';
-  const month = parts.find((part) => part.type === 'month')?.value ?? '';
-  const day = parts.find((part) => part.type === 'day')?.value ?? '';
-  return `${year}-${month}-${day}`;
-}
-
 function formatScheduleDate(dateIso: string, options: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat('ru-RU', {
     ...options,
@@ -101,20 +126,8 @@ function formatScheduleDate(dateIso: string, options: Intl.DateTimeFormatOptions
   }).format(new Date(`${dateIso}T12:00:00+03:00`));
 }
 
-function parseSchedulePrice(value: ScheduleEvent['price_ils']): number | null {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
-  if (typeof value !== 'string') return null;
-  const parsed = Number.parseFloat(value.trim().replace(',', '.').replace(/[^\d.-]/g, ''));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
 function formatSchedulePrice(price: number): string {
   return Number.isInteger(price) ? String(price) : price.toFixed(2).replace(/\.00$/, '');
-}
-
-function isClosedSchedule(format: string): boolean {
-  const normalized = format.toLowerCase();
-  return normalized.includes('закрыт') || normalized.includes('סגור') || normalized.includes('private');
 }
 
 function parseScheduleLinks(text: string): React.ReactNode {
@@ -194,6 +207,10 @@ export default async function RootPage() {
         backgroundAttachment: 'fixed',
       }}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(HOME_JSON_LD).replace(/</g, '\\u003c') }}
+      />
       <header className="sticky top-0 z-20 flex flex-wrap items-center justify-center gap-4 bg-[#2f2418] px-5 py-3 shadow-[0_6px_24px_rgba(40,28,14,.35)] md:px-7">
         <Link href="/" className="flex flex-col gap-0.5">
           <span className="text-[15px] font-black uppercase tracking-[0.18em] text-[#f2c46b]" style={{ fontFamily: 'Nunito, Arial, sans-serif' }}>
@@ -429,6 +446,18 @@ export default async function RootPage() {
             >
               info@ryba-kiva.com
             </a>
+            {SOCIAL_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-[#f2c46b73] px-6 py-3.5 text-[17px] font-black text-[#f2c46b] transition hover:bg-[#f2c46b1f] hover:text-[#ffd98a]"
+                style={{ fontFamily: 'Nunito, Arial, sans-serif' }}
+              >
+                {link.label}
+              </a>
+            ))}
           </div>
         </div>
       </section>

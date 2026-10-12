@@ -16,9 +16,14 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ryba-kiva.com'),
-  title: 'Ryba Kiva Theatre - puppet and musical performances',
+  title: 'Театр «Рыба Кива» — кукольные музыкальные спектакли',
   description:
-    'Ryba Kiva Theatre creates puppet and musical performances for families, with live music, shadows, and stories for children and adults.',
+    'Театр «Рыба Кива» — независимый музыкальный кукольный театр. Спектакли с куклами, тенями и живой музыкой для детей и взрослых.',
+  openGraph: {
+    siteName: 'Театр «Рыба Кива»',
+    locale: 'ru_RU',
+    type: 'website',
+  },
   icons: {
     icon: [
       { url: "/favicon.png?v=2", sizes: "any" },
@@ -35,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ru">
       <Script id="meta-pixel" strategy="afterInteractive">
         {`
           !function(f,b,e,v,n,t,s)

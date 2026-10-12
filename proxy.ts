@@ -29,6 +29,13 @@ export default function proxy(request: NextRequest) {
   const hostname = hostHeader.split(':')[0];
   const legacyShowSlug = LEGACY_HOST_TO_SHOW[hostname];
 
+  // www дублирует основной домен — склеиваем для Google постоянным редиректом.
+  if (hostname === 'www.ryba-kiva.com' && !pathname.startsWith('/api/')) {
+    const redirectUrl = new URL(pathname, CANONICAL_ORIGIN);
+    redirectUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(redirectUrl, 308);
+  }
+
   if (legacyShowSlug) {
     // Keep legacy payment callbacks reachable until the old domains expire.
     if (pathname.startsWith('/api/')) {

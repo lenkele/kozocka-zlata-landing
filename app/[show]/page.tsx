@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import ShowLandingClient from '@/components/ShowLandingClient';
+import { buildShowEventsJsonLd } from '@/lib/showEventsJsonLd';
 import { DEFAULT_SHOW_SLUG, SHOWS, SHOW_SLUGS, isShowSlug } from '@/shows';
 import { type CarouselPhoto, type GalleryPhoto, type ShowConfig, type ShowSlug } from '@/shows/types';
 
@@ -98,6 +99,17 @@ export default async function ShowPage({ params }: PageProps) {
   }
 
   const show = await resolveShowWithPhotos(slug);
-  return <ShowLandingClient show={show} />;
+  const eventsJsonLd = await buildShowEventsJsonLd(show).catch(() => null);
+  return (
+    <>
+      {eventsJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(eventsJsonLd).replace(/</g, '\\u003c') }}
+        />
+      )}
+      <ShowLandingClient show={show} />
+    </>
+  );
 }
 
