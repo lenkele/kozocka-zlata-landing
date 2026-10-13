@@ -81,7 +81,7 @@ General Provisions
 The name “Ryba Kiva” (also used in Hebrew) is a trade name used for artistic and cultural activity. The theatre does not constitute a separate legal entity. All activities, including ticket sales and website operation, are carried out through a privately owned small business (Essek Za’ir) registered in Israel.
 This Privacy Policy is an integral part of the website’s Terms and Conditions. Information about you is collected when you use the website or purchase tickets through it.
 Some of the information collected identifies you personally, such as your name, email address, details of tickets purchased, and payment-related information. This is information you knowingly provide, for example, when purchasing a ticket. Other information does not personally identify you and may include technical or aggregated data.
-Certain technical data and online identifiers may be considered “Personal Information” under applicable law, including IP address and device identifiers, even if we do not actively use such data for analytics or marketing purposes.
+Certain technical data and online identifiers may be considered “Personal Information” under applicable law, including IP address, device identifiers and cookie identifiers. Such data may be collected through the Meta Pixel, as described in the "Cookies and Advertising Technologies" section below.
 This Policy is intended to comply with applicable Israeli privacy and data protection laws, including the Protection of Privacy Law, 57411981 (including Amendment No. 13), the Protection of Privacy Regulations (Data Security), 57772017, and related regulations, as amended from time to time.
 
 Website and Services
@@ -108,20 +108,24 @@ The information collected is used in accordance with this Privacy Policy and app
 	•	Issuing electronic tickets and receipts;
 	•	Providing customer support and responding to inquiries;
 	•	Managing and documenting transactions as required by law;
-	•	Improving website content and services, on a limited and nonprofiling basis.
-At present, we do not use personal information for advertising or marketing purposes. If, in the future, marketing communications are offered (such as newsletters or WhatsApp groups), this will be done only with your explicit consent.
+	•	Improving website content and services;
+	•	Measuring the effectiveness of our advertising on Facebook and Instagram, as described in the "Cookies and Advertising Technologies" section below.
+We do not provide your name, email address or payment details to advertising platforms. Marketing communications (such as newsletters or WhatsApp groups) are sent only with your explicit consent.
 
 Providing Information to Third Parties
 We do not transfer your personal information to third parties except in the following cases:
 	•	To payment service providers (such as Allpay) strictly for the purpose of processing payments;
+	•	To Meta Platforms, through the Meta Pixel, limited to technical and event data as described in the "Cookies and Advertising Technologies" section below;
 	•	If required by law, regulation, court order, or legal process;
 	•	In the event of a legal dispute involving you and the business;
 	•	If the operation of the website is transferred to another entity, provided that such entity undertakes to comply with this Privacy Policy.
 
-Cookies
-At present, the websites do not intentionally use cookies or similar technologies for analytics, marketing, or tracking purposes.
-If, in the future, cookies are implemented (for example, for basic functionality or analytics tools such as Google Analytics), this Privacy Policy will be updated accordingly, and where required by law, appropriate notice and consent mechanisms will be provided.
-Users can also manage cookies through their browser settings.
+Cookies and Advertising Technologies
+The websites use the Meta Pixel, a tool provided by Meta Platforms (Facebook, Instagram), to measure the effectiveness of our advertising and to show our ads to relevant audiences.
+The Meta Pixel uses cookies and similar technologies and may collect technical information such as IP address, browser and device details, pages visited, and actions taken on the website (for example, opening the ticket purchase form, proceeding to payment, and completing a purchase, including the number of tickets and the order amount).
+We do not send your name, email address or payment details to Meta. Meta processes the data it collects in accordance with its own privacy policy: https://www.facebook.com/privacy/policy
+You can limit or block such tracking through your browser settings (for example, by blocking third-party cookies or using a tracker-blocking extension) and through your ad preferences in your Facebook or Instagram account. Blocking these technologies does not affect your ability to purchase tickets.
+If additional analytics tools (such as Google Analytics) are implemented in the future, this Privacy Policy will be updated accordingly.
 
 Data Security
 We implement reasonable and uptodate information security measures in accordance with Israeli law, including the Protection of Privacy Regulations (Data Security), 57772017. These measures are designed to reduce the risk of unauthorized access to personal information.
@@ -135,7 +139,7 @@ Requests regarding personal information should be sent to:
 info@ryba-kiva.com
 
 Marketing Communications
-We do not currently send marketing or promotional communications. If such communications are introduced in the future, they will be sent only to users who have given explicit consent, and users will be able to withdraw their consent at any time, in accordance with applicable law.
+Marketing or promotional communications are sent only to users who have given explicit consent, and users can withdraw their consent at any time, in accordance with applicable law.
 
 Changes to the Privacy Policy
 If material changes are made to this Privacy Policy, an updated version will be published on the relevant website. Continued use of the website after such publication constitutes acceptance of the updated policy.

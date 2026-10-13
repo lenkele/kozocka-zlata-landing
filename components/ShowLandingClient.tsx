@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React, { useEffect, useMemo, useState } from 'react';
 
+import { trackMetaEvent } from '@/lib/metaPixel';
 import { ALLPAY_MIN_AMOUNT_ILS } from '@/lib/paymentLimits';
 import { type Lang, type ShowConfig } from '@/shows/types';
 
@@ -423,6 +424,11 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     setTicketQtyInput('1');
     setTermsAccepted(false);
     setMarketingAccepted(false);
+    trackMetaEvent('InitiateCheckout', {
+      content_ids: [show.slug],
+      content_type: 'product',
+      ...(row.priceIls != null ? { value: row.priceIls, currency: 'ILS' } : {}),
+    });
   };
 
   const submitCheckout = async (event: React.FormEvent) => {
@@ -508,6 +514,12 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
         throw new Error(result.reason ?? 'checkout_create_failed');
       }
 
+      trackMetaEvent('AddPaymentInfo', {
+        content_ids: [show.slug],
+        content_type: 'product',
+        num_items: ticketQty,
+        ...(selectedTotalPrice !== null ? { value: selectedTotalPrice, currency: 'ILS' } : {}),
+      });
       window.location.href = result.paymentUrl;
     } catch (error) {
       console.error('Checkout create failed:', error);

@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 
+import MetaPixelPurchase from '@/components/MetaPixelPurchase';
 import { isShowSlug } from '@/shows';
+import { getOrderByOrderId, type StoredOrder } from '@/lib/ordersStore';
 import { resolveSafeReturnUrl } from '@/lib/returnUrl';
 
 type SuccessLang = 'ru' | 'en' | 'he';
@@ -70,6 +72,19 @@ function getQueryParam(params: Record<string, string | string[] | undefined>, ke
   return undefined;
 }
 
+// Analytics only: any failure here must not affect the success page.
+async function loadOrderForTracking(orderId: string | undefined): Promise<StoredOrder | null> {
+  if (!orderId) return null;
+  try {
+    const order = await getOrderByOrderId(orderId);
+    if (!order || order.status === 'failed' || order.amount == null) return null;
+    return order;
+  } catch (error) {
+    console.error('[payment-success] failed to load order for tracking', { orderId, error });
+    return null;
+  }
+}
+
 export default async function PaymentSuccessPage({ searchParams }: PaymentSuccessPageProps) {
   const params = searchParams ? await searchParams : {};
   const langParam = getQueryParam(params, 'lang');
@@ -81,12 +96,22 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
   const showSlug = showParam && isShowSlug(showParam) ? showParam : undefined;
   const returnUrl = resolveSafeReturnUrl(returnParam, '/', { showSlug });
   // debug: returnUrl resolved from returnParam, showSlug
+  const trackedOrder = await loadOrderForTracking(getQueryParam(params, 'order'));
 
   const content = SUCCESS_CONTENT[lang];
   const rtl = content.dir === 'rtl';
 
   return (
     <main className="min-h-screen bg-[radial-gradient(80%_60%_at_50%_0%,rgba(234,88,12,0.15),rgba(2,6,23,0.96)_70%)] px-4 py-12 text-slate-100">
+      {trackedOrder && (
+        <MetaPixelPurchase
+          orderId={trackedOrder.order_id}
+          showSlug={trackedOrder.show_slug}
+          value={Number(trackedOrder.amount)}
+          currency={trackedOrder.currency ?? 'ILS'}
+          qty={trackedOrder.qty}
+        />
+      )}
       <div className="mx-auto max-w-3xl">
         <section
           dir={rtl ? 'rtl' : 'ltr'}
