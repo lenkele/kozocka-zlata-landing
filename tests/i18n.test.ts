@@ -39,6 +39,20 @@ test('existing shared links choose a language and preserve all query parameters'
   assert.equal(new URL(proxy(request('/zlata?lang=he', 'ru')).headers.get('location')!).pathname, '/he/zlata');
 });
 
+test('short organiser links choose a language; localized ones stay put', () => {
+  for (const page of ['invite', 'workshops']) {
+    const response = proxy(request(`/${page}?utm_source=flyer`, 'he-IL,en;q=0.8'));
+    assert.equal(response.status, 307);
+    const target = new URL(response.headers.get('location')!);
+    assert.equal(target.pathname, `/he/${page}`);
+    assert.equal(target.search, '?utm_source=flyer');
+    assert.equal(new URL(proxy(request(`/${page}`)).headers.get('location')!).pathname, `/ru/${page}`);
+    const localized = proxy(request(`/en/${page}`, 'he', 'ru'));
+    assert.equal(localized.headers.get('location'), null);
+    assert.equal(localized.headers.get('x-middleware-request-x-site-language'), 'en');
+  }
+});
+
 test('explicit language addresses stay stable regardless of browser or cookie', () => {
   for (const [path, lang] of [['/ru', 'ru'], ['/he', 'he'], ['/en', 'en'], ['/ru/marita', 'ru'], ['/he/zlata', 'he'], ['/en/gefilte-lid', 'en']]) {
     const response = proxy(request(path, 'en-US', 'ru'));
@@ -64,10 +78,13 @@ test('legacy domains retain permanent redirects and payment callback compatibili
   }
 });
 
-test('sitemap contains all ten real language pages with reciprocal hreflang', () => {
+test('sitemap contains all sixteen real language pages with reciprocal hreflang', () => {
   const entries = sitemap();
-  assert.equal(entries.length, 10);
-  assert.equal(new Set(entries.map((entry) => entry.url)).size, 10);
+  assert.equal(entries.length, 16);
+  assert.equal(new Set(entries.map((entry) => entry.url)).size, 16);
+  for (const lang of ['ru', 'he', 'en']) {
+    for (const page of ['invite', 'workshops']) assert.ok(entries.some((entry) => entry.url === `https://ryba-kiva.com/${lang}/${page}`));
+  }
   assert.ok(!entries.some((entry) => entry.url.includes('/he/marita') || entry.url.includes('/he/gefilte-lid')));
   assert.equal(languageAlternates('zlata').he, 'https://ryba-kiva.com/he/zlata');
   assert.equal(localizedPath('he', 'marita'), '/en/marita');

@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 import { isShowSlug } from '@/shows';
 import { type ShowSlug } from '@/shows/types';
 import { LANGUAGES, LANGUAGE_COOKIE, LANGUAGE_HEADER, getShowLanguages, isLang, localizedPath, selectLanguage } from '@/lib/i18n';
+import { infoPagePath, isInfoPageSlug } from '@/lib/infoPages';
 
 const LEGACY_HOST_TO_SHOW: Record<string, ShowSlug> = {
   'www.ryba-kiva-zlata.com': 'zlata',
@@ -59,6 +60,16 @@ export default function proxy(request: NextRequest) {
 
   const segments = pathname.split('/').filter(Boolean);
   const [first, second] = segments;
+  // Короткие ссылки на страницы для организаторов (/invite, /workshops) — на языке посетителя.
+  if (segments.length === 1 && isInfoPageSlug(first)) {
+    const lang = selectLanguage(
+      request.headers.get('accept-language'),
+      LANGUAGES,
+      request.cookies.get(LANGUAGE_COOKIE)?.value,
+      request.nextUrl.searchParams.get('lang'),
+    );
+    return languageRedirect(request, infoPagePath(lang, first));
+  }
   if (pathname === '/' || (segments.length === 1 && isShowSlug(first))) {
     const slug = isShowSlug(first) ? first : undefined;
     const lang = selectLanguage(

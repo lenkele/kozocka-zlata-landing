@@ -15,10 +15,23 @@ function saveLanguageChoice(target: Lang) {
   } catch { /* Navigation still works when browser storage is unavailable. */ }
 }
 
-export default function LanguageSwitcher({ lang, available, slug }: { lang: Lang; available: Lang[]; slug?: ShowSlug }) {
+export default function LanguageSwitcher({
+  lang,
+  available,
+  slug,
+  pagePath,
+}: {
+  lang: Lang;
+  available: Lang[];
+  slug?: ShowSlug;
+  /** Страница вне спектаклей (например, 'invite'): ссылка ведёт на /<язык>/<pagePath>. */
+  pagePath?: string;
+}) {
+  const pathFor = (target: Lang) => (pagePath ? `/${target}/${pagePath}` : localizedPath(target, slug));
+
   function chooseLanguage(event: MouseEvent<HTMLAnchorElement>, target: Lang) {
     // Hashes are not sent to the server. Preserve them (and tracking/payment query parameters) here.
-    const url = new URL(localizedPath(target, slug), window.location.origin);
+    const url = new URL(pathFor(target), window.location.origin);
     url.search = window.location.search;
     url.searchParams.delete('lang');
     url.hash = window.location.hash;
@@ -29,7 +42,7 @@ export default function LanguageSwitcher({ lang, available, slug }: { lang: Lang
   return (
     <nav aria-label="Language" dir="ltr" className="flex items-center gap-1 rounded-full bg-black/35 px-2 py-1 text-sm">
       {available.map((target) => (
-        <a key={target} href={localizedPath(target, slug)} hrefLang={target} lang={target}
+        <a key={target} href={pathFor(target)} hrefLang={target} lang={target}
           aria-label={NAMES[target]} aria-current={target === lang ? 'page' : undefined}
           onClick={(event) => chooseLanguage(event, target)}
           className={`rounded-full px-2.5 py-1 transition ${target === lang ? 'bg-amber-500 font-semibold text-black' : 'text-amber-100 hover:bg-white/10'}`}>

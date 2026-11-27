@@ -6,7 +6,7 @@ type HomeCopy = {
   afisha: string; showsLabel: string; invite: string; hero: string[];
   afishaHeading: string; emptySchedule: string; tickets: string; closed: string; unavailable: string; passed: string; freeEntry: string;
   repertoire: string; showsHeading: string; aboutShow: string; schedule: string; poster: string;
-  inviteHeading: string; inviteIntro: string; inviteSteps: string[]; whatsapp: string; whatsappMessage: string;
+  inviteHeading: string; inviteIntro: string; inviteMore: string; inviteSteps: string[]; whatsapp: string; whatsappMessage: string;
   about: string; aboutHeading: string; aboutParagraphs: string[]; teamHeading: string;
   team: { name: string; role: string }[];
   footer: string; terms: string; privacy: string; logoAlt: string; teamAlt: string; performanceAlt: string;
@@ -28,7 +28,7 @@ export const HOME_COPY: Record<Lang, HomeCopy> = {
     afishaHeading: 'Афиша',
     emptySchedule: 'Расписание пока не заполнено. Следите за обновлениями!', tickets: 'Билеты', closed: 'Закрытый показ', unavailable: 'Недоступно', passed: 'Спектакль прошёл', freeEntry: 'Вход свободный',
     repertoire: 'Репертуар', showsHeading: 'Спектакли театра', aboutShow: 'О спектакле', schedule: 'Расписание', poster: 'Афиша',
-    inviteHeading: 'Хотите, чтобы «Рыба Кива» приехала к вам?',
+    inviteHeading: 'Хотите, чтобы «Рыба Кива» приехала к вам?', inviteMore: 'Подробнее для организаторов',
     inviteIntro: 'Просто напишите нам.\nМы поможем выбрать спектакль, договоримся о дате и обсудим площадку.',
     inviteSteps: ['Расскажите, для кого показ, где он состоится и сколько будет зрителей.', 'Нам нужны затемнение, розетка 220V и свободное место перед зрителями.', 'Свет, звук, куклы и декорации мы привозим с собой.'],
     whatsapp: 'Написать в WhatsApp', whatsappMessage: 'Здравствуйте! Хочу пригласить театр «Рыба Кива». Расскажите, пожалуйста, какие есть даты и условия.',
@@ -66,7 +66,7 @@ export const HOME_COPY: Record<Lang, HomeCopy> = {
     afishaHeading: 'לוח הצגות',
     emptySchedule: 'לוח ההצגות יפורסם בקרוב. עקבו אחר העדכונים!', tickets: 'כרטיסים', closed: 'הצגה לקבוצה סגורה', unavailable: 'לא זמין', passed: 'ההצגה התקיימה', freeEntry: 'כניסה חופשית',
     repertoire: 'הרפרטואר', showsHeading: 'הצגות התיאטרון', aboutShow: 'על ההצגה', schedule: 'מועדי ההצגות', poster: 'כרזת ההצגה',
-    inviteHeading: 'רוצים שריבא קיווא תגיע אליכם?',
+    inviteHeading: 'רוצים שריבא קיווא תגיע אליכם?', inviteMore: 'מידע למארגנים',
     inviteIntro: 'פשוט כתבו לנו.\nנעזור לבחור הצגה, נקבע תאריך ונדבר על המקום שבו תרצו לארח אותנו.',
     inviteSteps: ['ספרו לנו למי מיועדת ההצגה, היכן תתקיים וכמה צופים צפויים להגיע.', 'אנחנו צריכים אפשרות להחשיך את החלל, שקע חשמל של 220 וולט ומקום פנוי מול הקהל.', 'את התאורה, ציוד הסאונד, הבובות והתפאורה אנחנו מביאים איתנו.'],
     whatsapp: 'כתבו לנו ב־WhatsApp', whatsappMessage: 'שלום! נשמח להזמין את תיאטרון ״ריבא קיווא״. אילו תאריכים פנויים ומהם התנאים?',
@@ -104,7 +104,7 @@ export const HOME_COPY: Record<Lang, HomeCopy> = {
     afishaHeading: 'What’s on',
     emptySchedule: 'The schedule is not available yet. Stay tuned!', tickets: 'Tickets', closed: 'Private performance', unavailable: 'Unavailable', passed: 'Past performance', freeEntry: 'Free entry',
     repertoire: 'Repertoire', showsHeading: 'Our performances', aboutShow: 'About the show', schedule: 'Schedule', poster: 'Poster',
-    inviteHeading: 'Would you like Ryba Kiva to visit you?',
+    inviteHeading: 'Would you like Ryba Kiva to visit you?', inviteMore: 'More for organisers',
     inviteIntro: 'Just write to us.\nWe will help you choose a performance, find a date and discuss your venue.',
     inviteSteps: ['Tell us who the audience will be, where the performance will take place and how many people you expect.', 'We need a space that can be darkened, a 220V power socket and room in front of the audience.', 'We bring our own lighting, sound equipment, puppets and sets.'],
     whatsapp: 'Message us on WhatsApp', whatsappMessage: 'Hello! I would like to invite Ryba Kiva Theatre. Please let me know what dates and conditions are available.',

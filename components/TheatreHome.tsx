@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import WhatsAppGroupButton from '@/components/WhatsAppGroupButton';
+import { SiteFooter, SiteHeader } from '@/components/SiteChrome';
+import { infoPagePath } from '@/lib/infoPages';
+import { NAV_COPY } from '@/lib/infoPagesCopy';
 import { placeWithCity } from '@/lib/cities';
 import { HOME_COPY } from '@/lib/homeCopy';
 import { isPastPerformance, selectAfishaRows } from '@/lib/afisha';
@@ -166,46 +167,7 @@ export default async function TheatreHome({ lang }: { lang: Lang }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd(lang)).replace(/</g, '\\u003c') }}
       />
-      <header className="sticky top-0 z-20 flex flex-wrap items-center justify-center gap-4 bg-[#2f2418] px-5 py-3 shadow-[0_6px_24px_rgba(40,28,14,.35)] md:px-7">
-        <Link href={localizedPath(lang)} className="flex flex-col gap-0.5">
-          <span className="text-[15px] font-black uppercase tracking-[0.18em] text-[#f2c46b]" style={{ fontFamily: 'Nunito, Arial, sans-serif' }}>
-            {copy.theatre}
-          </span>
-          <span className="text-xs font-bold text-[#d8a24a]">{copy.subtitle}</span>
-        </Link>
-
-        <div className="hidden flex-1 md:block" />
-        <LanguageSwitcher lang={lang} available={LANGUAGES} />
-
-        <nav className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-          <a
-            href="#afisha"
-            className="rounded-full bg-[#e8a33d] px-5 py-2.5 text-sm font-black text-[#2f2418] transition hover:bg-[#f6b957]"
-            style={{ fontFamily: 'Nunito, Arial, sans-serif' }}
-          >
-            {copy.afisha}
-          </a>
-          <a
-            href="#shows"
-            className="rounded-full bg-[#1f1810] px-5 py-2.5 text-sm font-bold text-[#f2c46b] transition hover:text-[#ffd98a]"
-            style={{ fontFamily: 'Nunito, Arial, sans-serif' }}
-          >
-            {copy.showsLabel}
-          </a>
-          <a
-            href="#invite"
-            className="rounded-full bg-[#c9812a] px-5 py-2.5 text-sm font-black text-[#fff6e4] transition hover:bg-[#dd9339]"
-            style={{ fontFamily: 'Nunito, Arial, sans-serif' }}
-          >
-            {copy.invite}
-          </a>
-          <WhatsAppGroupButton
-            lang={lang}
-            className="cursor-pointer rounded-full bg-[#1f1810] px-5 py-2.5 text-sm font-bold text-[#f2c46b] transition hover:text-[#ffd98a]"
-            style={{ fontFamily: 'Nunito, Arial, sans-serif' }}
-          />
-        </nav>
-      </header>
+      <SiteHeader lang={lang} />
 
       <section className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.15fr_.85fr] md:px-7 md:py-16">
         <div>
@@ -386,6 +348,20 @@ export default async function TheatreHome({ lang }: { lang: Lang }) {
             >
               {copy.whatsapp}
             </a>
+            <Link
+              href={infoPagePath(lang, 'invite')}
+              className="rounded-full border border-[#f2c46b73] px-6 py-3.5 text-[17px] font-black text-[#f2c46b] transition hover:bg-[#f2c46b1f] hover:text-[#ffd98a]"
+              style={{ fontFamily: 'Nunito, Arial, sans-serif' }}
+            >
+              {copy.inviteMore}
+            </Link>
+            <Link
+              href={infoPagePath(lang, 'workshops')}
+              className="rounded-full border border-[#f2c46b73] px-6 py-3.5 text-[17px] font-black text-[#f2c46b] transition hover:bg-[#f2c46b1f] hover:text-[#ffd98a]"
+              style={{ fontFamily: 'Nunito, Arial, sans-serif' }}
+            >
+              {NAV_COPY[lang].workshops}
+            </Link>
             <a
               href="mailto:info@ryba-kiva.com"
               dir="ltr"
@@ -429,38 +405,7 @@ export default async function TheatreHome({ lang }: { lang: Lang }) {
         </div>
       </section>
 
-      <footer className="mt-8 bg-[#2f2418] px-5 py-9 md:px-7">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-6">
-          <div>
-            <div className="mb-2 text-[15px] font-black uppercase tracking-[0.18em] text-[#f2c46b]" style={{ fontFamily: 'Nunito, Arial, sans-serif' }}>
-              {copy.theatre}
-            </div>
-            <div className="text-base text-[#c6b699]">
-              {copy.footer} ·{' '}
-              <a href="mailto:info@ryba-kiva.com" dir="ltr" className="text-[#f2c46b] hover:text-[#ffd98a]">
-                info@ryba-kiva.com
-              </a>
-            </div>
-          </div>
-          <nav className="flex flex-wrap gap-4 text-[15px] text-[#c6b699]">
-            <a href="#afisha" className="hover:text-[#ffd98a]">
-              {copy.afisha}
-            </a>
-            <a href="#shows" className="hover:text-[#ffd98a]">
-              {copy.showsLabel}
-            </a>
-            <a href="#about" className="hover:text-[#ffd98a]">
-              {copy.theatre}
-            </a>
-            <Link href="/terms" className="hover:text-[#ffd98a]">
-              {copy.terms}
-            </Link>
-            <Link href="/privacy" className="hover:text-[#ffd98a]">
-              {copy.privacy}
-            </Link>
-          </nav>
-        </div>
-      </footer>
+      <SiteFooter lang={lang} />
     </main>
   );
 }
