@@ -10,7 +10,10 @@ type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
 
 function formatSaveError(reason: string | undefined, message?: string): string {
   if (reason === 'price_below_payment_minimum') {
-    return `Для продажи через сайт цена билета должна быть не меньше ${ALLPAY_MIN_AMOUNT_ILS} ILS.`;
+    return `Для продажи через сайт цена билета должна быть 0 (бесплатно / донат) или не меньше ${ALLPAY_MIN_AMOUNT_ILS} ILS.`;
+  }
+  if (message && message.includes('price_ils_check')) {
+    return 'База данных пока не принимает цену 0. Нужно выполнить миграцию docs/sql/2026-11-27-allow-free-events.sql в Supabase.';
   }
 
   const reasonText = reason ?? 'save_failed';
@@ -49,6 +52,8 @@ const SHOW_ITEMS = SHOW_SLUGS.map((slug) => ({
 })) as Array<{ slug: ShowSlug; label: string }>;
 
 const TABLE_MIN_WIDTH = 1725;
+
+const FREE_PRICE_HINT = `0 — бесплатный показ или добровольный донат (на сайте будет «Вход свободный», без оплаты). Платный билет через сайт — от ${ALLPAY_MIN_AMOUNT_ILS} ILS.`;
 
 const FORMAT_OPTIONS = ['Открытый показ', 'Закрытый показ'] as const;
 const LANGUAGE_OPTIONS = ['Русский', 'Иврит', 'Английский'] as const;
@@ -688,13 +693,14 @@ export default function AdminSchedulePage() {
                   <span className="font-medium">Стоимость (ILS)</span>
                   <input
                     type="number"
-                    min={ticketMode === 'self' ? ALLPAY_MIN_AMOUNT_ILS : 0.01}
+                    min={0}
                     step="0.01"
                     value={priceIls}
                     onChange={(e) => setPriceIls(e.target.value)}
                     required
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                   />
+                  <span className="mt-1 block text-xs text-slate-600">{FREE_PRICE_HINT}</span>
                 </label>
                 <label className="block text-sm">
                   <span className="font-medium">Кол-во мест (опционально)</span>
@@ -842,7 +848,7 @@ export default function AdminSchedulePage() {
                       <td className="w-[70px] min-w-[70px] px-2 py-2">{item.waze_url ? 'Есть' : '—'}</td>
                       <td className="w-[120px] min-w-[120px] px-2 py-2">{item.format_ru}</td>
                       <td className="w-[90px] min-w-[90px] px-2 py-2">{item.language_ru}</td>
-                      <td className="w-[80px] min-w-[80px] px-2 py-2">{typeof item.price_ils === 'number' ? `₪ ${item.price_ils}` : '—'}</td>
+                      <td className="w-[80px] min-w-[80px] px-2 py-2">{item.price_ils == null ? '—' : Number(item.price_ils) === 0 ? 'Бесплатно' : `₪ ${item.price_ils}`}</td>
                       <td className="w-[80px] min-w-[80px] px-2 py-2">{item.capacity ?? '∞'}</td>
                       <td className="w-[95px] min-w-[95px] px-2 py-2">{item.ticket_mode === 'venue' ? 'Площадка' : 'Сайт'}</td>
                       <td className="w-[130px] min-w-[130px] px-2 py-2">
@@ -1029,13 +1035,14 @@ export default function AdminSchedulePage() {
                       <span className="font-medium">Стоимость (ILS)</span>
                       <input
                         type="number"
-                        min={editTicketMode === 'self' ? ALLPAY_MIN_AMOUNT_ILS : 0.01}
+                        min={0}
                         step="0.01"
                         value={editPriceIls}
                         onChange={(e) => setEditPriceIls(e.target.value)}
                         required
                         className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                       />
+                      <span className="mt-1 block text-xs text-slate-600">{FREE_PRICE_HINT}</span>
                     </label>
                     <label className="block text-sm">
                       <span className="font-medium">Кол-во мест (опционально)</span>

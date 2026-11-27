@@ -168,7 +168,7 @@ async function getHomeScheduleRows(): Promise<HomeScheduleRow[]> {
 
         const formatOriginal = entry.format_original ?? entry.format;
         const price = parseSchedulePrice(event.price_ils);
-        const details = [entry.format, entry.language, price === null ? '' : `₪ ${formatSchedulePrice(price)}`].filter(Boolean).join(' · ');
+        const details = [entry.format, entry.language, price === null ? '' : price === 0 ? 'Вход свободный' : `₪ ${formatSchedulePrice(price)}`].filter(Boolean).join(' · ');
 
         return {
           id: event.id ?? `${dateIso}-${entry.time}-${index}`,

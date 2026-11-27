@@ -74,6 +74,8 @@ type CheckoutLabels = {
   cancelLabel: string;
   unavailableLabel: string;
   soldOutLabel: string;
+  freeEntryLabel: string;
+  freeVenueButton: string;
   passedShowLabel: string;
   closedShowLabel: string;
   soldOutErrorLabel: string;
@@ -119,6 +121,8 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     cancelLabel: 'Отмена',
     unavailableLabel: 'Недоступно',
     soldOutLabel: 'Sold out',
+    freeEntryLabel: 'Вход свободный',
+    freeVenueButton: 'Регистрация',
     passedShowLabel: 'Спектакль прошел',
     closedShowLabel: 'Для закрытых показов покупка недоступна',
     soldOutErrorLabel: 'На это событие билеты закончились.',
@@ -155,6 +159,8 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     cancelLabel: 'ביטול',
     unavailableLabel: 'לא זמין',
     soldOutLabel: 'אזל',
+    freeEntryLabel: 'כניסה חופשית',
+    freeVenueButton: 'הרשמה',
     passedShowLabel: 'המופע כבר התקיים',
     closedShowLabel: 'אין רכישה למופעים סגורים',
     soldOutErrorLabel: 'אין יותר כרטיסים לאירוע הזה.',
@@ -191,6 +197,8 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     cancelLabel: 'Cancel',
     unavailableLabel: 'Unavailable',
     soldOutLabel: 'Sold out',
+    freeEntryLabel: 'Free entry',
+    freeVenueButton: 'Register',
     passedShowLabel: 'Performance ended',
     closedShowLabel: 'Ticket purchase is unavailable for closed shows',
     soldOutErrorLabel: 'No tickets left for this event.',
@@ -207,6 +215,11 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
 function isClosedShow(format: string): boolean {
   const normalized = format.toLowerCase();
   return normalized.includes('закрыт') || normalized.includes('סגור') || normalized.includes('private');
+}
+
+// Цена 0 — бесплатный показ / добровольный донат: оплаты через сайт нет.
+function isFreeEntry(row: ScheduleDisplayEntry): boolean {
+  return row.priceIls === 0;
 }
 
 function isVenueTicketingMode(value: unknown): boolean {
@@ -416,7 +429,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   };
 
   const openCheckout = (row: ScheduleDisplayEntry) => {
-    if (isClosedShow(row.formatOriginal) || isPastShowDate(row.dateIso) || isSoldOut(row.id) || row.ticketMode === 'venue') {
+    if (isClosedShow(row.formatOriginal) || isPastShowDate(row.dateIso) || isSoldOut(row.id) || row.ticketMode === 'venue' || isFreeEntry(row)) {
       return;
     }
     setSelectedRow(row);
@@ -729,13 +742,15 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                       </p>
                       <div className="flex items-center justify-between gap-2 pt-1">
                         {typeof row.priceIls === 'number' && (
-                          <span className="text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
+                          <span className="text-sm text-amber-100/85">
+                            {isFreeEntry(row) ? checkoutT.freeEntryLabel : `₪ ${formatIlsAmount(row.priceIls)}`}
+                          </span>
                         )}
                         {isClosedShow(row.formatOriginal) ? (
                           <span className="text-xs text-amber-100/60">{checkoutT.unavailableLabel}</span>
                         ) : isPastShowDate(row.dateIso) ? (
                           <span className="text-xs text-amber-100/60">{checkoutT.passedShowLabel}</span>
-                        ) : isSoldOut(row.id) ? (
+                        ) : isFreeEntry(row) && row.ticketMode === 'self' ? null : isSoldOut(row.id) ? (
                           <span className="text-xs text-amber-100/60">{checkoutT.soldOutLabel}</span>
                         ) : row.ticketMode === 'venue' && !row.ticketUrl ? (
                           <span className="text-xs text-amber-100/60">{checkoutT.unavailableLabel}</span>
@@ -746,7 +761,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                             rel="noopener noreferrer nofollow"
                             className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
                           >
-                            {checkoutT.buyButton}
+                            {isFreeEntry(row) ? checkoutT.freeVenueButton : checkoutT.buyButton}
                           </a>
                         ) : (
                           <button
@@ -801,6 +816,8 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                               <span className="text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
                             ) : isPastShowDate(row.dateIso) ? (
                               <span className="text-sm text-amber-100/60">{checkoutT.passedShowLabel}</span>
+                            ) : isFreeEntry(row) && row.ticketMode === 'self' ? (
+                              <span className="text-sm text-amber-100/85">{checkoutT.freeEntryLabel}</span>
                             ) : isSoldOut(row.id) ? (
                               <span className="text-sm text-amber-100/60">{checkoutT.soldOutLabel}</span>
                             ) : row.ticketMode === 'venue' && !row.ticketUrl ? (
@@ -808,7 +825,9 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                             ) : row.ticketMode === 'venue' && row.ticketUrl ? (
                               <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
                                 {typeof row.priceIls === 'number' && (
-                                  <span className="text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
+                                  <span className="text-sm text-amber-100/85">
+                                    {isFreeEntry(row) ? checkoutT.freeEntryLabel : `₪ ${formatIlsAmount(row.priceIls)}`}
+                                  </span>
                                 )}
                                 <a
                                   href={row.ticketUrl}
@@ -816,7 +835,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                                   rel="noopener noreferrer nofollow"
                                   className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
                                 >
-                                  {checkoutT.buyButton}
+                                  {isFreeEntry(row) ? checkoutT.freeVenueButton : checkoutT.buyButton}
                                 </a>
                               </div>
                             ) : (
@@ -1343,7 +1362,7 @@ function normalizeDateIso(value: unknown): string {
 }
 
 function parsePriceIls(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
     return Number.isInteger(value) ? value : Number.parseFloat(value.toFixed(2));
   }
 
@@ -1354,7 +1373,7 @@ function parsePriceIls(value: unknown): number | null {
       .replace(/[^\d.,-]/g, '')
       .replace(',', '.');
     const parsed = Number.parseFloat(normalized);
-    if (Number.isFinite(parsed) && parsed > 0) {
+    if (Number.isFinite(parsed) && parsed >= 0) {
       return Number.isInteger(parsed) ? parsed : Number.parseFloat(parsed.toFixed(2));
     }
   }

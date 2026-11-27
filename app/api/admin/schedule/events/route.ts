@@ -120,14 +120,16 @@ function isValidTime(value: string): boolean {
   return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
+// 0 — бесплатный показ / добровольный донат.
 function parsePriceIls(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
     return Number.parseFloat(value.toFixed(2));
   }
   if (typeof value === 'string') {
     const normalized = value.trim().replace(',', '.');
+    if (!normalized) return null;
     const parsed = Number.parseFloat(normalized);
-    if (Number.isFinite(parsed) && parsed > 0) {
+    if (Number.isFinite(parsed) && parsed >= 0) {
       return Number.parseFloat(parsed.toFixed(2));
     }
   }
@@ -334,7 +336,7 @@ export async function POST(request: Request) {
   if (!privateFormat && priceIls === null) {
     return NextResponse.json({ ok: false, reason: 'invalid_price' }, { status: 400 });
   }
-  if (!privateFormat && ticketMode === 'self' && priceIls !== null && priceIls < ALLPAY_MIN_AMOUNT_ILS) {
+  if (!privateFormat && ticketMode === 'self' && priceIls !== null && priceIls > 0 && priceIls < ALLPAY_MIN_AMOUNT_ILS) {
     return NextResponse.json(
       { ok: false, reason: 'price_below_payment_minimum', minimumAmount: ALLPAY_MIN_AMOUNT_ILS },
       { status: 400 },
@@ -511,7 +513,7 @@ export async function PATCH(request: Request) {
   if (!privateFormat && priceIls === null) {
     return NextResponse.json({ ok: false, reason: 'invalid_price' }, { status: 400 });
   }
-  if (!privateFormat && ticketMode === 'self' && priceIls !== null && priceIls < ALLPAY_MIN_AMOUNT_ILS) {
+  if (!privateFormat && ticketMode === 'self' && priceIls !== null && priceIls > 0 && priceIls < ALLPAY_MIN_AMOUNT_ILS) {
     return NextResponse.json(
       { ok: false, reason: 'price_below_payment_minimum', minimumAmount: ALLPAY_MIN_AMOUNT_ILS },
       { status: 400 },

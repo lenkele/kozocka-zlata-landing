@@ -118,6 +118,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: 'venue_ticketing' }, { status: 400 });
   }
 
+  if (unitPrice <= 0) {
+    return NextResponse.json({ ok: false, reason: 'free_event' }, { status: 400 });
+  }
+
   if (eventCapacity !== null) {
     try {
       const soldQty = await getPaidQtyForEvent(showSlug, eventId);

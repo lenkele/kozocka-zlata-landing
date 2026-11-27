@@ -66,6 +66,7 @@ export async function buildShowEventsJsonLd(show: ShowConfig) {
         organizer: { '@type': 'PerformingGroup', name: 'Рыба Кива', url: SITE_URL },
         performer: { '@type': 'PerformingGroup', name: 'Рыба Кива', url: SITE_URL },
         workPerformed: { '@type': 'CreativeWork', name: title },
+        ...(price === 0 ? { isAccessibleForFree: true } : {}),
         offers: offerUrl
           ? {
               '@type': 'Offer',

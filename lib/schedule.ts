@@ -67,8 +67,9 @@ export function resolveCapacity(value: unknown): number | null {
   return parsePositiveInt(value);
 }
 
+// 0 — бесплатный показ / добровольный донат (оплата через сайт недоступна).
 function parsePriceIls(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
     return Number.isInteger(value) ? value : Number.parseFloat(value.toFixed(2));
   }
 
@@ -81,7 +82,7 @@ function parsePriceIls(value: unknown): number | null {
 
     if (!normalized) return null;
     const parsed = Number.parseFloat(normalized);
-    if (Number.isFinite(parsed) && parsed > 0) {
+    if (Number.isFinite(parsed) && parsed >= 0) {
       return Number.isInteger(parsed) ? parsed : Number.parseFloat(parsed.toFixed(2));
     }
   }
@@ -231,10 +232,10 @@ export function getTodayIsoInIsrael(date = new Date()): string {
 }
 
 export function parseSchedulePrice(value: ScheduleEvent['price_ils']): number | null {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) return value;
   if (typeof value !== 'string') return null;
   const parsed = Number.parseFloat(value.trim().replace(',', '.').replace(/[^\d.-]/g, ''));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
 
 export function isClosedSchedule(format: string): boolean {

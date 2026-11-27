@@ -14,7 +14,7 @@ create table if not exists public.schedule_events (
   language_ru text not null,
   language_en text not null,
   language_he text not null,
-  price_ils numeric(10,2) null check (price_ils is null or price_ils > 0),
+  price_ils numeric(10,2) null check (price_ils is null or price_ils >= 0),
   capacity integer null check (capacity is null or capacity > 0),
   ticket_mode text not null default 'self' check (ticket_mode in ('self', 'venue')),
   ticket_url text null,
