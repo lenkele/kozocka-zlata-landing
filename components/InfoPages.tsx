@@ -233,7 +233,7 @@ function WorkshopCard({ workshop }: { workshop: Workshop }) {
           <div className="mb-5 space-y-3 text-[17px] leading-7 text-[#eadfc9]">
             {workshop.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
           </div>
-          <FactList facts={workshop.facts} />
+          {workshop.facts.length > 0 && <FactList facts={workshop.facts} />}
           {workshop.quote && (
             <blockquote className="mt-5 border-s-4 border-[#e8a33d] ps-4 text-[16px] italic leading-7 text-[#eadfc9]">
               «{workshop.quote.text}»

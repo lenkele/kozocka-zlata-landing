@@ -68,6 +68,9 @@ const IMAGES = {
   horse: { src: '/images/workshops/suitcase-horse.jpg', width: 603, height: 601 },
   granny: { src: '/images/workshops/suitcase-granny.jpg', width: 513, height: 1200 },
   shadow: { src: '/images/workshops/shadow-light.jpg', width: 416, height: 605 },
+  animationFish: { src: '/images/workshops/animation-fish.jpg', width: 400, height: 357 },
+  animationArk: { src: '/images/workshops/animation-ark.jpg', width: 856, height: 589 },
+  santa: { src: '/images/workshops/santa-winter.jpg', width: 535, height: 347 },
 };
 
 export const INVITE_COPY: Record<Lang, InviteCopy> = {
@@ -233,12 +236,12 @@ export const WORKSHOPS_COPY: Record<Lang, WorkshopsCopy> = {
   ru: {
     metaTitle: 'Мастер-классы для детей и родителей: делаем кукол и играем спектакль | Театр «Рыба Кива»',
     metaDescription:
-      'Семейные театральные мастерские театра «Рыба Кива» в Израиле: марионетки, тени и свет, ханукальный праздник с живой анимацией. Для детей вместе со взрослыми, на русском языке. Материалы наши, цена по запросу.',
+      'Семейные театральные мастерские театра «Рыба Кива» в Израиле: марионетки, живой мультфильм, тени и свет, ханукальный и новогодний праздники, песенный круг для взрослых. На русском языке, материалы наши, цена по запросу.',
     kicker: 'Театральные мастерские',
     heading: 'Мастер-классы театра «Рыба Кива»',
     lead: [
       'На наших мастер-классах дети не просто мастерят поделку. Вместе со взрослыми они делают кукол, придумывают им характеры, проживают историю и в конце играют маленький спектакль под живую музыку.',
-      'Это полноценные длинные мероприятия, а не короткое занятие после спектакля.',
+      'Это полноценные длинные мероприятия, а не короткое занятие после спектакля. А для взрослых у нас есть «Песенный круг» — певческие встречи.',
     ],
     general: [
       { label: 'Язык', value: 'русский' },
@@ -280,6 +283,17 @@ export const WORKSHOPS_COPY: Record<Lang, WorkshopsCopy> = {
         image: { ...IMAGES.shadow, alt: 'Теневая сцена из мастерской «Птица-правда, тень и свет»' },
       },
       {
+        id: 'animation',
+        kicker: 'Мастерская анимации',
+        title: '«Живая анимация»',
+        paragraphs: [
+          'Вместе с участниками мы создаём плоских персонажей, а потом они оживают под камерой в реальном времени — и на экране получается настоящий живой мультфильм.',
+        ],
+        facts: [],
+        image: { ...IMAGES.animationFish, alt: 'Кадр живого мультфильма: рыба и кораблик, нарисованные участниками' },
+        image2: { ...IMAGES.animationArk, alt: 'Ноев ковчег из мастерской «Живая анимация»' },
+      },
+      {
         id: 'hanukkah',
         kicker: 'Семейный праздник',
         title: 'Ханукальный праздник с живой анимацией',
@@ -292,6 +306,25 @@ export const WORKSHOPS_COPY: Record<Lang, WorkshopsCopy> = {
           { label: 'От площадки', value: 'затемнение, столы и помощники, которые соберут группы и проследят за временем' },
         ],
       },
+      {
+        id: 'little-ded-moroz',
+        kicker: 'Новогодний праздник',
+        title: '«Маленький Дед Мороз»',
+        paragraphs: [
+          'Атмосферное новогоднее мероприятие: вместе с участниками мы создаём реквизит и персонажей, а потом все вместе разыгрываем и проживаем музыкальную сказку.',
+        ],
+        facts: [],
+        image: { ...IMAGES.santa, alt: 'Зимний город из мастерской «Маленький Дед Мороз»' },
+      },
+      {
+        id: 'song-circle',
+        kicker: 'Для взрослых',
+        title: '«Песенный круг»',
+        paragraphs: [
+          'Певческие встречи для взрослых: по-всякому развлекаемся с голосом и ритмом, пробуем элементы импровизации и поём на несколько голосов песни со всего мира.',
+        ],
+        facts: [{ label: 'Для кого', value: 'взрослые' }],
+      },
     ],
     combineNote: 'Мастер-класс можно заказать вместе со спектаклем, но это отдельное длинное мероприятие — заложите на него время.',
     ctaHeading: 'Заказать мастер-класс',
@@ -303,12 +336,12 @@ export const WORKSHOPS_COPY: Record<Lang, WorkshopsCopy> = {
   he: {
     metaTitle: 'סדנאות בובות להורים וילדים | תיאטרון ״ריבא קיווא״',
     metaDescription:
-      'סדנאות תיאטרון משפחתיות של ״ריבא קיווא״ בישראל: בובות מריונטה, צל ואור, חגיגת חנוכה עם אנימציה חיה. לילדים יחד עם המבוגרים שלהם, ברוסית. החומרים עלינו, המחיר לפי בקשה.',
+      'סדנאות תיאטרון משפחתיות של ״ריבא קיווא״ בישראל: בובות מריונטה, אנימציה חיה, צל ואור, חגיגות חנוכה ושנה חדשה ומעגל שירה למבוגרים. ברוסית, החומרים עלינו, המחיר לפי בקשה.',
     kicker: 'סדנאות תיאטרון',
     heading: 'הסדנאות של תיאטרון ״ריבא קיווא״',
     lead: [
       'בסדנאות שלנו הילדים לא רק מכינים יצירה. יחד עם המבוגרים שלהם הם מכינים בובות, ממציאים להן דמויות, חווים את הסיפור ובסוף מעלים הצגה קטנה עם מוזיקה חיה.',
-      'אלה אירועים ארוכים ומלאים, ולא פעילות קצרה אחרי הצגה. הסדנאות מתקיימות כרגע ברוסית.',
+      'אלה אירועים ארוכים ומלאים, ולא פעילות קצרה אחרי הצגה. ולמבוגרים יש לנו ״מעגל שירה״ — מפגשי שירה. הסדנאות מתקיימות כרגע ברוסית.',
     ],
     general: [
       { label: 'שפה', value: 'רוסית' },
@@ -346,6 +379,17 @@ export const WORKSHOPS_COPY: Record<Lang, WorkshopsCopy> = {
         image: { ...IMAGES.shadow, alt: 'סצנת צלליות מהסדנה ״ציפור־האמת, צל ואור״' },
       },
       {
+        id: 'animation',
+        kicker: 'סדנת אנימציה',
+        title: '״אנימציה חיה״',
+        paragraphs: [
+          'יחד עם המשתתפים אנחנו יוצרים דמויות שטוחות, ואז הן מתעוררות לחיים מתחת למצלמה בזמן אמת — ועל המסך נוצר סרט מצויר חי.',
+        ],
+        facts: [],
+        image: { ...IMAGES.animationFish, alt: 'פריים מסרט מצויר חי: דג וספינה שציירו המשתתפים' },
+        image2: { ...IMAGES.animationArk, alt: 'תיבת נח מהסדנה ״אנימציה חיה״' },
+      },
+      {
         id: 'hanukkah',
         kicker: 'חגיגה משפחתית',
         title: 'חגיגת חנוכה עם אנימציה חיה',
@@ -358,6 +402,25 @@ export const WORKSHOPS_COPY: Record<Lang, WorkshopsCopy> = {
           { label: 'מהמקום', value: 'החשכה, שולחנות ועוזרים שיארגנו את הקבוצות וישמרו על לוח הזמנים' },
         ],
       },
+      {
+        id: 'little-ded-moroz',
+        kicker: 'חגיגת השנה החדשה',
+        title: '״סבא כפור הקטן״',
+        paragraphs: [
+          'אירוע חגיגי ואווירתי לשנה החדשה (נוביגוד): יחד עם המשתתפים אנחנו מכינים אביזרים ודמויות, ואז מציגים וחווים יחד אגדה מוזיקלית.',
+        ],
+        facts: [],
+        image: { ...IMAGES.santa, alt: 'עיר חורפית מהסדנה ״סבא כפור הקטן״' },
+      },
+      {
+        id: 'song-circle',
+        kicker: 'למבוגרים',
+        title: '״מעגל שירה״',
+        paragraphs: [
+          'מפגשי שירה למבוגרים: משחקים בכל מיני דרכים עם הקול והקצב, מנסים אלתור ושרים בכמה קולות שירים מכל העולם.',
+        ],
+        facts: [{ label: 'למי', value: 'מבוגרים' }],
+      },
     ],
     combineNote: 'אפשר להזמין סדנה יחד עם הצגה, אבל זה אירוע נפרד וארוך — כדאי לתכנן לו זמן.',
     ctaHeading: 'להזמנת סדנה',
@@ -369,12 +432,12 @@ export const WORKSHOPS_COPY: Record<Lang, WorkshopsCopy> = {
   en: {
     metaTitle: 'Puppet-Making Workshops for Children and Parents | Ryba Kiva Theatre',
     metaDescription:
-      'Family theatre workshops by Ryba Kiva Theatre in Israel: marionettes, shadow and light, a Hanukkah celebration with live animation. For children together with their adults, held in Russian. We bring all materials; price on request.',
+      'Family theatre workshops by Ryba Kiva Theatre in Israel: marionettes, live animation, shadow and light, Hanukkah and New Year celebrations, and a song circle for adults. Held in Russian; we bring all materials; price on request.',
     kicker: 'Theatre workshops',
     heading: 'Ryba Kiva Theatre workshops',
     lead: [
       'In our workshops children do more than make a craft. Together with their adults they make puppets, invent their characters, live through a story and finally play a small show to live music.',
-      'These are full, long events rather than a short activity after a performance. Workshops are currently held in Russian.',
+      'These are full, long events rather than a short activity after a performance. For adults we also run the Song Circle, a series of singing gatherings. Workshops are currently held in Russian.',
     ],
     general: [
       { label: 'Language', value: 'Russian' },
@@ -412,6 +475,17 @@ export const WORKSHOPS_COPY: Record<Lang, WorkshopsCopy> = {
         image: { ...IMAGES.shadow, alt: 'A shadow scene from the “Bird of Truth, Shadow and Light” workshop' },
       },
       {
+        id: 'animation',
+        kicker: 'Animation workshop',
+        title: '“Live Animation”',
+        paragraphs: [
+          'Together with the participants we create flat characters, and then they come alive under the camera in real time — and a live cartoon appears on the screen.',
+        ],
+        facts: [],
+        image: { ...IMAGES.animationFish, alt: 'A frame from a live cartoon: a fish and a ship drawn by participants' },
+        image2: { ...IMAGES.animationArk, alt: 'Noah’s Ark from the “Live Animation” workshop' },
+      },
+      {
         id: 'hanukkah',
         kicker: 'Family celebration',
         title: 'A Hanukkah celebration with live animation',
@@ -423,6 +497,25 @@ export const WORKSHOPS_COPY: Record<Lang, WorkshopsCopy> = {
           { label: 'For', value: 'families with children — parents take part together with their children' },
           { label: 'From the venue', value: 'darkening, tables and helpers to organise the groups and keep time' },
         ],
+      },
+      {
+        id: 'little-ded-moroz',
+        kicker: 'New Year celebration',
+        title: '“Little Ded Moroz”',
+        paragraphs: [
+          'An atmospheric New Year event: together with the participants we make props and characters, and then we act out and live through a musical fairy tale together.',
+        ],
+        facts: [],
+        image: { ...IMAGES.santa, alt: 'A winter town from the “Little Ded Moroz” workshop' },
+      },
+      {
+        id: 'song-circle',
+        kicker: 'For adults',
+        title: '“Song Circle”',
+        paragraphs: [
+          'Singing gatherings for adults: we play with voice and rhythm in all sorts of ways, try a bit of improvisation and sing songs from around the world in several voices.',
+        ],
+        facts: [{ label: 'For', value: 'adults' }],
       },
     ],
     combineNote: 'A workshop can be booked together with a performance, but it is a separate, long event — plan time for it.',
