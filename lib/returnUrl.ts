@@ -1,5 +1,6 @@
 import { isShowSlug } from '@/shows';
 import type { ShowSlug } from '@/shows/types';
+import { isLang } from '@/lib/i18n';
 
 export type ResolveReturnUrlOptions = {
   /** Slug спектакля, с которого шла покупка — для корректного возврата при относительном пути */
@@ -61,7 +62,8 @@ function isHostAllowed(host: string): boolean {
 
 /** Извлекает slug из пути (/zlata, /marita, /) */
 function getSlugFromPath(pathname: string): ShowSlug {
-  const segment = (pathname || '/').split('/')[1];
+  const parts = (pathname || '/').split('/');
+  const segment = isLang(parts[1]) ? parts[2] : parts[1];
   return segment && isShowSlug(segment) ? (segment as ShowSlug) : 'zlata';
 }
 

@@ -1,1 +1,47 @@
-schedule: []
+schedule:
+- id: 20260623-1800
+  date_iso: '2026-06-23'
+  price_ils: 70
+  ticket_mode: self
+  entries:
+    ru:
+      time: '18:00'
+      place: Иерусалим, Тальпиот
+      format: квартирник, Шалом Йегуда, 11 кв 6
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: Иерусалим, Тальпиот
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: Иерусалим, Тальпиот
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20260627-1830
+  date_iso: '2026-06-27'
+  price_ils: 70
+  ticket_mode: self
+  entries:
+    ru:
+      time: '18:30'
+      place: Беер-Шева
+      format: Шахаль, 47/4
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:30'
+      place: Беер-Шева
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:30'
+      place: Беер-Шева
+      format: Public performance
+      format_original: Public performance
+      language: Russian

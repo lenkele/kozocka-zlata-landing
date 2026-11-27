@@ -1,22 +1,23 @@
 import type { MetadataRoute } from 'next';
 
 import { SHOW_SLUGS } from '@/shows';
-
-const SITE_URL = 'https://ryba-kiva.com';
+import { LANGUAGES, SITE_URL, getShowLanguages, languageAlternates, localizedPath } from '@/lib/i18n';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const showPages = SHOW_SLUGS.map((slug) => ({
-    url: `${SITE_URL}/${slug}`,
+  const showPages = SHOW_SLUGS.flatMap((slug) => getShowLanguages(slug).map((lang) => ({
+    url: `${SITE_URL}${localizedPath(lang, slug)}`,
+    alternates: { languages: languageAlternates(slug) },
     changeFrequency: 'weekly' as const,
     priority: 0.8,
-  }));
+  })));
 
   return [
-    {
-      url: SITE_URL,
-      changeFrequency: 'weekly',
+    ...LANGUAGES.map((lang) => ({
+      url: `${SITE_URL}${localizedPath(lang)}`,
+      alternates: { languages: languageAlternates() },
+      changeFrequency: 'weekly' as const,
       priority: 1,
-    },
+    })),
     ...showPages,
   ];
 }

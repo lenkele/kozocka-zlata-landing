@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { headers } from 'next/headers';
+import { isLang, LANGUAGE_HEADER } from '@/lib/i18n';
 import LegalFooterLinks from "@/components/LegalFooterLinks";
 import MetaPixelPageView from "@/components/MetaPixelPageView";
+import DocumentLanguage from '@/components/DocumentLanguage';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,13 +38,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const requestedLang = (await headers()).get(LANGUAGE_HEADER);
+  const lang = isLang(requestedLang) ? requestedLang : 'ru';
   return (
-    <html lang="ru">
+    <html lang={lang} dir={lang === 'he' ? 'rtl' : 'ltr'}>
       <Script id="meta-pixel" strategy="afterInteractive">
         {`
           !function(f,b,e,v,n,t,s)
@@ -62,6 +67,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <MetaPixelPageView />
+        <DocumentLanguage />
         <div className="min-h-screen flex flex-col">
           <div className="flex-1">{children}</div>
           <footer className="border-t border-slate-700/60 bg-slate-950/90 px-4 py-4 text-xs text-slate-300">

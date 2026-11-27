@@ -5,7 +5,8 @@ import {
   normalizeScheduleDate,
   parseSchedulePrice,
 } from '@/lib/schedule';
-import type { ShowConfig } from '@/shows/types';
+import type { Lang, ShowConfig } from '@/shows/types';
+import { localizedPath } from '@/lib/i18n';
 
 const SITE_URL = 'https://ryba-kiva.com';
 
@@ -27,15 +28,16 @@ function cleanPlace(place: string): string {
 }
 
 // TheaterEvent для ближайших открытых показов: Google показывает их в поиске мероприятий.
-export async function buildShowEventsJsonLd(show: ShowConfig) {
-  const title = show.content.ru?.title ?? show.content.en?.title ?? show.slug;
-  const poster = show.content.ru?.posterImage ?? show.content.en?.posterImage;
-  const pageUrl = `${SITE_URL}/${show.slug}`;
+export async function buildShowEventsJsonLd(show: ShowConfig, lang: Lang = 'ru') {
+  const content = show.content[lang] ?? show.content.ru ?? show.content.en;
+  const title = content?.title ?? show.slug;
+  const poster = content?.posterImage;
+  const pageUrl = `${SITE_URL}${localizedPath(lang, show.slug)}`;
   const today = getTodayIsoInIsrael();
   const events = await getCachedScheduleForShow(show.slug);
 
   const theaterEvents = events.flatMap((event) => {
-    const entry = event.entries?.ru ?? event.entries?.en ?? event.entries?.he;
+    const entry = event.entries?.[lang] ?? event.entries?.ru ?? event.entries?.en ?? event.entries?.he;
     const dateIso = normalizeScheduleDate(event.date_iso);
     if (!entry || !dateIso || dateIso < today) return [];
     if (isClosedSchedule(entry.format_original ?? entry.format)) return [];
@@ -55,8 +57,8 @@ export async function buildShowEventsJsonLd(show: ShowConfig) {
     return [
       {
         '@type': 'TheaterEvent',
-        name: `«${title}» — театр «Рыба Кива»`,
-        description: show.pageDescription,
+        name: `${title} — ${content?.theatreLabel ?? 'Ryba Kiva Theatre'}`,
+        description: content?.seoSubtitle ?? show.pageDescription,
         startDate,
         eventStatus: 'https://schema.org/EventScheduled',
         eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',

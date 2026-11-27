@@ -1,0 +1,137 @@
+[
+  {
+    "id": "zlata:jerusalem-school",
+    "dateIso": "2025-11-28",
+    "time": "09:00"
+  },
+  {
+    "id": "zlata:jerusalem-gilo",
+    "dateIso": "2025-12-09",
+    "time": "18:00"
+  },
+  {
+    "id": "zlata:nahariya",
+    "dateIso": "2025-12-11",
+    "time": "17:00"
+  },
+  {
+    "id": "zlata:251213_ashkelon",
+    "dateIso": "2025-12-13",
+    "time": "18:00"
+  },
+  {
+    "id": "zlata:haifa-festival",
+    "dateIso": "2025-12-18",
+    "time": "17:00"
+  },
+  {
+    "id": "zlata:haifa-city",
+    "dateIso": "2025-12-21",
+    "time": "17:00"
+  },
+  {
+    "id": "zlata:haifa-hadar",
+    "dateIso": "2026-01-02",
+    "time": "13:00"
+  },
+  {
+    "id": "marita:Hiperion",
+    "dateIso": "2026-01-06",
+    "time": "15:00"
+  },
+  {
+    "id": "marita:Tarusa",
+    "dateIso": "2026-01-09",
+    "time": "18:00"
+  },
+  {
+    "id": "marita:Dolina",
+    "dateIso": "2026-01-10",
+    "time": "17:00"
+  },
+  {
+    "id": "marita:Skazka",
+    "dateIso": "2026-01-11",
+    "time": "17:00"
+  },
+  {
+    "id": "marita:20260225-1800",
+    "dateIso": "2026-02-25",
+    "time": "18:00"
+  },
+  {
+    "id": "marita:20260226-1800",
+    "dateIso": "2026-02-26",
+    "time": "18:00"
+  },
+  {
+    "id": "marita:20260227-1830",
+    "dateIso": "2026-02-27",
+    "time": "18:30"
+  },
+  {
+    "id": "marita:20260302-1800",
+    "dateIso": "2026-03-02",
+    "time": "18:00"
+  },
+  {
+    "id": "marita:20260304-1800",
+    "dateIso": "2026-03-04",
+    "time": "18:00"
+  },
+  {
+    "id": "marita:20260305-1830",
+    "dateIso": "2026-03-05",
+    "time": "18:30"
+  },
+  {
+    "id": "marita:20260306-1400",
+    "dateIso": "2026-03-06",
+    "time": "14:00"
+  },
+  {
+    "id": "marita:20260207-1800",
+    "dateIso": "2026-03-07",
+    "time": "18:00"
+  },
+  {
+    "id": "marita:20261021-1800",
+    "dateIso": "2026-10-21",
+    "time": "18:00"
+  },
+  {
+    "id": "marita:20261023-1500",
+    "dateIso": "2026-10-23",
+    "time": "15:00"
+  },
+  {
+    "id": "marita:20261024-1800",
+    "dateIso": "2026-10-24",
+    "time": "18:00"
+  },
+  {
+    "id": "marita:20261027-1800",
+    "dateIso": "2026-10-27",
+    "time": "18:00"
+  },
+  {
+    "id": "marita:20261028-1800",
+    "dateIso": "2026-10-28",
+    "time": "18:00"
+  },
+  {
+    "id": "marita:20261029-1800",
+    "dateIso": "2026-10-29",
+    "time": "18:00"
+  },
+  {
+    "id": "gefilte-lid:20260623-1800",
+    "dateIso": "2026-06-23",
+    "time": "18:00"
+  },
+  {
+    "id": "gefilte-lid:20260627-1830",
+    "dateIso": "2026-06-27",
+    "time": "18:30"
+  }
+]

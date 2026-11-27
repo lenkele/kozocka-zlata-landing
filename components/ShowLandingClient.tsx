@@ -2,6 +2,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { isPastPerformance, selectAfishaRows } from '@/lib/afisha';
+import { getShowLanguages, localizedPath } from '@/lib/i18n';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { trackMetaEvent } from '@/lib/metaPixel';
@@ -246,42 +249,10 @@ function isVenueTicketingMode(value: unknown): boolean {
   return typeof value === 'string' && value.trim().toLowerCase() === 'venue';
 }
 
-function getTodayIsoLocal(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function isPastShowDate(dateIso: string): boolean {
-  if (!dateIso || !/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) {
-    return false;
-  }
-  return dateIso < getTodayIsoLocal();
-}
-
-function getCurrentYearMonthLocal(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-}
-
-function pickVisibleScheduleRows(rows: ScheduleDisplayEntry[]): ScheduleDisplayEntry[] {
-  if (rows.length === 0) return rows;
-
-  const firstDayOfCurrentMonth = `${getCurrentYearMonthLocal()}-01`;
-  return rows.filter((row) => row.dateIso >= firstDayOfCurrentMonth);
-}
-
-export default function ShowLandingClient({ show }: { show: ShowConfig }) {
-  // Стабильная ссылка: иначе `?? ['ru','he','en']` даёт новый массив каждый рендер и
-  // useEffect([availableLanguages]) каждый раз сбрасывает язык через resolvePreferredLang.
-  const availableLanguages = useMemo<Lang[]>(() => show.availableLanguages ?? ['ru', 'he', 'en'], [show.availableLanguages]);
+export default function ShowLandingClient({ show, lang = 'ru' }: { show: ShowConfig; lang?: Lang }) {
+  const availableLanguages = getShowLanguages(show.slug);
   const defaultLang = availableLanguages.includes('ru') ? 'ru' : availableLanguages[0];
 
-  const [lang, setLang] = useState<Lang>(defaultLang);
   const [scheduleData, setScheduleData] = useState<ScheduleDisplayEntry[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [availabilityByEvent, setAvailabilityByEvent] = useState<Record<string, EventAvailability>>({});
@@ -315,26 +286,11 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     return show.whatsappLinkBase + encodeURIComponent(message ?? '');
   }, [lang, defaultLang, show.whatsappLinkBase, show.whatsappMessages]);
 
-  const changeLang = (newLang: Lang) => {
-    // Проверяем, что язык доступен для этого спектакля
-    if (!availableLanguages.includes(newLang)) return;
-    setLang(newLang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('preferredLang', newLang);
-      window.dispatchEvent(new Event('preferredLangChanged'));
-    }
-  };
-
   const isRTL = lang === 'he';
   const badgeSpacingClass = isRTL ? 'mr-2' : 'ml-2';
   const textDirectionClass = isRTL ? 'text-right' : '';
   const scheduleAlignClass = isRTL ? 'text-right' : 'text-left';
   const buyCellItemsClass = isRTL ? 'items-end' : 'items-start';
-
-  useEffect(() => {
-    const preferred = resolvePreferredLang(availableLanguages);
-    setLang(preferred);
-  }, [availableLanguages]);
 
   useEffect(() => {
     let isMounted = true;
@@ -418,7 +374,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     wazeUrl: null,
   }));
   const displayScheduleBase: ScheduleDisplayEntry[] = scheduleData.length > 0 ? scheduleData : fallbackScheduleData;
-  const displaySchedule: ScheduleDisplayEntry[] = pickVisibleScheduleRows(displayScheduleBase);
+  const displaySchedule: ScheduleDisplayEntry[] = selectAfishaRows(displayScheduleBase);
   const galleryPhotos = show.galleryPhotos.length > 0 ? show.galleryPhotos : show.carouselPhotos;
 
   const scrollToSchedule = () => {
@@ -451,7 +407,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   };
 
   const openCheckout = (row: ScheduleDisplayEntry) => {
-    if (isClosedShow(row.formatOriginal) || isPastShowDate(row.dateIso) || isSoldOut(row.id) || row.ticketMode === 'venue') {
+    if (isClosedShow(row.formatOriginal) || isPastPerformance(row) || isSoldOut(row.id) || row.ticketMode === 'venue') {
       return;
     }
     setSelectedRow(row);
@@ -596,14 +552,14 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   }, [selectedMaxQty, ticketQtyInput]);
 
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-fixed bg-cover bg-center overflow-x-hidden" style={{ backgroundImage: show.backgroundStyle }}>
+    <div lang={lang} dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-fixed bg-cover bg-center overflow-x-hidden" style={{ backgroundImage: show.backgroundStyle }}>
       <div className={`min-h-screen ${textColor} ${textDirectionClass}`}>
         <header className={`sticky top-0 z-50 ${headerBg} backdrop-blur-sm border-b border-[rgba(255,255,255,0.1)]`}>
           <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 md:gap-4">
             <div className={`flex flex-col items-center md:flex-row md:items-center gap-1 md:gap-3 ${isRTL ? 'md:flex-row-reverse' : ''} flex-shrink min-w-0`}>
               <div className="flex flex-col gap-0.5">
                 <Link
-                  href="/"
+                  href={localizedPath(lang)}
                   className="text-[0.65rem] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-amber-200/80 whitespace-nowrap transition hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
                 >
                   {t.theatreLabel}
@@ -619,31 +575,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
               </div>
             </div>
             <div className={`flex items-center gap-1 sm:gap-2 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink min-w-0`}>
-              {availableLanguages.length > 1 && (
-                <div className="flex items-center gap-1 text-xs md:text-sm bg-[rgba(0,0,0,0.35)] rounded-full px-2 py-1">
-                  {availableLanguages.includes('ru') && (
-                    <LangButton current={lang} target="ru" onClick={changeLang}>
-                      Рус
-                    </LangButton>
-                  )}
-                  {availableLanguages.includes('he') && (
-                    <LangButton current={lang} target="he" onClick={changeLang}>
-                      עִבְ׳
-                    </LangButton>
-                  )}
-                  {availableLanguages.includes('en') && (
-                    <LangButton
-                      current={lang}
-                      target="en"
-                      onClick={changeLang}
-                      disabled={!show.content.en}
-                      title={!show.content.en ? 'English version coming soon' : undefined}
-                    >
-                      Eng
-                    </LangButton>
-                  )}
-                </div>
-              )}
+              <LanguageSwitcher lang={lang} available={availableLanguages} slug={show.slug} />
               <button
                 onClick={scrollToSchedule}
                 className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
@@ -763,10 +695,10 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                       className={`rounded-2xl border border-amber-100/15 ${darkCardBg} p-4 space-y-2 ${textDirectionClass}`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-amber-100">{parseLinksInText(row.date)}</span>
-                        <span className="text-sm text-amber-50/90">{parseLinksInText(row.time)}</span>
+                        <span className="text-sm font-medium text-amber-100">{parseLinksInText(row.date, isPastPerformance(row))}</span>
+                        <span className="text-sm text-amber-50/90">{parseLinksInText(row.time, isPastPerformance(row))}</span>
                       </div>
-                      <p className="text-sm text-amber-50/90">{parseLinksInText(row.place)}</p>
+                      <p className="text-sm text-amber-50/90">{parseLinksInText(row.place, isPastPerformance(row))}</p>
                       {row.wazeUrl && (
                         <a
                           href={row.wazeUrl}
@@ -778,7 +710,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                         </a>
                       )}
                       <p className="text-xs text-amber-100/60">
-                        {parseLinksInText(row.format)} · {parseLinksInText(row.language)}
+                        {parseLinksInText(row.format, isPastPerformance(row))} · {parseLinksInText(row.language, isPastPerformance(row))}
                       </p>
                       <div className="flex items-center justify-between gap-2 pt-1">
                         {typeof row.priceIls === 'number' && (
@@ -786,10 +718,10 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                             {isFreeEntry(row) ? checkoutT.freeEntryLabel : `₪ ${formatIlsAmount(row.priceIls)}`}
                           </span>
                         )}
-                        {isClosedShow(row.formatOriginal) ? (
-                          <span className="text-xs text-amber-100/60">{checkoutT.unavailableLabel}</span>
-                        ) : isPastShowDate(row.dateIso) ? (
+                        {isPastPerformance(row) ? (
                           <span className="text-xs text-amber-100/60">{checkoutT.passedShowLabel}</span>
+                        ) : isClosedShow(row.formatOriginal) ? (
+                          <span className="text-xs text-amber-100/60">{checkoutT.unavailableLabel}</span>
                         ) : isSoldOut(row.id) ? (
                           <span className="text-xs text-amber-100/60">{checkoutT.soldOutLabel}</span>
                         ) : row.ticketMode === 'venue' && !row.ticketUrl ? (
@@ -832,11 +764,11 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                     <tbody className="divide-y divide-amber-100/10 text-amber-50/90">
                       {displaySchedule.map((row) => (
                         <tr key={row.id || `${row.date}-${row.time}-${row.place}`}>
-                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.date)}</td>
-                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.time)}</td>
+                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.date, isPastPerformance(row))}</td>
+                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.time, isPastPerformance(row))}</td>
                           <td className={`px-4 py-3 ${scheduleAlignClass}`}>
                             <div className={`flex flex-col gap-1 ${isRTL ? 'items-end' : 'items-start'}`}>
-                              <span>{parseLinksInText(row.place)}</span>
+                              <span>{parseLinksInText(row.place, isPastPerformance(row))}</span>
                               {row.wazeUrl && (
                                 <a
                                   href={row.wazeUrl}
@@ -849,12 +781,12 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                               )}
                             </div>
                           </td>
-                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.format)}</td>
-                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.language)}</td>
+                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.format, isPastPerformance(row))}</td>
+                          <td className={`px-4 py-3 ${scheduleAlignClass}`}>{parseLinksInText(row.language, isPastPerformance(row))}</td>
                           <td className={`px-4 py-3 ${scheduleAlignClass}`}>
                             {isClosedShow(row.formatOriginal) ? (
                               <span className="text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
-                            ) : isPastShowDate(row.dateIso) ? (
+                            ) : isPastPerformance(row) ? (
                               <span className="text-sm text-amber-100/60">{checkoutT.passedShowLabel}</span>
                             ) : isSoldOut(row.id) ? (
                               <span className="text-sm text-amber-100/60">{checkoutT.soldOutLabel}</span>
@@ -1150,47 +1082,6 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   );
 }
 
-function LangButton({
-  current,
-  target,
-  onClick,
-  children,
-  disabled,
-  title,
-}: {
-  current: Lang;
-  target: Lang;
-  onClick: (l: Lang) => void;
-  children: React.ReactNode;
-  disabled?: boolean;
-  title?: string;
-}) {
-  const active = current === target;
-  const handleClick = () => {
-    if (!disabled) {
-      onClick(target);
-    }
-  };
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={disabled}
-      aria-disabled={disabled}
-      title={title}
-      className={`px-2 py-0.5 rounded-full transition text-xs md:text-[0.8rem] ${
-        disabled
-          ? 'text-amber-100/40 cursor-not-allowed'
-          : active
-            ? 'bg-amber-500 text-black font-semibold'
-            : 'text-amber-100/80 hover:bg-[rgba(255,255,255,0.08)]'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
 function SectionTitle({ children, small, color }: { children: React.ReactNode; small?: boolean; color?: string }) {
   const textColor = color ?? 'text-amber-100';
   return (
@@ -1344,34 +1235,6 @@ function PhotoCarousel({
   );
 }
 
-/** Явный выбор пользователя (localStorage) > языки браузера > английский / первый доступный. */
-function resolvePreferredLang(available: Lang[]): Lang {
-  if (available.length === 0) return 'en';
-  const fallback: Lang = available.includes('en') ? 'en' : available[0];
-  if (typeof window === 'undefined') {
-    return fallback;
-  }
-
-  const saved = localStorage.getItem('preferredLang') as Lang | null;
-  if (saved && ['ru', 'he', 'en'].includes(saved) && available.includes(saved)) {
-    return saved;
-  }
-
-  const tags = navigator.languages?.length ? [...navigator.languages] : [navigator.language];
-  for (const tag of tags) {
-    const lower = tag.toLowerCase();
-    let candidate: Lang | null = null;
-    if (lower.startsWith('he') || lower.startsWith('iw')) candidate = 'he';
-    else if (lower.startsWith('ru')) candidate = 'ru';
-    else if (lower.startsWith('en')) candidate = 'en';
-    if (candidate && available.includes(candidate)) {
-      return candidate;
-    }
-  }
-
-  return fallback;
-}
-
 function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayEntry[] {
   if (!yamlData?.schedule || !Array.isArray(yamlData.schedule)) {
     return [];
@@ -1507,7 +1370,7 @@ function formatDate(dateIso: string, lang: Lang): string {
   return `${day} ${month}`;
 }
 
-function parseLinksInText(text: string): React.ReactNode {
+function parseLinksInText(text: string, disableLinks = false): React.ReactNode {
   const linkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -1520,11 +1383,11 @@ function parseLinksInText(text: string): React.ReactNode {
 
     const linkText = match[1];
     const url = match[2];
-    parts.push(
+    parts.push(disableLinks ? linkText : (
       <a key={match.index} href={url} target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-300 transition">
         {linkText}
       </a>
-    );
+    ));
 
     lastIndex = match.index + match[0].length;
   }

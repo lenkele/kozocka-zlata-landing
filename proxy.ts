@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-import { DEFAULT_SHOW_SLUG, isShowSlug } from '@/shows';
+import { isShowSlug } from '@/shows';
 import { type ShowSlug } from '@/shows/types';
+import { LANGUAGES, LANGUAGE_COOKIE, LANGUAGE_HEADER, getShowLanguages, isLang, localizedPath, selectLanguage } from '@/lib/i18n';
 
 const LEGACY_HOST_TO_SHOW: Record<string, ShowSlug> = {
   'www.ryba-kiva-zlata.com': 'zlata',
@@ -15,12 +16,17 @@ const LEGACY_HOST_TO_SHOW: Record<string, ShowSlug> = {
 
 const CANONICAL_ORIGIN = 'https://ryba-kiva.com';
 
-const DEV_HOST_TO_SHOW: Record<string, ShowSlug> = {
-  localhost: DEFAULT_SHOW_SLUG,
-  '127.0.0.1': DEFAULT_SHOW_SLUG,
-};
-
 const EXCLUDED_PREFIXES = ['/api', '/_next', '/static', '/favicon.ico', '/shows'];
+
+function languageRedirect(request: NextRequest, pathname: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  const response = NextResponse.redirect(url, 307);
+  // Language decisions must never be cached across visitors or browser preferences.
+  response.headers.set('Cache-Control', 'private, no-store');
+  response.headers.set('Vary', 'Accept-Language, Cookie');
+  return response;
+}
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -51,27 +57,27 @@ export default function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Проверяем, не является ли текущий путь уже валидным slug спектакля
-  const currentSlug = pathname.split('/')[1];
-  if (currentSlug && isShowSlug(currentSlug)) {
-    // Путь уже указывает на конкретный спектакль - не трогаем его
-    return NextResponse.next();
+  const segments = pathname.split('/').filter(Boolean);
+  const [first, second] = segments;
+  if (pathname === '/' || (segments.length === 1 && isShowSlug(first))) {
+    const slug = isShowSlug(first) ? first : undefined;
+    const lang = selectLanguage(
+      request.headers.get('accept-language'),
+      slug ? getShowLanguages(slug) : LANGUAGES,
+      request.cookies.get(LANGUAGE_COOKIE)?.value,
+      request.nextUrl.searchParams.get('lang'),
+    );
+    return languageRedirect(request, localizedPath(lang, slug));
+  }
+  if (isLang(first) && segments.length === 2 && isShowSlug(second)) {
+    const target = localizedPath(first, second);
+    if (target !== pathname.replace(/\/$/, '')) return languageRedirect(request, target);
   }
 
-  const targetSlug = DEV_HOST_TO_SHOW[hostname];
-
-  if (!targetSlug || !isShowSlug(targetSlug)) {
-    return NextResponse.next();
-  }
-
-  // Rewrite only the local root route to the default show.
-  if (pathname === '/') {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${targetSlug}`;
-    return NextResponse.rewrite(url);
-  }
-
-  return NextResponse.next();
+  // The URL, never a browser preference, determines the rendered language on localized pages.
+  const headers = new Headers(request.headers);
+  headers.set(LANGUAGE_HEADER, isLang(first) ? first : 'ru');
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {

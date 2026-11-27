@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { isLang } from '@/lib/i18n';
 import { useSyncExternalStore } from 'react';
 
 type FooterLang = 'ru' | 'en' | 'he';
@@ -21,7 +23,8 @@ const FOOTER_LABELS: Record<FooterLang, { terms: string; privacy: string }> = {
 };
 
 export default function LegalFooterLinks() {
-  const lang = useSyncExternalStore<FooterLang>(
+  const pathLang = usePathname().split('/')[1];
+  const savedLang = useSyncExternalStore<FooterLang>(
     (onStoreChange) => {
       if (typeof window === 'undefined') return () => {};
       window.addEventListener('storage', onStoreChange);
@@ -41,7 +44,7 @@ export default function LegalFooterLinks() {
     () => 'ru',
   );
 
-  const labels = FOOTER_LABELS[lang];
+  const labels = FOOTER_LABELS[isLang(pathLang) ? pathLang : savedLang];
 
   return (
     <div className="mx-auto flex max-w-5xl items-center justify-center gap-4 md:gap-6">

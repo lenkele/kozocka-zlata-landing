@@ -1,40 +1,422 @@
 schedule:
-  - id: Hiperion
-    date_iso: 2026-01-06
-    entries:
-      ru:
-        time: "15:00"
-        place: 'Гиперион, Большой Трёхсвятительский переулок 2/1 [билеты](https://ticketscloud.com/v1/widgets/common?token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNWRmZDVmYzRhN2U0YTYwNzdlZGEyNjkzIn0.i2brzZv93gjRFBvYzSaw-XjpyqUcatY3BKwbevsnNCQ&event=693d86b4de1a06074805fccc&s=1&r=1&org=5dfd5fc4a7e4a6077eda2693&city=524901&category=592841f8515e35002dead925&tags=592841f8515e35002dead927%2C%D0%A2%D0%B5%D0%B0%D1%82%D1%80&lang=ru)'
-        format: "Открытый показ"
-        language: "Русский"
-        
-  - id: Tarusa
-    date_iso: 2026-01-09
-    entries:
-      ru:
-        time: "18:00"
-        place: 'Таруса, ул. Ленина, 6. 2 этаж [билеты через канал](https://t.me/tarusalist/884)'
-        format: "Открытый показ"
-        language: "Русский"
-        
-  - id: Dolina
-    date_iso: 2026-01-10
-    entries:
-      ru:
-        time: "17:00"
-        place: 'Крылатая Долина, ул. Лобачевского 51к1 [билеты](https://moscow.qtickets.events/204974-koldovstvo-marity)'
-        format: "Открытый показ"
-        language: "Русский"
-        
-  - id: Skazka
-    date_iso: 2026-01-11
-    entries:
-      ru:
-        time: "17:00"
-        place: 'Сказка рядом, Новоясеневский пр-т, 24 к4, 4 этаж, лофт "Крылья" [билеты](https://qtickets.ru/event/206597)'
-        format: "Открытый показ"
-        language: "Русский"        
- 
-
-
-
+- id: Hiperion
+  date_iso: '2026-01-06'
+  price_ils: 1
+  ticket_mode: self
+  entries:
+    ru:
+      time: '15:00'
+      place: Гиперион, Большой Трёхсвятительский переулок 2/1 [билеты](https://ticketscloud.com/v1/widgets/common?token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNWRmZDVmYzRhN2U0YTYwNzdlZGEyNjkzIn0.i2brzZv93gjRFBvYzSaw-XjpyqUcatY3BKwbevsnNCQ&event=693d86b4de1a06074805fccc&s=1&r=1&org=5dfd5fc4a7e4a6077eda2693&city=524901&category=592841f8515e35002dead925&tags=592841f8515e35002dead927%2C%D0%A2%D0%B5%D0%B0%D1%82%D1%80&lang=ru)
+      format: Открытый показ
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '15:00'
+      place: Гиперион, Большой Трёхсвятительский переулок 2/1 [билеты](https://ticketscloud.com/v1/widgets/common?token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNWRmZDVmYzRhN2U0YTYwNzdlZGEyNjkzIn0.i2brzZv93gjRFBvYzSaw-XjpyqUcatY3BKwbevsnNCQ&event=693d86b4de1a06074805fccc&s=1&r=1&org=5dfd5fc4a7e4a6077eda2693&city=524901&category=592841f8515e35002dead925&tags=592841f8515e35002dead927%2C%D0%A2%D0%B5%D0%B0%D1%82%D1%80&lang=ru)
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '15:00'
+      place: Гиперион, Большой Трёхсвятительский переулок 2/1 [билеты](https://ticketscloud.com/v1/widgets/common?token=eyJhbGciOiJIUzI1NiIsImlzcyI6InRpY2tldHNjbG91ZC5ydSIsInR5cCI6IkpXVCJ9.eyJwIjoiNWRmZDVmYzRhN2U0YTYwNzdlZGEyNjkzIn0.i2brzZv93gjRFBvYzSaw-XjpyqUcatY3BKwbevsnNCQ&event=693d86b4de1a06074805fccc&s=1&r=1&org=5dfd5fc4a7e4a6077eda2693&city=524901&category=592841f8515e35002dead925&tags=592841f8515e35002dead927%2C%D0%A2%D0%B5%D0%B0%D1%82%D1%80&lang=ru)
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: Tarusa
+  date_iso: '2026-01-09'
+  price_ils: 1
+  ticket_mode: self
+  entries:
+    ru:
+      time: '18:00'
+      place: Таруса, ул. Ленина, 6. 2 этаж [билеты через канал](https://t.me/tarusalist/884)
+      format: Открытый показ
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: Таруса, ул. Ленина, 6. 2 этаж [билеты через канал](https://t.me/tarusalist/884)
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: Таруса, ул. Ленина, 6. 2 этаж [билеты через канал](https://t.me/tarusalist/884)
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: Dolina
+  date_iso: '2026-01-10'
+  price_ils: 1
+  ticket_mode: self
+  entries:
+    ru:
+      time: '17:00'
+      place: Крылатая Долина, ул. Лобачевского 51к1 [билеты](https://moscow.qtickets.events/204974-koldovstvo-marity)
+      format: Открытый показ
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '17:00'
+      place: Крылатая Долина, ул. Лобачевского 51к1 [билеты](https://moscow.qtickets.events/204974-koldovstvo-marity)
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '17:00'
+      place: Крылатая Долина, ул. Лобачевского 51к1 [билеты](https://moscow.qtickets.events/204974-koldovstvo-marity)
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: Skazka
+  date_iso: '2026-01-11'
+  price_ils: 1
+  ticket_mode: self
+  entries:
+    ru:
+      time: '17:00'
+      place: Сказка рядом, Новоясеневский пр-т, 24 к4, 4 этаж, лофт "Крылья" [билеты](https://qtickets.ru/event/206597)
+      format: Открытый показ
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '17:00'
+      place: Сказка рядом, Новоясеневский пр-т, 24 к4, 4 этаж, лофт "Крылья" [билеты](https://qtickets.ru/event/206597)
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '17:00'
+      place: Сказка рядом, Новоясеневский пр-т, 24 к4, 4 этаж, лофт "Крылья" [билеты](https://qtickets.ru/event/206597)
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20260225-1800
+  date_iso: '2026-02-25'
+  price_ils: 20
+  ticket_mode: venue
+  ticket_url: https://www.paykal.co.il/karmiel/product/rentolim/
+  waze_url: https://ul.waze.com/ul?venue_id=23134537.231214298.322249&overview=yes&utm_campaign=default&utm_source=waze_website&utm_medium=lm_share_location
+  entries:
+    ru:
+      time: '18:00'
+      place: Кармиэль, Матнас Рабин
+      format: Билеты субсидированы, при покупке выбрать опцию 20 ₪
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: מתנס רבין כרמיאל
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: Кармиэль, Матнас Рабин
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20260226-1800
+  date_iso: '2026-02-26'
+  price_ils: 20
+  ticket_mode: venue
+  ticket_url: https://afula.smarticket.co.il/event/6230
+  entries:
+    ru:
+      time: '18:00'
+      place: Афула, городская библиотека
+      format: Билеты субсидированы.  Можно купить за наличные в офисе по адресу Кикар Ацмаут, 3 тел. 054 599 54 77 - Рая
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: Городская библиотека Афулы
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: Городская библиотека Афулы
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20260227-1830
+  date_iso: '2026-02-27'
+  price_ils: 50
+  ticket_mode: self
+  entries:
+    ru:
+      time: '18:30'
+      place: 'Квартирник у Алины: mevaseret tzion shaked 20, кв 35, ключ 2356, этаж 7'
+      format: Квартирник на прекрасном балконе Алины Фаркаш
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:30'
+      place: 'Квартирник у Алины: mevaseret tzion shaked 20, кв 35, ключ 2356, этаж 7'
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:30'
+      place: 'Квартирник у Алины: mevaseret tzion shaked 20, кв 35, ключ 2356, этаж 7'
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20260302-1800
+  date_iso: '2026-03-02'
+  price_ils: 75
+  ticket_mode: venue
+  ticket_url: https://forms.gle/EERKQw4pbzo4beHq8
+  entries:
+    ru:
+      time: '18:00'
+      place: TOHUBOHU FOTO Derech HaAtsma'ut 7 Haifa, Israel
+      format: Для спонтанных зрителей! Спектакль состоится если они наберутся. Оплата на месте. Пожалуйста, обязательно зарегистрируйтесь
+        по кнопке "билеты" если вы планируете прийти, чтобы мы знали, что вы есть!
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: TOHUBOHU FOTO Derech HaAtsma'ut 7 Haifa, Israel
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: TOHUBOHU FOTO Derech HaAtsma'ut 7 Haifa, Israel
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20260304-1800
+  date_iso: '2026-03-04'
+  price_ils: 50
+  ticket_mode: venue
+  ticket_url: https://anumuseum.org.il/ru/events/marita-sorcery/
+  entries:
+    ru:
+      time: '18:00'
+      place: Тель-Авив, музей АНУ, Фестиваль "В Чемодане"
+      format: И приходите пораньше, на фестивале будет много интересного!
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: Тель-Авив, музей АНУ, Фестиваль "В Чемодане"
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: Тель-Авив, музей АНУ, Фестиваль "В Чемодане"
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20260305-1830
+  date_iso: '2026-03-05'
+  price_ils: 75
+  ticket_mode: venue
+  ticket_url: https://forms.gle/qmhVGai9UX1Pis3y8
+  entries:
+    ru:
+      time: '18:30'
+      place: Иерусалим, Бейт ХаКерем
+      format: Адрес после регистрации (по кнопке "купить билет"), оплата на месте
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:30'
+      place: Иерусалим, Бейт ХаКерем
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:30'
+      place: Иерусалим, Бейт ХаКерем
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20260306-1400
+  date_iso: '2026-03-06'
+  price_ils: 75
+  ticket_mode: self
+  entries:
+    ru:
+      time: '14:00'
+      place: Ашкелон, גדוד הפורצים 9, ул. Гдуд ха-Порцим, 9
+      format: Открытый показ
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '14:00'
+      place: Ашкелон, גדוד הפורצים 9, ул. Гдуд ха-Порцим, 9
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '14:00'
+      place: Ашкелон, גדוד הפורצים 9, ул. Гдуд ха-Порцим, 9
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20260207-1800
+  date_iso: '2026-03-07'
+  price_ils: 75
+  ticket_mode: self
+  entries:
+    ru:
+      time: '18:00'
+      place: Беер-Шева, ул. Шахаль 47/4,
+      format: Квартирник у Комских
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: Беер-Шева, ул. Шахаль 47/4,
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: Беер-Шева, ул. Шахаль 47/4,
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20261021-1800
+  date_iso: '2026-10-21'
+  price_ils: 75
+  ticket_mode: self
+  entries:
+    ru:
+      time: '18:00'
+      place: Реховот,  אלקלעי 10 кв 7
+      format: Квартирник
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: Реховот,  אלקלעי 10 кв 7
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: Реховот,  אלקלעי 10 кв 7
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20261023-1500
+  date_iso: '2026-10-23'
+  price_ils: 75
+  ticket_mode: self
+  entries:
+    ru:
+      time: '15:00'
+      place: Ашкелон, ул. Гдуд ха-Порцим, 9, напротив этого дома бомбоубежище номер 332
+      format: Открытый показ
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '15:00'
+      place: Ашкелон, ул. Гдуд ха-Порцим, 9, напротив этого дома бомбоубежище номер 332
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '15:00'
+      place: Ашкелон, ул. Гдуд ха-Порцим, 9, напротив этого дома бомбоубежище номер 332
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20261024-1800
+  date_iso: '2026-10-24'
+  price_ils: 75
+  ticket_mode: self
+  entries:
+    ru:
+      time: '18:00'
+      place: Беер-Шева, Шахаль, 47/4, квартирник у Комских
+      format: Открытый показ
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: Беер-Шева, Шахаль, 47/4, квартирник у Комских
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: Беер-Шева, Шахаль, 47/4, квартирник у Комских
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20261027-1800
+  date_iso: '2026-10-27'
+  price_ils: 75
+  ticket_mode: self
+  entries:
+    ru:
+      time: '18:00'
+      place: Петах-Тиква, בר כוכבה 74
+      format: Открытый показ
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: Петах-Тиква, בר כוכבה 74
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: Петах-Тиква, בר כוכבה 74
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20261028-1800
+  date_iso: '2026-10-28'
+  price_ils: 65
+  ticket_mode: self
+  entries:
+    ru:
+      time: '18:00'
+      place: Рамат-Ган, Бялик, 47, Еврейская община Олим Берама Хабад
+      format: Частично субсидированные билеты
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: Рамат-Ган, Бялик, 47, Еврейская община Олим Берама Хабад
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: Рамат-Ган, Бялик, 47, Еврейская община Олим Берама Хабад
+      format: Public performance
+      format_original: Public performance
+      language: Russian
+- id: 20261029-1800
+  date_iso: '2026-10-29'
+  price_ils: 50
+  ticket_mode: self
+  entries:
+    ru:
+      time: '18:00'
+      place: Хайфа, зал матнаса Адар - комьюнити центр Тверия 15,  2й этаж, 5 комната (справа по коридору)
+      format: Частично субсидированные билеты
+      format_original: Открытый показ
+      language: Русский
+    he:
+      time: '18:00'
+      place: Хайфа, матнас Адар, Тверия 15
+      format: מופע פתוח
+      format_original: מופע פתוח
+      language: רוסית
+    en:
+      time: '18:00'
+      place: Хайфа, матнас Адар, Тверия 15
+      format: Public performance
+      format_original: Public performance
+      language: Russian
