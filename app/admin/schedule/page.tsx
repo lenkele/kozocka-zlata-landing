@@ -34,6 +34,9 @@ type EventRow = {
   comment_ru?: string | null;
   comment_en?: string | null;
   comment_he?: string | null;
+  city_ru?: string | null;
+  city_en?: string | null;
+  city_he?: string | null;
   price_ils: number | null;
   capacity: number | null;
   ticket_mode: 'self' | 'venue';
@@ -92,6 +95,9 @@ export default function AdminSchedulePage() {
   const [placeRu, setPlaceRu] = useState('');
   const [placeEn, setPlaceEn] = useState('');
   const [placeHe, setPlaceHe] = useState('');
+  const [cityRu, setCityRu] = useState('');
+  const [cityEn, setCityEn] = useState('');
+  const [cityHe, setCityHe] = useState('');
   const [wazeUrl, setWazeUrl] = useState('');
   const [formatRu, setFormatRu] = useState<(typeof FORMAT_OPTIONS)[number]>('Открытый показ');
   const [languageRu, setLanguageRu] = useState<(typeof LANGUAGE_OPTIONS)[number]>('Русский');
@@ -113,6 +119,9 @@ export default function AdminSchedulePage() {
   const [editPlaceRu, setEditPlaceRu] = useState('');
   const [editPlaceEn, setEditPlaceEn] = useState('');
   const [editPlaceHe, setEditPlaceHe] = useState('');
+  const [editCityRu, setEditCityRu] = useState('');
+  const [editCityEn, setEditCityEn] = useState('');
+  const [editCityHe, setEditCityHe] = useState('');
   const [editWazeUrl, setEditWazeUrl] = useState('');
   const [editFormatRu, setEditFormatRu] = useState<(typeof FORMAT_OPTIONS)[number]>('Открытый показ');
   const [editLanguageRu, setEditLanguageRu] = useState<(typeof LANGUAGE_OPTIONS)[number]>('Русский');
@@ -219,6 +228,7 @@ export default function AdminSchedulePage() {
       'date_iso',
       'time',
       'place_ru',
+      'city_ru',
       'waze_url',
       'format_ru',
       'language_ru',
@@ -239,6 +249,7 @@ export default function AdminSchedulePage() {
       item.date_iso,
       item.time,
       item.place_ru,
+      item.city_ru ?? '',
       item.waze_url ?? '',
       item.format_ru,
       item.language_ru,
@@ -363,6 +374,9 @@ export default function AdminSchedulePage() {
           placeRu,
           placeEn,
           placeHe,
+          cityRu,
+          cityEn,
+          cityHe,
           wazeUrl,
           formatRu,
           formatEn: derivedFormat.en,
@@ -396,6 +410,9 @@ export default function AdminSchedulePage() {
       setPlaceRu('');
       setPlaceEn('');
       setPlaceHe('');
+      setCityRu('');
+      setCityEn('');
+      setCityHe('');
       setWazeUrl('');
       setCommentRu('');
       setCommentEn('');
@@ -421,6 +438,9 @@ export default function AdminSchedulePage() {
     setEditPlaceRu(item.place_ru);
     setEditPlaceEn(item.place_en);
     setEditPlaceHe(item.place_he);
+    setEditCityRu(item.city_ru ?? '');
+    setEditCityEn(item.city_en ?? '');
+    setEditCityHe(item.city_he ?? '');
     setEditWazeUrl(item.waze_url ?? '');
     setEditFormatRu((item.format_ru as (typeof FORMAT_OPTIONS)[number]) ?? 'Открытый показ');
     setEditLanguageRu((item.language_ru as (typeof LANGUAGE_OPTIONS)[number]) ?? 'Русский');
@@ -460,6 +480,9 @@ export default function AdminSchedulePage() {
           placeRu: editPlaceRu,
           placeEn: editPlaceEn,
           placeHe: editPlaceHe,
+          cityRu: editCityRu,
+          cityEn: editCityEn,
+          cityHe: editCityHe,
           wazeUrl: editWazeUrl,
           formatRu: editFormatRu,
           formatEn: editDerivedFormat.en,
@@ -646,6 +669,22 @@ export default function AdminSchedulePage() {
             </label>
           </div>
           <p className="text-xs text-slate-600">Достаточно заполнить хотя бы одно поле «Место». Остальные подтянутся автоматически.</p>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <label className="block text-sm">
+              <span className="font-medium">Город (RU)</span>
+              <input value={cityRu} onChange={(e) => setCityRu(e.target.value)} placeholder="Хайфа" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">Город (EN)</span>
+              <input value={cityEn} onChange={(e) => setCityEn(e.target.value)} placeholder="Haifa" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium">Город (HE)</span>
+              <input value={cityHe} onChange={(e) => setCityHe(e.target.value)} placeholder="חיפה" dir="rtl" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+            </label>
+          </div>
+          <p className="text-xs text-slate-600">Город нужен Google для поиска мероприятий. Достаточно вписать на одном языке: известные города (Хайфа, Иерусалим, Ашкелон…) переведутся сами. На сайте город добавится к месту, если его там ещё нет.</p>
 
           <label className="block text-sm">
             <span className="font-medium">Ссылка на Вэйз (опционально)</span>
@@ -988,6 +1027,22 @@ export default function AdminSchedulePage() {
                 </label>
               </div>
               <p className="text-xs text-slate-600">Достаточно заполнить хотя бы одно поле «Место». Остальные подтянутся автоматически.</p>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="block text-sm">
+                  <span className="font-medium">Город (RU)</span>
+                  <input value={editCityRu} onChange={(e) => setEditCityRu(e.target.value)} placeholder="Хайфа" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                </label>
+                <label className="block text-sm">
+                  <span className="font-medium">Город (EN)</span>
+                  <input value={editCityEn} onChange={(e) => setEditCityEn(e.target.value)} placeholder="Haifa" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                </label>
+                <label className="block text-sm">
+                  <span className="font-medium">Город (HE)</span>
+                  <input value={editCityHe} onChange={(e) => setEditCityHe(e.target.value)} placeholder="חיפה" dir="rtl" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                </label>
+              </div>
+              <p className="text-xs text-slate-600">Город нужен Google для поиска мероприятий. Достаточно вписать на одном языке: известные города (Хайфа, Иерусалим, Ашкелон…) переведутся сами. На сайте город добавится к месту, если его там ещё нет.</p>
 
               <label className="block text-sm">
                 <span className="font-medium">Ссылка на Вэйз (опционально)</span>

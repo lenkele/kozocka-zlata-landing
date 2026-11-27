@@ -2,7 +2,7 @@ import type { Lang, ShowSlug } from '@/shows/types';
 
 type ShowCopy = { eyebrow: string; title: string; description: string; meta: string };
 type HomeCopy = {
-  title: string; description: string; theatre: string; subtitle: string; heading: string;
+  title: string; description: string; theatre: string; subtitle: string; heading: string; headingNote: string;
   afisha: string; showsLabel: string; invite: string; hero: string[];
   afishaHeading: string; emptySchedule: string; tickets: string; closed: string; unavailable: string; passed: string; freeEntry: string;
   repertoire: string; showsHeading: string; aboutShow: string; schedule: string; poster: string;
@@ -15,9 +15,10 @@ type HomeCopy = {
 
 export const HOME_COPY: Record<Lang, HomeCopy> = {
   ru: {
-    title: 'Театр «Рыба Кива» — официальный сайт | Кукольные спектакли',
-    description: 'Независимый музыкальный кукольный театр «Рыба Кива»: «Колдовство Мариты», «Козочка Злата», «Гефилте Лид». Афиша, билеты, приглашение театра.',
+    title: 'Театр «Рыба Кива» — кукольные спектакли для детей и взрослых в Израиле',
+    description: 'Официальный сайт кукольного театра «Рыба Кива» в Израиле. Спектакли с живой музыкой на русском и иврите для детей от 4 лет и взрослых: «Козочка Злата» к Хануке, «Колдовство Мариты», «Гефилте Лид». Афиша, билеты, выездные спектакли для детсадов, школ и матнасов.',
     theatre: 'Театр «Рыба Кива»', subtitle: 'Кукольные спектакли с живой музыкой', heading: 'Рыба Кива вас ждёт',
+    headingNote: 'Кукольный театр с живой музыкой для детей и взрослых в Израиле',
     afisha: 'Афиша', showsLabel: 'Спектакли', invite: 'Пригласить театр',
     hero: [
       'Мы приезжаем с целым маленьким миром в паре чемоданов: куклами, декорациями, светом и музыкальными инструментами.\nИграем в камерных залах, детских садах, школах, студиях и даже дома.',
@@ -52,9 +53,10 @@ export const HOME_COPY: Record<Lang, HomeCopy> = {
     },
   },
   he: {
-    title: 'תיאטרון ״ריבא קיווא״ — האתר הרשמי | הצגות בובות ומוזיקה חיה',
-    description: 'תיאטרון הבובות המוזיקלי ״ריבא קיווא״: ״זלטה העז״, ״הקסם של מריטה״ ו״געפילטע ליד״. לוח הצגות, כרטיסים והזמנת התיאטרון אליכם.',
+    title: 'תיאטרון ״ריבא קיווא״ — הצגות בובות לילדים ולמבוגרים בישראל',
+    description: 'האתר הרשמי של תיאטרון הבובות ״ריבא קיווא״ בישראל. הצגות עם מוזיקה חיה בעברית וברוסית לילדים מגיל 4 ולמבוגרים: ״זלטה העז״ לחנוכה, ״הקסם של מריטה״ ו״געפילטע ליד״. לוח הצגות, כרטיסים והזמנת הצגה לגנים, לבתי ספר ולמתנ״סים.',
     theatre: 'תיאטרון ״ריבא קיווא״', subtitle: 'הצגות בובות עם מוזיקה חיה', heading: 'ריבא קיווא מחכה לכם',
+    headingNote: 'תיאטרון בובות עם מוזיקה חיה לילדים ולמבוגרים בישראל',
     afisha: 'לוח הצגות', showsLabel: 'ההצגות שלנו', invite: 'להזמנת התיאטרון',
     hero: [
       'אנחנו מגיעים עם עולם קטן ושלם בתוך שתי מזוודות: בובות, תפאורה, תאורה וכלי נגינה.\nמופיעים באולמות קטנים, בגני ילדים, בבתי ספר, בסטודיו ואפילו אצלכם בבית.',
@@ -89,9 +91,10 @@ export const HOME_COPY: Record<Lang, HomeCopy> = {
     },
   },
   en: {
-    title: 'Ryba Kiva Theatre — Official Website | Puppet Performances',
-    description: 'Independent musical puppet theatre Ryba Kiva: The Magic of Marita, Zlata the Goat and Gefilte Lid. Upcoming performances, tickets and bookings.',
+    title: 'Ryba Kiva Theatre — Puppet Shows for Children and Adults in Israel',
+    description: 'Official website of Ryba Kiva, a puppet theatre with live music in Israel. Performances in Russian and Hebrew for children aged 4+ and adults: Zlata the Goat for Hanukkah, The Magic of Marita and Gefilte Lid. Schedule, tickets and bookings for kindergartens, schools and community centres.',
     theatre: 'Ryba Kiva Theatre', subtitle: 'Puppet performances with live music', heading: 'Ryba Kiva is waiting for you',
+    headingNote: 'Puppet theatre with live music for children and adults in Israel',
     afisha: 'What’s on', showsLabel: 'Performances', invite: 'Invite the theatre',
     hero: [
       'We arrive with a whole little world packed into two suitcases: puppets, sets, lights and musical instruments.\nWe perform in intimate halls, kindergartens, schools, studios and even your home.',

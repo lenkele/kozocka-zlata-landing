@@ -50,6 +50,18 @@ export const MARITA_SHOW: ShowConfig = {
   slug: 'marita',
   pageTitle: '"Колдовство Мариты" - кукольный мюзикл от театра "Рыба Кива"',
   pageDescription: 'Кукольный мюзикл "Колдовство Мариты" от театра "Рыба Кива". Музыкальный спектакль с куклами для всей семьи.',
+  seo: {
+    ru: {
+      title: '«Колдовство Мариты» — кукольный мюзикл с живой музыкой | Театр «Рыба Кива»',
+      description:
+        'Кукольный мюзикл по старинной сефардской легенде: авторские куклы и живая сефардская музыка. Для детей от 6 лет и взрослых, 1 час 20 минут, на русском языке. Показы в Израиле: афиша и билеты.',
+    },
+    en: {
+      title: 'The Magic of Marita — Puppet Musical with Live Music | Ryba Kiva Theatre',
+      description:
+        'A puppet musical based on an old Sephardic legend, with original puppets and live Sephardic music. For children aged 6+ and adults, 1 hour 20 minutes, in Russian. Performances in Israel: schedule and tickets.',
+    },
+  },
   backgroundStyle:
     `linear-gradient(rgba(181,168,154,0.6), rgba(181,168,154,0.6)), url('${IMAGES_BASE}/forest.png')`,
   scheduleFilePath: `${DATA_BASE}/schedule.yaml`,

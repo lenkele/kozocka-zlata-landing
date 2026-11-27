@@ -38,6 +38,23 @@ export const ZLATA_SHOW: ShowConfig = {
   slug: 'zlata',
   pageTitle: '"Козочка Злата" - кукольный мюзикл от театра "Рыба Кива"',
   pageDescription: 'Трогательный, радостный и чуть-чуть грустный спектакль по мотивам рассказа Исаака Зингера и еврейских притч. С куклами, тенями, живой музыкой и ханукальным волшебством.',
+  seo: {
+    ru: {
+      title: '«Козочка Злата» — кукольный спектакль на Хануку для детей | Театр «Рыба Кива»',
+      description:
+        'Ханукальный кукольный спектакль с живой музыкой по мотивам сказки Исаака Башевиса-Зингера. Для детей от 4–5 лет и взрослых, 45 минут, на русском и иврите. Показы в Израиле: афиша и билеты.',
+    },
+    he: {
+      title: '״זלטה העז״ — הצגת בובות לחנוכה לילדים | תיאטרון ״ריבא קיווא״',
+      description:
+        'הצגת בובות לחנוכה עם מוזיקה חיה, בהשראת סיפורו של יצחק בשביס־זינגר. לילדים מגיל 4–5 ולמבוגרים, 45 דקות, בעברית וברוסית. הצגות בישראל: לוח הצגות וכרטיסים.',
+    },
+    en: {
+      title: 'Zlata the Goat — Hanukkah Puppet Show for Children | Ryba Kiva Theatre',
+      description:
+        'A Hanukkah puppet show with live music inspired by Isaac Bashevis Singer. For children aged 4–5+ and adults, 45 minutes, in Russian and Hebrew. Performances in Israel: schedule and tickets.',
+    },
+  },
   backgroundStyle:
     "linear-gradient(180deg, rgba(151,170,184,0.70) 0%, rgba(64,86,105,0.85) 100%), " +
     `url('${IMAGES_BASE}/forest.png')`,

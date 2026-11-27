@@ -14,6 +14,7 @@ export type ScheduleEntry = {
   format_original?: string;
   language: string;
   date_text?: string;
+  city?: string;
 };
 
 export type ScheduleEvent = {
@@ -47,6 +48,9 @@ type ScheduleEventRow = {
   comment_ru?: string | null;
   comment_en?: string | null;
   comment_he?: string | null;
+  city_ru?: string | null;
+  city_en?: string | null;
+  city_he?: string | null;
   price_ils: number | string | null;
   capacity: number | string | null;
   ticket_mode: 'self' | 'venue' | string | null;
@@ -118,7 +122,14 @@ async function supabaseRequest(requestPath: string, init: RequestInit): Promise<
   });
 }
 
+function cleanCity(value: string | null | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
 function mapSupabaseRowToEvent(row: ScheduleEventRow): ScheduleEvent {
+  // Город на нужном языке; если его нет — любой заполненный (лучше, чем ничего).
+  const anyCity = cleanCity(row.city_en) ?? cleanCity(row.city_ru) ?? cleanCity(row.city_he);
   return {
     id: row.event_id,
     date_iso: row.date_iso,
@@ -134,6 +145,7 @@ function mapSupabaseRowToEvent(row: ScheduleEventRow): ScheduleEvent {
         format: row.comment_ru?.trim() || row.format_ru,
         format_original: row.format_ru,
         language: row.language_ru,
+        city: cleanCity(row.city_ru) ?? anyCity,
       },
       he: {
         time: row.time,
@@ -141,6 +153,7 @@ function mapSupabaseRowToEvent(row: ScheduleEventRow): ScheduleEvent {
         format: row.comment_he?.trim() || row.format_he,
         format_original: row.format_he,
         language: row.language_he,
+        city: cleanCity(row.city_he) ?? anyCity,
       },
       en: {
         time: row.time,
@@ -148,21 +161,51 @@ function mapSupabaseRowToEvent(row: ScheduleEventRow): ScheduleEvent {
         format: row.comment_en?.trim() || row.format_en,
         format_original: row.format_en,
         language: row.language_en,
+        city: cleanCity(row.city_en) ?? anyCity,
       },
     },
   };
 }
 
-async function loadSupabaseSchedule(showSlug: ShowSlug): Promise<ScheduleEvent[]> {
-  const queryWithComments = `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,comment_ru,comment_en,comment_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.asc,time.asc`;
-  const queryWithoutComments = `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url&order=date_iso.asc,time.asc`;
+const BASE_SELECT_FIELDS =
+  'event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url';
 
-  let response = await supabaseRequest(queryWithComments, { method: 'GET' });
-  let text = await response.text();
-  if (!response.ok && text.toLowerCase().includes('comment_ru')) {
-    response = await supabaseRequest(queryWithoutComments, { method: 'GET' });
+// Необязательные колонки (добавлялись миграциями). Если какой-то ещё нет в базе,
+// запрос повторяется без неё — расписание и продажи не должны ломаться.
+export const OPTIONAL_SCHEDULE_COLUMNS = {
+  comments: ['comment_ru', 'comment_en', 'comment_he'],
+  city: ['city_ru', 'city_en', 'city_he'],
+} as const;
+
+export type OptionalScheduleColumnGroup = keyof typeof OPTIONAL_SCHEDULE_COLUMNS;
+
+/** Какую группу необязательных колонок упоминает ошибка Supabase (колонки нет в базе). */
+export function findMissingColumnGroup(
+  errorText: string,
+  groups: readonly OptionalScheduleColumnGroup[],
+): OptionalScheduleColumnGroup | null {
+  const text = errorText.toLowerCase();
+  return groups.find((group) => OPTIONAL_SCHEDULE_COLUMNS[group].some((column) => text.includes(column))) ?? null;
+}
+
+async function loadSupabaseSchedule(showSlug: ShowSlug): Promise<ScheduleEvent[]> {
+  let groups: OptionalScheduleColumnGroup[] = ['comments', 'city'];
+  let response: Response;
+  let text: string;
+
+  for (;;) {
+    const select = [BASE_SELECT_FIELDS, ...groups.flatMap((group) => OPTIONAL_SCHEDULE_COLUMNS[group])].join(',');
+    response = await supabaseRequest(
+      `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&is_active=eq.true&select=${select}&order=date_iso.asc,time.asc`,
+      { method: 'GET' },
+    );
     text = await response.text();
+    if (response.ok) break;
+    const missing = findMissingColumnGroup(text, groups);
+    if (!missing) break;
+    groups = groups.filter((group) => group !== missing);
   }
+
   if (!response.ok) {
     throw new Error(`failed to fetch schedule events from Supabase: ${response.status} ${text}`);
   }

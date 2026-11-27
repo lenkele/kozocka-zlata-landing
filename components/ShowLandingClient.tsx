@@ -11,6 +11,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { trackMetaEvent } from '@/lib/metaPixel';
 import { isValidPhone, normalizePhone } from '@/lib/phone';
 import { ALLPAY_MIN_AMOUNT_ILS } from '@/lib/paymentLimits';
+import { placeWithCity } from '@/lib/cities';
+import type { ScheduleEvent } from '@/lib/schedule';
 import { type Lang, type ShowConfig } from '@/shows/types';
 
 type ScheduleDisplayEntry = {
@@ -48,6 +50,7 @@ type ScheduleYaml = {
           format_original?: string;
           language: string;
           date_text?: string;
+          city?: string;
         }
       >
     >;
@@ -259,12 +262,27 @@ function isVenueTicketingMode(value: unknown): boolean {
   return typeof value === 'string' && value.trim().toLowerCase() === 'venue';
 }
 
-export default function ShowLandingClient({ show, lang = 'ru' }: { show: ShowConfig; lang?: Lang }) {
+export default function ShowLandingClient({
+  show,
+  lang = 'ru',
+  initialSchedule,
+}: {
+  show: ShowConfig;
+  lang?: Lang;
+  /** Расписание, загруженное на сервере. Если его нет — грузим в браузере, как раньше. */
+  initialSchedule?: ScheduleEvent[];
+}) {
   const availableLanguages = getShowLanguages(show.slug);
   const defaultLang = availableLanguages.includes('ru') ? 'ru' : availableLanguages[0];
 
-  const [scheduleData, setScheduleData] = useState<ScheduleDisplayEntry[]>([]);
-  const [scheduleLoading, setScheduleLoading] = useState(true);
+  const serverSchedule = useMemo(
+    () => (initialSchedule ? parseScheduleData({ schedule: initialSchedule as ScheduleYaml['schedule'] }, lang) : null),
+    [initialSchedule, lang],
+  );
+  const [fetchedScheduleData, setScheduleData] = useState<ScheduleDisplayEntry[]>([]);
+  const [fetchedScheduleLoading, setScheduleLoading] = useState(true);
+  const scheduleData = serverSchedule ?? fetchedScheduleData;
+  const scheduleLoading = serverSchedule ? false : fetchedScheduleLoading;
   const [availabilityByEvent, setAvailabilityByEvent] = useState<Record<string, EventAvailability>>({});
   const [selectedRow, setSelectedRow] = useState<ScheduleDisplayEntry | null>(null);
   const [buyerName, setBuyerName] = useState('');
@@ -304,6 +322,9 @@ export default function ShowLandingClient({ show, lang = 'ru' }: { show: ShowCon
   const buyCellItemsClass = isRTL ? 'items-end' : 'items-start';
 
   useEffect(() => {
+    // Расписание уже пришло с сервера — второй запрос не нужен.
+    if (serverSchedule) return;
+
     let isMounted = true;
     setScheduleLoading(true);
 
@@ -337,7 +358,7 @@ export default function ShowLandingClient({ show, lang = 'ru' }: { show: ShowCon
     return () => {
       isMounted = false;
     };
-  }, [lang, show.slug]);
+  }, [lang, show.slug, serverSchedule]);
 
   useEffect(() => {
     let isMounted = true;
@@ -1293,7 +1314,7 @@ function parseScheduleData(yamlData: ScheduleYaml, lang: Lang): ScheduleDisplayE
         dateIso,
         date: entry.date_text || formatDate(dateIso, lang),
         time: entry.time,
-        place: entry.place,
+        place: placeWithCity(entry.place, entry.city),
         format: entry.format,
         formatOriginal: entry.format_original || entry.format,
         language: entry.language,
@@ -1405,8 +1426,10 @@ function formatDate(dateIso: string, lang: Lang): string {
     ],
   };
 
-  const day = date.getDate();
-  const month = monthNames[lang][date.getMonth()];
+  // dateIso — календарная дата (полночь UTC). UTC-геттеры дают одну и ту же дату на сервере
+  // и у зрителя в любом часовом поясе (иначе в Америке показ сдвигался на день раньше).
+  const day = date.getUTCDate();
+  const month = monthNames[lang][date.getUTCMonth()];
 
   return `${day} ${month}`;
 }

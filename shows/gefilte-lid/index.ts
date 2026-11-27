@@ -14,6 +14,18 @@ export const GEFILTE_LID_SHOW: ShowConfig = {
   pageTitle: '"Гефилте Лид" — тёплый музыкальный спектакль от театра "Рыба Кива"',
   pageDescription:
     'Весёлый, красивый и тёплый спектакль для всей семьи о портном и ослике от театра "Рыба Кива". С куклами, проекциями, живой музыкой и щепоткой волшебства.',
+  seo: {
+    ru: {
+      title: '«Гефилте Лид» — музыкальный кукольный спектакль для всей семьи | Театр «Рыба Кива»',
+      description:
+        'Весёлый и трогательный спектакль о портном и ослике, которые отправились за самым красивым карпом. Куклы, тени, проекции и живая музыка. Для детей от 5 лет и взрослых, 1 час, на русском языке. Показы в Израиле.',
+    },
+    en: {
+      title: 'Gefilte Lid — Musical Puppet Show for the Whole Family | Ryba Kiva Theatre',
+      description:
+        'A funny and touching story about a tailor and a donkey who set out to find the most beautiful carp. Puppets, shadows, projections and live music. For children aged 5+ and adults, 1 hour, in Russian. Performances in Israel.',
+    },
+  },
   // Цвет и прозрачность подобраны под кремово-зелёную гамму афиши:
   // тёплый оливково-песочный налёт поверх бежевых обоев с цветочками.
   backgroundStyle:

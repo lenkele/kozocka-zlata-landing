@@ -84,6 +84,8 @@ export type ShowConfig = {
   slug: ShowSlug;
   pageTitle: string; // Title для вкладки браузера
   pageDescription?: string; // SEO описание
+  /** Title и description для поиска по языкам; если нет — берутся pageTitle / seoSubtitle. */
+  seo?: Partial<Record<Lang, { title: string; description: string }>>;
   backgroundStyle: string;
   scheduleFilePath: string;
   carouselPhotos: CarouselPhoto[];

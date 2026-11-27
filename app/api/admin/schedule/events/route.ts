@@ -3,7 +3,9 @@ import { NextResponse } from 'next/server';
 
 import { getCookieName, getAdminScheduleCredentials, verifySessionToken } from '@/lib/adminScheduleAuth';
 import { createEventSheet, isSheetsIntegrationEnabled } from '@/lib/googleSheet';
+import { resolveCityNames } from '@/lib/cities';
 import { ALLPAY_MIN_AMOUNT_ILS } from '@/lib/paymentLimits';
+import { findMissingColumnGroup, OPTIONAL_SCHEDULE_COLUMNS, type OptionalScheduleColumnGroup } from '@/lib/schedule';
 import { isShowSlug, SHOWS } from '@/shows';
 
 type CreateEventBody = {
@@ -24,6 +26,9 @@ type CreateEventBody = {
   commentRu?: string;
   commentEn?: string;
   commentHe?: string;
+  cityRu?: string;
+  cityEn?: string;
+  cityHe?: string;
   priceIls?: number | string;
   capacity?: number | string | null;
   ticketMode?: 'self' | 'venue' | string;
@@ -48,6 +53,9 @@ type ScheduleEventRow = {
   comment_ru?: string | null;
   comment_en?: string | null;
   comment_he?: string | null;
+  city_ru?: string | null;
+  city_en?: string | null;
+  city_he?: string | null;
   price_ils: number | null;
   capacity: number | null;
   ticket_mode: 'self' | 'venue';
@@ -192,11 +200,6 @@ function isLegacyPriceNotNullError(errorText: string): boolean {
   return text.includes('price_ils') && text.includes('null value') && text.includes('not-null constraint');
 }
 
-function isMissingCommentColumnError(errorText: string): boolean {
-  const text = errorText.toLowerCase();
-  return text.includes('comment_ru') || text.includes('comment_en') || text.includes('comment_he');
-}
-
 function isMissingSheetColumnError(errorText: string): boolean {
   const text = errorText.toLowerCase();
   return text.includes('sheet_id') || text.includes('sheet_url');
@@ -208,11 +211,51 @@ function normalizeOptionalText(value: unknown): string | null {
   return trimmed ? trimmed : null;
 }
 
-const SELECT_FIELDS_WITH_COMMENTS =
-  'show_slug,event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,comment_ru,comment_en,comment_he,price_ils,capacity,ticket_mode,ticket_url';
-
 const SELECT_FIELDS_BASE =
   'show_slug,event_id,date_iso,time,place_ru,place_en,place_he,waze_url,format_ru,format_en,format_he,language_ru,language_en,language_he,price_ils,capacity,ticket_mode,ticket_url';
+
+const SHEET_COLUMNS = 'sheet_id,sheet_url';
+
+function withoutKeys(payload: Record<string, unknown>, keys: readonly string[]): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(payload).filter(([key]) => !keys.includes(key)));
+}
+
+// Запись события с запасными вариантами: старое ограничение NOT NULL на цене и
+// необязательные колонки (комментарии, город), которых может ещё не быть в базе.
+async function writeScheduleEvent(
+  path: string,
+  method: 'POST' | 'PATCH',
+  payload: Record<string, unknown>,
+  allowLegacyPriceFallback: boolean,
+): Promise<{ response: Response; text: string }> {
+  let current = payload;
+  let groups: OptionalScheduleColumnGroup[] = ['comments', 'city'];
+  let usedLegacyPrice = false;
+
+  for (;;) {
+    const response = await supabaseRequest(path, {
+      method,
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify(current),
+    });
+    const text = await response.text();
+    if (response.ok) return { response, text };
+
+    if (allowLegacyPriceFallback && !usedLegacyPrice && isLegacyPriceNotNullError(text)) {
+      // Compatibility fallback for DBs where old NOT NULL constraint is still active.
+      current = { ...current, price_ils: 1 };
+      usedLegacyPrice = true;
+      continue;
+    }
+    const missing = findMissingColumnGroup(text, groups);
+    if (missing) {
+      current = withoutKeys(current, OPTIONAL_SCHEDULE_COLUMNS[missing]);
+      groups = groups.filter((group) => group !== missing);
+      continue;
+    }
+    return { response, text };
+  }
+}
 
 function buildBaseEventId(dateIso: string, time: string): string {
   const date = dateIso.replaceAll('-', '');
@@ -259,22 +302,31 @@ export async function GET(request: Request) {
     : `show_slug=eq.${encodeURIComponent(showParam)}&is_active=eq.true`;
   const order = 'order=date_iso.desc,time.desc';
 
-  // Try progressively simpler selects so the list keeps working even if the
-  // comment/sheet columns have not been migrated yet.
-  const selectVariants = [
-    `${SELECT_FIELDS_WITH_COMMENTS},sheet_id,sheet_url`,
-    SELECT_FIELDS_WITH_COMMENTS,
-    `${SELECT_FIELDS_BASE},sheet_id,sheet_url`,
-    SELECT_FIELDS_BASE,
-  ];
-
+  // Drop optional columns one by one so the list keeps working even if the
+  // comment/city/sheet columns have not been migrated yet.
+  let groups: OptionalScheduleColumnGroup[] = ['comments', 'city'];
+  let includeSheets = true;
   let response: Response | null = null;
   let text = '';
-  for (const select of selectVariants) {
+  for (;;) {
+    const select = [
+      SELECT_FIELDS_BASE,
+      ...groups.flatMap((group) => OPTIONAL_SCHEDULE_COLUMNS[group]),
+      ...(includeSheets ? [SHEET_COLUMNS] : []),
+    ].join(',');
     response = await supabaseRequest(`/schedule_events?${filter}&select=${select}&${order}`, { method: 'GET' });
     text = await response.text();
     if (response.ok) break;
-    if (!isMissingCommentColumnError(text) && !isMissingSheetColumnError(text)) break;
+    const missing = findMissingColumnGroup(text, groups);
+    if (missing) {
+      groups = groups.filter((group) => group !== missing);
+      continue;
+    }
+    if (includeSheets && isMissingSheetColumnError(text)) {
+      includeSheets = false;
+      continue;
+    }
+    break;
   }
 
   if (!response || !response.ok) {
@@ -357,6 +409,7 @@ export async function POST(request: Request) {
   const commentRu = normalizeOptionalText(body.commentRu);
   const commentEn = normalizeOptionalText(body.commentEn);
   const commentHe = normalizeOptionalText(body.commentHe);
+  const cities = resolveCityNames(body.cityRu ?? '', body.cityEn ?? '', body.cityHe ?? '');
   const baseEventId = buildBaseEventId(dateIso, time);
   const eventId = await ensureUniqueEventId(showSlug, baseEventId);
 
@@ -378,6 +431,9 @@ export async function POST(request: Request) {
     comment_ru: commentRu,
     comment_en: commentEn,
     comment_he: commentHe,
+    city_ru: cities.ru,
+    city_en: cities.en,
+    city_he: cities.he,
     price_ils: effectivePrice,
     capacity: effectiveCapacity,
     ticket_mode: ticketMode,
@@ -385,38 +441,12 @@ export async function POST(request: Request) {
     is_active: true,
   };
 
-  let response = await supabaseRequest('/schedule_events', {
-    method: 'POST',
-    headers: { Prefer: 'return=representation' },
-    body: JSON.stringify(insertPayload),
-  });
-
-  let responseText = await response.text();
-  if (!response.ok && (ticketMode === 'venue' || privateFormat) && isLegacyPriceNotNullError(responseText)) {
-    // Compatibility fallback for DBs where old NOT NULL constraint is still active.
-    response = await supabaseRequest('/schedule_events', {
-      method: 'POST',
-      headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({
-        ...insertPayload,
-        price_ils: 1,
-      }),
-    });
-    responseText = await response.text();
-  }
-  if (!response.ok && isMissingCommentColumnError(responseText)) {
-    response = await supabaseRequest('/schedule_events', {
-      method: 'POST',
-      headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({
-        ...insertPayload,
-        comment_ru: undefined,
-        comment_en: undefined,
-        comment_he: undefined,
-      }),
-    });
-    responseText = await response.text();
-  }
+  const { response, text: responseText } = await writeScheduleEvent(
+    '/schedule_events',
+    'POST',
+    insertPayload,
+    ticketMode === 'venue' || privateFormat,
+  );
 
   if (!response.ok) {
     return NextResponse.json({ ok: false, reason: 'db_insert_failed', message: responseText }, { status: 500 });
@@ -534,6 +564,7 @@ export async function PATCH(request: Request) {
   const commentRu = normalizeOptionalText(body.commentRu);
   const commentEn = normalizeOptionalText(body.commentEn);
   const commentHe = normalizeOptionalText(body.commentHe);
+  const cities = resolveCityNames(body.cityRu ?? '', body.cityEn ?? '', body.cityHe ?? '');
 
   const updatePayload = {
     date_iso: dateIso,
@@ -551,6 +582,9 @@ export async function PATCH(request: Request) {
     comment_ru: commentRu,
     comment_en: commentEn,
     comment_he: commentHe,
+    city_ru: cities.ru,
+    city_en: cities.en,
+    city_he: cities.he,
     price_ils: effectivePrice,
     capacity: effectiveCapacity,
     ticket_mode: ticketMode,
@@ -558,37 +592,12 @@ export async function PATCH(request: Request) {
   };
 
   const query = `/schedule_events?show_slug=eq.${encodeURIComponent(showSlug)}&event_id=eq.${encodeURIComponent(eventId)}`;
-  let response = await supabaseRequest(query, {
-    method: 'PATCH',
-    headers: { Prefer: 'return=representation' },
-    body: JSON.stringify(updatePayload),
-  });
-
-  let responseText = await response.text();
-  if (!response.ok && (ticketMode === 'venue' || privateFormat) && isLegacyPriceNotNullError(responseText)) {
-    response = await supabaseRequest(query, {
-      method: 'PATCH',
-      headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({
-        ...updatePayload,
-        price_ils: 1,
-      }),
-    });
-    responseText = await response.text();
-  }
-  if (!response.ok && isMissingCommentColumnError(responseText)) {
-    response = await supabaseRequest(query, {
-      method: 'PATCH',
-      headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({
-        ...updatePayload,
-        comment_ru: undefined,
-        comment_en: undefined,
-        comment_he: undefined,
-      }),
-    });
-    responseText = await response.text();
-  }
+  const { response, text: responseText } = await writeScheduleEvent(
+    query,
+    'PATCH',
+    updatePayload,
+    ticketMode === 'venue' || privateFormat,
+  );
 
   if (!response.ok) {
     return NextResponse.json({ ok: false, reason: 'db_update_failed', message: responseText }, { status: 500 });

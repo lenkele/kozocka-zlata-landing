@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import WhatsAppGroupButton from '@/components/WhatsAppGroupButton';
+import { placeWithCity } from '@/lib/cities';
 import { HOME_COPY } from '@/lib/homeCopy';
 import { isPastPerformance, selectAfishaRows } from '@/lib/afisha';
 import { LANGUAGES, LOCALES, SITE_URL, localizedPath } from '@/lib/i18n';
@@ -24,7 +25,9 @@ function homeJsonLd(lang: Lang) {
         '@type': 'PerformingGroup', '@id': `${SITE_URL}/#organization`,
         name: 'Рыба Кива',
         alternateName: ['Театр «Рыба Кива»', 'Театрик «Рыба Кива»', 'Ryba Kiva', 'Ryba Kiva Theatre', 'ריבא קיווא'],
-        description: 'Независимый музыкальный кукольный театр.',
+        description: copy.description,
+        address: { '@type': 'PostalAddress', addressCountry: 'IL' },
+        areaServed: { '@type': 'Country', name: 'Israel' },
         url: SITE_URL, logo: `${SITE_URL}/images/ryba-kiva-logo.jpg`,
         telephone: '+972-53-321-9998', email: 'info@ryba-kiva.com',
         sameAs: SOCIAL_LINKS.map((link) => link.href),
@@ -125,7 +128,7 @@ async function getHomeScheduleRows(lang: Lang): Promise<HomeScheduleRow[]> {
           dateLabel: formatScheduleDate(dateIso, { day: 'numeric', month: 'long', year: 'numeric' }, lang),
           weekday: formatScheduleDate(dateIso, { weekday: 'long' }, lang),
           time: entry.time,
-          place: entry.place,
+          place: placeWithCity(entry.place, entry.city),
           details,
           ticketMode: event.ticket_mode === 'venue' ? 'venue' : 'self',
           ticketUrl: typeof event.ticket_url === 'string' && event.ticket_url.trim() ? event.ticket_url.trim() : null,
@@ -220,6 +223,12 @@ export default async function TheatreHome({ lang }: { lang: Lang }) {
               style={{ fontFamily: 'Nunito, Arial, sans-serif', textShadow: '0 3px 18px rgba(47,36,24,.45)' }}
             >
               {copy.heading}
+              <span
+                className="mt-2 block text-base font-bold leading-snug text-[#f2c46b] sm:text-lg md:text-xl"
+                style={{ textShadow: '0 2px 10px rgba(47,36,24,.5)' }}
+              >
+                {copy.headingNote}
+              </span>
             </h1>
           </div>
 

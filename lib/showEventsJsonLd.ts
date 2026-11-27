@@ -4,6 +4,7 @@ import {
   isClosedSchedule,
   normalizeScheduleDate,
   parseSchedulePrice,
+  type ScheduleEvent,
 } from '@/lib/schedule';
 import type { Lang, ShowConfig } from '@/shows/types';
 import { localizedPath } from '@/lib/i18n';
@@ -27,14 +28,24 @@ function cleanPlace(place: string): string {
     .trim();
 }
 
+// Язык показа в админке пишется словом — в разметку отдаём код языка.
+function performanceLanguageCode(language: string | undefined): string | undefined {
+  const value = language?.trim().toLowerCase() ?? '';
+  if (!value) return undefined;
+  if (/рус|russian|רוסית/.test(value)) return 'ru';
+  if (/иврит|hebrew|עברית/.test(value)) return 'he';
+  if (/англ|english|אנגלית/.test(value)) return 'en';
+  return undefined;
+}
+
 // TheaterEvent для ближайших открытых показов: Google показывает их в поиске мероприятий.
-export async function buildShowEventsJsonLd(show: ShowConfig, lang: Lang = 'ru') {
+export async function buildShowEventsJsonLd(show: ShowConfig, lang: Lang = 'ru', preloadedEvents?: ScheduleEvent[]) {
   const content = show.content[lang] ?? show.content.ru ?? show.content.en;
   const title = content?.title ?? show.slug;
   const poster = content?.posterImage;
   const pageUrl = `${SITE_URL}${localizedPath(lang, show.slug)}`;
   const today = getTodayIsoInIsrael();
-  const events = await getCachedScheduleForShow(show.slug);
+  const events = preloadedEvents ?? (await getCachedScheduleForShow(show.slug));
 
   const theaterEvents = events.flatMap((event) => {
     const entry = event.entries?.[lang] ?? event.entries?.ru ?? event.entries?.en ?? event.entries?.he;
@@ -62,7 +73,17 @@ export async function buildShowEventsJsonLd(show: ShowConfig, lang: Lang = 'ru')
         startDate,
         eventStatus: 'https://schema.org/EventScheduled',
         eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-        location: { '@type': 'Place', name: place, address: place },
+        location: {
+          '@type': 'Place',
+          name: place,
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: place,
+            ...(entry.city?.trim() ? { addressLocality: entry.city.trim() } : {}),
+            addressCountry: 'IL',
+          },
+        },
+        ...(performanceLanguageCode(entry.language) ? { inLanguage: performanceLanguageCode(entry.language) } : {}),
         image: poster ? [`${SITE_URL}${poster}`] : undefined,
         url: pageUrl,
         organizer: { '@type': 'PerformingGroup', name: 'Рыба Кива', url: SITE_URL },
