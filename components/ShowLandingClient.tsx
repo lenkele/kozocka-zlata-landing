@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import WhatsAppGroupButton from '@/components/WhatsAppGroupButton';
 import { isPastPerformance, selectAfishaRows } from '@/lib/afisha';
 import { getShowLanguages, localizedPath } from '@/lib/i18n';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -596,8 +597,12 @@ export default function ShowLandingClient({ show, lang = 'ru' }: { show: ShowCon
                 <span>{t.heroBadge}</span>
               </div>
             </div>
-            <div className={`flex items-center gap-1 sm:gap-2 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink min-w-0`}>
+            <div className={`flex flex-wrap items-center justify-center gap-1 sm:gap-2 ${isRTL ? 'flex-row-reverse' : ''} flex-shrink min-w-0`}>
               <LanguageSwitcher lang={lang} available={availableLanguages} slug={show.slug} />
+              <WhatsAppGroupButton
+                lang={lang}
+                className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
+              />
               <button
                 onClick={scrollToSchedule}
                 className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}

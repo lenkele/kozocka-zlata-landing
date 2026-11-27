@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { headers } from 'next/headers';
 
 import MetaPixelPurchase from '@/components/MetaPixelPurchase';
+import { WhatsAppGroupText, WhatsAppJoinLink } from '@/components/WhatsAppGroupButton';
 import { isShowSlug } from '@/shows';
 import { getOrderByOrderId, type StoredOrder } from '@/lib/ordersStore';
 import { resolveSafeReturnUrl } from '@/lib/returnUrl';
@@ -163,6 +164,11 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
                 {paragraph}
               </p>
             ))}
+          </div>
+
+          <div className={`mt-8 space-y-4 rounded-xl border border-[#25D366]/40 bg-[#25D366]/10 p-4 text-slate-100 md:p-5 ${rtl ? 'text-right' : ''}`}>
+            <WhatsAppGroupText lang={lang} />
+            <WhatsAppJoinLink lang={lang} />
           </div>
 
           <div className={`mt-8 ${rtl ? 'text-right' : ''}`}>

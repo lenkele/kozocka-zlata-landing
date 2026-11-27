@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import WhatsAppGroupButton from '@/components/WhatsAppGroupButton';
 import { HOME_COPY } from '@/lib/homeCopy';
 import { isPastPerformance, selectAfishaRows } from '@/lib/afisha';
 import { LANGUAGES, LOCALES, SITE_URL, localizedPath } from '@/lib/i18n';
@@ -195,6 +196,11 @@ export default async function TheatreHome({ lang }: { lang: Lang }) {
           >
             {copy.invite}
           </a>
+          <WhatsAppGroupButton
+            lang={lang}
+            className="cursor-pointer rounded-full bg-[#1f1810] px-5 py-2.5 text-sm font-bold text-[#f2c46b] transition hover:text-[#ffd98a]"
+            style={{ fontFamily: 'Nunito, Arial, sans-serif' }}
+          />
         </nav>
       </header>
 
