@@ -36,6 +36,9 @@ export function isSheetsIntegrationEnabled(): boolean {
   return getConfig() !== null;
 }
 
+// Создание таблицы (Drive) дольше, чем дописывание строки.
+const APPS_SCRIPT_TIMEOUT_MS: Record<AppsScriptPayload['action'], number> = { create: 45_000, append: 20_000 };
+
 async function callAppsScript(payload: AppsScriptPayload): Promise<AppsScriptResponse> {
   const config = getConfig();
   if (!config) {
@@ -48,11 +51,13 @@ async function callAppsScript(payload: AppsScriptPayload): Promise<AppsScriptRes
     body: JSON.stringify({ secret: config.secret, ...payload }),
     cache: 'no-store',
     redirect: 'follow',
+    signal: AbortSignal.timeout(APPS_SCRIPT_TIMEOUT_MS[payload.action]),
   });
 
   const text = await response.text();
   if (!response.ok) {
-    throw new Error(`[googleSheet] apps script HTTP ${response.status}: ${text}`);
+    // Google присылает огромную HTML-страницу ошибки — в лог хватит начала.
+    throw new Error(`[googleSheet] apps script HTTP ${response.status}: ${text.slice(0, 300)}`);
   }
 
   let result: AppsScriptResponse;
