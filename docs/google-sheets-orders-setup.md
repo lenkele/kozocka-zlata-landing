@@ -35,7 +35,7 @@ function doPost(e) {
 
       var header = body.header || [
         'Дата оплаты', 'Имя', 'Email', 'Билетов', 'Сумма',
-        'Валюта', 'Спектакль', 'Показ (event_id)', 'Order ID'
+        'Валюта', 'Спектакль', 'Показ (event_id)', 'Order ID', 'Телефон'
       ];
       sheet.appendRow(header);
       sheet.setFrozenRows(1);

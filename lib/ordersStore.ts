@@ -7,6 +7,7 @@ type CreatePendingOrderInput = {
   qty: number;
   buyerName: string;
   buyerEmail: string;
+  buyerPhone: string;
   amount: number;
   currency: string;
   termsAccepted: boolean;
@@ -28,6 +29,8 @@ export type StoredOrder = {
   qty: number;
   buyer_name: string | null;
   buyer_email: string;
+  /** Нет у старых заказов и до миграции docs/sql/2026-11-27-add-order-phone.sql. */
+  buyer_phone?: string | null;
   amount: number | null;
   currency: string | null;
   status: string;
@@ -78,7 +81,8 @@ async function supabaseRequest(path: string, init: RequestInit): Promise<Respons
 
 export async function getOrderByOrderId(orderId: string): Promise<StoredOrder | null> {
   const response = await supabaseRequest(
-    `/orders?order_id=eq.${encodeURIComponent(orderId)}&select=order_id,show_slug,event_id,qty,buyer_name,buyer_email,amount,currency,status,paid_at,allpay_payment_id,consent_terms_accepted,consent_marketing_accepted,allpay_raw&limit=1`,
+    // select=* — чтобы buyer_phone приходил, когда колонка есть, и запрос не падал, пока её нет.
+    `/orders?order_id=eq.${encodeURIComponent(orderId)}&select=*&limit=1`,
     { method: 'GET' }
   );
   const text = await response.text();
@@ -114,25 +118,36 @@ async function patchOrder(
 }
 
 export async function createPendingOrder(input: CreatePendingOrderInput): Promise<void> {
-  const response = await supabaseRequest('/orders', {
-    method: 'POST',
-    body: JSON.stringify({
-      order_id: input.orderId,
-      show_slug: input.showSlug,
-      event_id: input.eventId,
-      qty: input.qty,
-      buyer_name: input.buyerName,
-      buyer_email: input.buyerEmail,
-      amount: input.amount,
-      currency: input.currency,
-      status: 'pending',
-      consent_terms_accepted: input.termsAccepted,
-      consent_marketing_accepted: input.marketingAccepted,
-    }),
-  });
+  const row = {
+    order_id: input.orderId,
+    show_slug: input.showSlug,
+    event_id: input.eventId,
+    qty: input.qty,
+    buyer_name: input.buyerName,
+    buyer_email: input.buyerEmail,
+    buyer_phone: input.buyerPhone,
+    amount: input.amount,
+    currency: input.currency,
+    status: 'pending',
+    consent_terms_accepted: input.termsAccepted,
+    consent_marketing_accepted: input.marketingAccepted,
+  };
+
+  let response = await supabaseRequest('/orders', { method: 'POST', body: JSON.stringify(row) });
+  let text = response.ok ? '' : await response.text();
+
+  // Пока колонку buyer_phone не добавили в Supabase, продажа не должна ломаться.
+  if (!response.ok && text.includes('buyer_phone')) {
+    console.warn('[ordersStore] orders.buyer_phone column is missing — run docs/sql/2026-11-27-add-order-phone.sql', {
+      orderId: input.orderId,
+    });
+    const { buyer_phone: _omitted, ...rowWithoutPhone } = row;
+    void _omitted;
+    response = await supabaseRequest('/orders', { method: 'POST', body: JSON.stringify(rowWithoutPhone) });
+    text = response.ok ? '' : await response.text();
+  }
 
   if (!response.ok) {
-    const text = await response.text();
     throw new Error(`[ordersStore] create pending failed: ${response.status} ${text}`);
   }
 }

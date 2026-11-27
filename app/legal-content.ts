@@ -53,7 +53,7 @@ All content related to the performances, including scripts, texts, music, stagin
 Audience members are permitted to take photographs and videos during performances and share them publicly, provided that proper credit to Ryba Kiva Theatre is clearly given and such use is non-commercial.
 
 9. Communications
-We may communicate with customers regarding their purchase and performance-related updates via email and, where applicable, through WhatsApp groups that the customer has voluntarily joined.
+We may communicate with customers regarding their purchase and performance-related updates via email, by telephone, SMS or WhatsApp message to the telephone number provided (for urgent matters such as rescheduling or cancellation), and, where applicable, through WhatsApp groups that the customer has voluntarily joined.
 Marketing communications and announcements may be sent only to customers who have given explicit consent and may be withdrawn at any time.
 
 10. Limitation of Liability
@@ -80,23 +80,24 @@ This Privacy Policy is based on a standard template provided in connection with 
 General Provisions
 The name “Ryba Kiva” (also used in Hebrew) is a trade name used for artistic and cultural activity. The theatre does not constitute a separate legal entity. All activities, including ticket sales and website operation, are carried out through a privately owned small business (Essek Za’ir) registered in Israel.
 This Privacy Policy is an integral part of the website’s Terms and Conditions. Information about you is collected when you use the website or purchase tickets through it.
-Some of the information collected identifies you personally, such as your name, email address, details of tickets purchased, and payment-related information. This is information you knowingly provide, for example, when purchasing a ticket. Other information does not personally identify you and may include technical or aggregated data.
+Some of the information collected identifies you personally, such as your name, email address, telephone number, details of tickets purchased, and payment-related information. This is information you knowingly provide, for example, when purchasing a ticket or registering for a free performance. Other information does not personally identify you and may include technical or aggregated data.
 Certain technical data and online identifiers may be considered “Personal Information” under applicable law, including IP address, device identifiers and cookie identifiers. Such data may be collected through the Meta Pixel, as described in the "Cookies and Advertising Technologies" section below.
 This Policy is intended to comply with applicable Israeli privacy and data protection laws, including the Protection of Privacy Law, 57411981 (including Amendment No. 13), the Protection of Privacy Regulations (Data Security), 57772017, and related regulations, as amended from time to time.
 
 Website and Services
 The website operated under the Ryba Kiva name is an informational website for theatrical performances and allows users to purchase tickets for specific shows and events. Each performance may have its own dedicated page within the theatre website.
 The websites do not require user registration and do not include personal user accounts.
-The websites are available in Russian and Hebrew.
+The websites are available in Russian, Hebrew and English.
 
 Registration for Services and Ticket Purchase
-When purchasing tickets, you may be required to provide certain personal information, including:
+When purchasing tickets or registering for a free performance, you are asked to provide certain personal information, including:
 	•	Full name;
 	•	Email address;
+	•	Telephone number;
 	•	Ticket and performance details;
-	•	Payment-related details as described below.
-Providing this information is necessary in order to complete the ticket purchase, issue electronic tickets and receipts, and provide customer support if needed.
-Providing a telephone number is currently optional and may be requested in the future for service-related purposes only.
+	•	Payment-related details as described below (for paid tickets only).
+Providing this information is necessary in order to complete the ticket purchase or registration, issue electronic tickets and receipts, and provide customer support if needed.
+Your telephone number is used only for prompt contact regarding your ticket or the performance — for example, if the performance is rescheduled, cancelled, or its time or venue changes. We do not use it for advertising or marketing and do not add it to WhatsApp groups or mailing lists without your separate consent.
 
 Payments
 Payments on the websites are processed by Allpay using secure payment systems.
@@ -106,11 +107,12 @@ Use of Information
 The information collected is used in accordance with this Privacy Policy and applicable law for the following purposes:
 	•	Enabling ticket purchases and providing purchased services;
 	•	Issuing electronic tickets and receipts;
+	•	Contacting you promptly about your ticket or changes to the performance;
 	•	Providing customer support and responding to inquiries;
 	•	Managing and documenting transactions as required by law;
 	•	Improving website content and services;
 	•	Measuring the effectiveness of our advertising on Facebook and Instagram, as described in the "Cookies and Advertising Technologies" section below.
-We do not provide your name, email address or payment details to advertising platforms. Marketing communications (such as newsletters or WhatsApp groups) are sent only with your explicit consent.
+We do not provide your name, email address, telephone number or payment details to advertising platforms. Marketing communications (such as newsletters or WhatsApp groups) are sent only with your explicit consent.
 
 Providing Information to Third Parties
 We do not transfer your personal information to third parties except in the following cases:
@@ -123,7 +125,7 @@ We do not transfer your personal information to third parties except in the foll
 Cookies and Advertising Technologies
 The websites use the Meta Pixel, a tool provided by Meta Platforms (Facebook, Instagram), to measure the effectiveness of our advertising and to show our ads to relevant audiences.
 The Meta Pixel uses cookies and similar technologies and may collect technical information such as IP address, browser and device details, pages visited, and actions taken on the website (for example, opening the ticket purchase form, proceeding to payment, and completing a purchase, including the number of tickets and the order amount).
-We do not send your name, email address or payment details to Meta. Meta processes the data it collects in accordance with its own privacy policy: https://www.facebook.com/privacy/policy
+We do not send your name, email address, telephone number or payment details to Meta. Meta processes the data it collects in accordance with its own privacy policy: https://www.facebook.com/privacy/policy
 You can limit or block such tracking through your browser settings (for example, by blocking third-party cookies or using a tracker-blocking extension) and through your ad preferences in your Facebook or Instagram account. Blocking these technologies does not affect your ability to purchase tickets.
 If additional analytics tools (such as Google Analytics) are implemented in the future, this Privacy Policy will be updated accordingly.
 

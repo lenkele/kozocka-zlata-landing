@@ -8,6 +8,7 @@ import { getShowLanguages, localizedPath } from '@/lib/i18n';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { trackMetaEvent } from '@/lib/metaPixel';
+import { isValidPhone, normalizePhone } from '@/lib/phone';
 import { ALLPAY_MIN_AMOUNT_ILS } from '@/lib/paymentLimits';
 import { type Lang, type ShowConfig } from '@/shows/types';
 
@@ -65,6 +66,8 @@ type CheckoutLabels = {
   eventLabel: string;
   nameLabel: string;
   emailLabel: string;
+  phoneLabel: string;
+  phoneInvalidErrorLabel: string;
   qtyLabel: string;
   termsConsentPrefix: string;
   termsLinkLabel: string;
@@ -117,6 +120,8 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     eventLabel: 'Событие',
     nameLabel: 'Имя',
     emailLabel: 'Email',
+    phoneLabel: 'Ваш номер телефона для оперативной связи',
+    phoneInvalidErrorLabel: 'Проверьте номер телефона — нужно от 7 до 15 цифр.',
     qtyLabel: 'Количество',
     termsConsentPrefix: 'Я принимаю',
     termsLinkLabel: 'Условия',
@@ -160,6 +165,8 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     eventLabel: 'אירוע',
     nameLabel: 'שם',
     emailLabel: 'אימייל',
+    phoneLabel: 'מספר הטלפון שלכם ליצירת קשר מהיר',
+    phoneInvalidErrorLabel: 'בדקו את מספר הטלפון — נדרשות 7 עד 15 ספרות.',
     qtyLabel: 'כמות',
     termsConsentPrefix: 'אני מסכים/ה ל',
     termsLinkLabel: 'תנאים',
@@ -203,6 +210,8 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     eventLabel: 'Event',
     nameLabel: 'Name',
     emailLabel: 'Email',
+    phoneLabel: 'Your phone number for prompt contact',
+    phoneInvalidErrorLabel: 'Please check your phone number — it should have 7 to 15 digits.',
     qtyLabel: 'Quantity',
     termsConsentPrefix: 'I agree to the',
     termsLinkLabel: 'Terms',
@@ -259,6 +268,7 @@ export default function ShowLandingClient({ show, lang = 'ru' }: { show: ShowCon
   const [selectedRow, setSelectedRow] = useState<ScheduleDisplayEntry | null>(null);
   const [buyerName, setBuyerName] = useState('');
   const [buyerEmail, setBuyerEmail] = useState('');
+  const [buyerPhone, setBuyerPhone] = useState('');
   const [ticketQtyInput, setTicketQtyInput] = useState('1');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [marketingAccepted, setMarketingAccepted] = useState(false);
@@ -431,7 +441,12 @@ export default function ShowLandingClient({ show, lang = 'ru' }: { show: ShowCon
 
     const safeName = buyerName.trim();
     const safeEmail = buyerEmail.trim();
-    if (!safeName || !safeEmail) return;
+    const safePhone = normalizePhone(buyerPhone);
+    if (!safeName || !safeEmail || !safePhone) return;
+    if (!isValidPhone(safePhone)) {
+      setCheckoutError(checkoutT.phoneInvalidErrorLabel);
+      return;
+    }
     if (!termsAccepted) {
       setCheckoutError(checkoutT.termsRequiredErrorLabel);
       return;
@@ -459,6 +474,7 @@ export default function ShowLandingClient({ show, lang = 'ru' }: { show: ShowCon
           buyer: {
             name: safeName,
             email: safeEmail,
+            phone: safePhone,
           },
           consents: {
             termsAccepted,
@@ -509,6 +525,12 @@ export default function ShowLandingClient({ show, lang = 'ru' }: { show: ShowCon
           const safeRemaining = Math.max(1, result.remaining);
           setTicketQtyInput(String(safeRemaining));
           setCheckoutError(formatQtyExceedsError(result.remaining));
+          setCheckoutLoading(false);
+          return;
+        }
+
+        if (result.reason === 'buyer_phone_invalid') {
+          setCheckoutError(checkoutT.phoneInvalidErrorLabel);
           setCheckoutLoading(false);
           return;
         }
@@ -980,6 +1002,20 @@ export default function ShowLandingClient({ show, lang = 'ru' }: { show: ShowCon
                     onChange={(event) => setBuyerEmail(event.target.value)}
                     placeholder={checkoutT.emailPlaceholder}
                     className="w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 placeholder:text-amber-50/40 outline-none focus:border-amber-300/60"
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs text-amber-100/80">{checkoutT.phoneLabel}</span>
+                  <input
+                    required
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    dir="ltr"
+                    value={buyerPhone}
+                    onChange={(event) => setBuyerPhone(event.target.value)}
+                    placeholder="050-123-4567"
+                    className={`w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 placeholder:text-amber-50/40 outline-none focus:border-amber-300/60 ${isRTL ? 'text-right' : ''}`}
                   />
                 </label>
                 <label className="block space-y-1">

@@ -6,6 +6,7 @@ import { fulfillConfirmedOrder } from '@/lib/fulfillOrder';
 import type { StoredOrder } from '@/lib/ordersStore';
 import { createPendingOrder, getPaidQtyForEvent, markOrderFailed, markOrderPaidOnce } from '@/lib/ordersStore';
 import { ALLPAY_MIN_AMOUNT_ILS } from '@/lib/paymentLimits';
+import { isValidPhone, normalizePhone } from '@/lib/phone';
 import { resolveSafeReturnUrl } from '@/lib/returnUrl';
 import { isShowSlug } from '@/shows';
 import { loadScheduleForShow, resolveCapacity, resolveUnitPrice } from '@/lib/schedule';
@@ -20,6 +21,7 @@ type CreateCheckoutRequest = {
   buyer?: {
     name?: string;
     email?: string;
+    phone?: string;
   };
   consents?: {
     termsAccepted?: boolean;
@@ -59,10 +61,11 @@ async function registerFreeOrder(input: {
   returnPath: string;
   buyerName: string;
   buyerEmail: string;
+  buyerPhone: string;
   termsAccepted: boolean;
   marketingAccepted: boolean;
 }) {
-  const { showSlug, eventId, qty, lang, returnPath, buyerName, buyerEmail } = input;
+  const { showSlug, eventId, qty, lang, returnPath, buyerName, buyerEmail, buyerPhone } = input;
   const orderId = `${showSlug}-${eventId}-${crypto.randomUUID()}`;
 
   let order: StoredOrder;
@@ -74,6 +77,7 @@ async function registerFreeOrder(input: {
       qty,
       buyerName,
       buyerEmail,
+      buyerPhone,
       amount: 0,
       currency: 'ILS',
       termsAccepted: input.termsAccepted,
@@ -126,6 +130,7 @@ export async function POST(request: Request) {
 
   const buyerName = body.buyer?.name?.trim() ?? '';
   const buyerEmail = body.buyer?.email?.trim().toLowerCase() ?? '';
+  const buyerPhone = normalizePhone(body.buyer?.phone);
   const qty = parsePositiveInt(body.qty, 1);
   const lang: 'ru' | 'he' | 'en' = body.lang === 'he' || body.lang === 'en' ? body.lang : 'ru';
   const termsAccepted = body.consents?.termsAccepted === true;
@@ -137,6 +142,10 @@ export async function POST(request: Request) {
 
   if (!EMAIL_PATTERN.test(buyerEmail)) {
     return NextResponse.json({ ok: false, reason: 'buyer_email_invalid' }, { status: 400 });
+  }
+
+  if (!isValidPhone(buyerPhone)) {
+    return NextResponse.json({ ok: false, reason: 'buyer_phone_invalid' }, { status: 400 });
   }
 
   if (!termsAccepted) {
@@ -220,6 +229,7 @@ export async function POST(request: Request) {
       returnPath,
       buyerName,
       buyerEmail,
+      buyerPhone,
       termsAccepted,
       marketingAccepted,
     });
@@ -256,6 +266,7 @@ export async function POST(request: Request) {
       qty,
       buyerName,
       buyerEmail,
+      buyerPhone,
       amount,
       currency: 'ILS',
       termsAccepted,

@@ -10,6 +10,8 @@ export const ORDER_SHEET_HEADER = [
   'Спектакль',
   'Показ (event_id)',
   'Order ID',
+  // В конце, чтобы не сдвигать колонки в уже созданных таблицах.
+  'Телефон',
 ];
 
 type AppsScriptResponse = {
@@ -100,5 +102,6 @@ export function buildOrderSheetRow(order: StoredOrder): Array<string | number> {
     order.show_slug,
     order.event_id ?? '',
     order.order_id,
+    order.buyer_phone ?? '',
   ];
 }
