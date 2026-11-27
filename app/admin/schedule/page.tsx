@@ -53,7 +53,7 @@ const SHOW_ITEMS = SHOW_SLUGS.map((slug) => ({
 
 const TABLE_MIN_WIDTH = 1725;
 
-const FREE_PRICE_HINT = `0 — бесплатный показ или добровольный донат (на сайте будет «Вход свободный», без оплаты). Платный билет через сайт — от ${ALLPAY_MIN_AMOUNT_ILS} ILS.`;
+const FREE_PRICE_HINT = `0 — бесплатный показ или добровольный донат (на сайте «Вход свободный» и бесплатная регистрация с билетом на email; места считаются по «Кол-ву мест»). Платный билет через сайт — от ${ALLPAY_MIN_AMOUNT_ILS} ILS.`;
 
 const FORMAT_OPTIONS = ['Открытый показ', 'Закрытый показ'] as const;
 const LANGUAGE_OPTIONS = ['Русский', 'Иврит', 'Английский'] as const;

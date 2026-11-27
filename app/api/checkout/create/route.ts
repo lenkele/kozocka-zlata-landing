@@ -2,7 +2,9 @@ import crypto from 'node:crypto';
 import { NextResponse } from 'next/server';
 
 import { createAllpayPayment } from '@/lib/allpay';
-import { createPendingOrder, getPaidQtyForEvent, markOrderFailed } from '@/lib/ordersStore';
+import { fulfillConfirmedOrder } from '@/lib/fulfillOrder';
+import type { StoredOrder } from '@/lib/ordersStore';
+import { createPendingOrder, getPaidQtyForEvent, markOrderFailed, markOrderPaidOnce } from '@/lib/ordersStore';
 import { ALLPAY_MIN_AMOUNT_ILS } from '@/lib/paymentLimits';
 import { resolveSafeReturnUrl } from '@/lib/returnUrl';
 import { isShowSlug } from '@/shows';
@@ -23,6 +25,8 @@ type CreateCheckoutRequest = {
     termsAccepted?: boolean;
     marketingAccepted?: boolean;
   };
+  // Honeypot (скрытое поле формы).
+  website?: string;
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,6 +45,64 @@ function isClosedFormat(value: unknown): boolean {
   if (typeof value !== 'string') return false;
   const normalized = value.trim().toLowerCase();
   return normalized.includes('закрыт') || normalized.includes('private') || normalized.includes('סגור');
+}
+
+const FREE_REGISTRATION_MAX_QTY = 10;
+
+// Бесплатный показ (цена 0): без AllPay. Заказ сразу подтверждается с суммой 0,
+// дальше та же цепочка, что после оплаты: таблица, письмо с билетом, учёт мест.
+async function registerFreeOrder(input: {
+  showSlug: string;
+  eventId: string;
+  qty: number;
+  lang: 'ru' | 'he' | 'en';
+  returnPath: string;
+  buyerName: string;
+  buyerEmail: string;
+  termsAccepted: boolean;
+  marketingAccepted: boolean;
+}) {
+  const { showSlug, eventId, qty, lang, returnPath, buyerName, buyerEmail } = input;
+  const orderId = `${showSlug}-${eventId}-${crypto.randomUUID()}`;
+
+  let order: StoredOrder;
+  try {
+    await createPendingOrder({
+      orderId,
+      showSlug,
+      eventId,
+      qty,
+      buyerName,
+      buyerEmail,
+      amount: 0,
+      currency: 'ILS',
+      termsAccepted: input.termsAccepted,
+      marketingAccepted: input.marketingAccepted,
+    });
+    const confirmed = await markOrderPaidOnce({
+      orderId,
+      amount: 0,
+      currency: 'ILS',
+      raw: { source: 'free_registration' },
+    });
+    order = confirmed.order;
+  } catch (error) {
+    console.error('[checkout-create] failed to save free registration', { orderId, error });
+    return NextResponse.json({ ok: false, reason: 'db_create_pending_failed', orderId }, { status: 500 });
+  }
+
+  try {
+    await fulfillConfirmedOrder(order, { appendToSheet: true, logPrefix: '[checkout-create:free]' });
+  } catch (error) {
+    // Регистрация сохранена и место учтено, но письмо не ушло.
+    console.error('[checkout-create] free registration saved, ticket email failed', { orderId, error });
+    return NextResponse.json({ ok: false, reason: 'email_send_failed', registered: true, orderId }, { status: 500 });
+  }
+
+  console.log('[checkout-create] free registration confirmed', { orderId, qty, buyerEmail });
+
+  const redirectUrl = `/payment/success?lang=${encodeURIComponent(lang)}&show=${encodeURIComponent(showSlug)}&return=${encodeURIComponent(returnPath)}&order=${encodeURIComponent(orderId)}&free=1`;
+  return NextResponse.json({ ok: true, orderId, registered: true, redirectUrl, status: 'paid' });
 }
 
 export async function POST(request: Request) {
@@ -118,8 +180,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: 'venue_ticketing' }, { status: 400 });
   }
 
-  if (unitPrice <= 0) {
-    return NextResponse.json({ ok: false, reason: 'free_event' }, { status: 400 });
+  const isFreeRegistration = unitPrice === 0;
+  if (isFreeRegistration) {
+    // Скрытое поле-ловушка: люди его не видят, боты заполняют.
+    if (typeof body.website === 'string' && body.website.trim()) {
+      console.warn('[checkout-create] honeypot triggered on free registration', { showSlug, eventId });
+      return NextResponse.json({ ok: false, reason: 'rejected' }, { status: 400 });
+    }
+    if (qty > FREE_REGISTRATION_MAX_QTY) {
+      return NextResponse.json(
+        { ok: false, reason: 'qty_exceeds_remaining', remaining: FREE_REGISTRATION_MAX_QTY },
+        { status: 400 },
+      );
+    }
   }
 
   if (eventCapacity !== null) {
@@ -136,6 +209,20 @@ export async function POST(request: Request) {
       console.error('[checkout-create] failed to validate event capacity', { showSlug, eventId, error });
       return NextResponse.json({ ok: false, reason: 'capacity_check_failed' }, { status: 500 });
     }
+  }
+
+  if (isFreeRegistration) {
+    return registerFreeOrder({
+      showSlug,
+      eventId,
+      qty,
+      lang,
+      returnPath,
+      buyerName,
+      buyerEmail,
+      termsAccepted,
+      marketingAccepted,
+    });
   }
 
   const amount = unitPrice * qty;

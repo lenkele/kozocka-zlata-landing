@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 
-import { sendTicketEmail } from '@/lib/email';
-import { appendOrderRow, isSheetsIntegrationEnabled } from '@/lib/googleSheet';
+import { fulfillConfirmedOrder } from '@/lib/fulfillOrder';
 import type { StoredOrder } from '@/lib/ordersStore';
-import { getEventSheetId, markOrderPaidOnce, markTicketEmailSent, shouldRetryTicketEmail } from '@/lib/ordersStore';
+import { markOrderPaidOnce, shouldRetryTicketEmail } from '@/lib/ordersStore';
 import { getAllpaySignature, secureSignatureMatch } from './signature';
 
 type CallbackPayload = Record<string, unknown> & {
@@ -166,33 +165,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, accepted: true, duplicated: true });
   }
 
-  // Best-effort: append the paid order to the per-event Google Sheet.
-  // Runs only after a successful paid transition, so each order is logged once.
-  if (paidUpdate.updated && isSheetsIntegrationEnabled()) {
-    try {
-      const sheetId = await getEventSheetId(paidUpdate.order.show_slug, paidUpdate.order.event_id);
-      if (sheetId) {
-        await appendOrderRow(sheetId, paidUpdate.order);
-        console.log('[allpay-callback] order appended to sheet', { orderId, sheetId });
-      } else {
-        console.warn('[allpay-callback] no sheet for event, skip append', {
-          orderId,
-          showSlug: paidUpdate.order.show_slug,
-          eventId: paidUpdate.order.event_id,
-        });
-      }
-    } catch (error) {
-      console.error('[allpay-callback] failed to append order to sheet', { orderId, error });
-    }
-  }
-
   try {
-    const emailResult = await sendTicketEmail(paidUpdate.order);
-    await markTicketEmailSent(paidUpdate.order, emailResult.id);
+    // Sheet append runs only after a successful paid transition, so each order is logged once.
+    const emailResult = await fulfillConfirmedOrder(paidUpdate.order, {
+      appendToSheet: paidUpdate.updated,
+      logPrefix: '[allpay-callback]',
+    });
     console.log('[allpay-callback] ticket email sent', {
       orderId,
       to: paidUpdate.order.buyer_email,
-      emailId: emailResult.id ?? null,
+      emailId: emailResult.emailId ?? null,
       retry: !paidUpdate.updated,
     });
   } catch (error) {

@@ -76,6 +76,11 @@ type CheckoutLabels = {
   soldOutLabel: string;
   freeEntryLabel: string;
   freeVenueButton: string;
+  registerButton: string;
+  registerModalTitle: string;
+  registerSubmitLabel: string;
+  registerSubmittingLabel: string;
+  registerEmailFailedLabel: string;
   passedShowLabel: string;
   closedShowLabel: string;
   soldOutErrorLabel: string;
@@ -123,6 +128,11 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     soldOutLabel: 'Sold out',
     freeEntryLabel: 'Вход свободный',
     freeVenueButton: 'Регистрация',
+    registerButton: 'Зарегистрироваться',
+    registerModalTitle: 'Регистрация на спектакль',
+    registerSubmitLabel: 'Зарегистрироваться',
+    registerSubmittingLabel: 'Регистрируем...',
+    registerEmailFailedLabel: 'Вы зарегистрированы, но письмо с билетом не отправилось. Напишите нам — мы пришлём билет вручную.',
     passedShowLabel: 'Спектакль прошел',
     closedShowLabel: 'Для закрытых показов покупка недоступна',
     soldOutErrorLabel: 'На это событие билеты закончились.',
@@ -161,6 +171,11 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     soldOutLabel: 'אזל',
     freeEntryLabel: 'כניסה חופשית',
     freeVenueButton: 'הרשמה',
+    registerButton: 'להרשמה',
+    registerModalTitle: 'הרשמה להצגה',
+    registerSubmitLabel: 'להרשמה',
+    registerSubmittingLabel: 'נרשמים...',
+    registerEmailFailedLabel: 'נרשמתם, אבל המייל עם הכרטיס לא נשלח. כתבו לנו ונשלח את הכרטיס ידנית.',
     passedShowLabel: 'המופע כבר התקיים',
     closedShowLabel: 'אין רכישה למופעים סגורים',
     soldOutErrorLabel: 'אין יותר כרטיסים לאירוע הזה.',
@@ -199,6 +214,11 @@ const CHECKOUT_LABELS: Record<Lang, CheckoutLabels> = {
     soldOutLabel: 'Sold out',
     freeEntryLabel: 'Free entry',
     freeVenueButton: 'Register',
+    registerButton: 'Register',
+    registerModalTitle: 'Performance registration',
+    registerSubmitLabel: 'Register',
+    registerSubmittingLabel: 'Registering...',
+    registerEmailFailedLabel: 'You are registered, but the ticket email failed to send. Please contact us and we will send your ticket manually.',
     passedShowLabel: 'Performance ended',
     closedShowLabel: 'Ticket purchase is unavailable for closed shows',
     soldOutErrorLabel: 'No tickets left for this event.',
@@ -217,7 +237,7 @@ function isClosedShow(format: string): boolean {
   return normalized.includes('закрыт') || normalized.includes('סגור') || normalized.includes('private');
 }
 
-// Цена 0 — бесплатный показ / добровольный донат: оплаты через сайт нет.
+// Цена 0 — бесплатный показ / добровольный донат: регистрация через сайт без оплаты.
 function isFreeEntry(row: ScheduleDisplayEntry): boolean {
   return row.priceIls === 0;
 }
@@ -273,6 +293,8 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   const [marketingAccepted, setMarketingAccepted] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  // Скрытое поле-ловушка для ботов (люди его не видят).
+  const [honeypot, setHoneypot] = useState('');
 
   // Используем контент для текущего языка или fallback на дефолтный
   const t = show.content[lang] ?? show.content[defaultLang]!;
@@ -429,7 +451,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
   };
 
   const openCheckout = (row: ScheduleDisplayEntry) => {
-    if (isClosedShow(row.formatOriginal) || isPastShowDate(row.dateIso) || isSoldOut(row.id) || row.ticketMode === 'venue' || isFreeEntry(row)) {
+    if (isClosedShow(row.formatOriginal) || isPastShowDate(row.dateIso) || isSoldOut(row.id) || row.ticketMode === 'venue') {
       return;
     }
     setSelectedRow(row);
@@ -437,6 +459,9 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
     setTicketQtyInput('1');
     setTermsAccepted(false);
     setMarketingAccepted(false);
+    setHoneypot('');
+    // Бесплатная регистрация — не покупка, в воронку оплаты Meta не пишем.
+    if (isFreeEntry(row)) return;
     trackMetaEvent('InitiateCheckout', {
       content_ids: [show.slug],
       content_type: 'product',
@@ -483,6 +508,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
             termsAccepted,
             marketingAccepted,
           },
+          website: honeypot,
         }),
       });
 
@@ -490,9 +516,23 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
         ok?: boolean;
         reason?: string;
         paymentUrl?: string;
+        redirectUrl?: string;
+        registered?: boolean;
         remaining?: number;
         minimumAmount?: number;
       };
+
+      // Бесплатная регистрация: оплаты нет, сразу на страницу подтверждения.
+      if (response.ok && result.ok && result.registered && result.redirectUrl) {
+        window.location.href = result.redirectUrl;
+        return;
+      }
+      if (result.reason === 'email_send_failed' && result.registered) {
+        setCheckoutError(checkoutT.registerEmailFailedLabel);
+        setCheckoutLoading(false);
+        return;
+      }
+
       if (!response.ok || !result.ok || !result.paymentUrl) {
         if (result.reason === 'sold_out') {
           setCheckoutError(checkoutT.soldOutErrorLabel);
@@ -750,7 +790,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                           <span className="text-xs text-amber-100/60">{checkoutT.unavailableLabel}</span>
                         ) : isPastShowDate(row.dateIso) ? (
                           <span className="text-xs text-amber-100/60">{checkoutT.passedShowLabel}</span>
-                        ) : isFreeEntry(row) && row.ticketMode === 'self' ? null : isSoldOut(row.id) ? (
+                        ) : isSoldOut(row.id) ? (
                           <span className="text-xs text-amber-100/60">{checkoutT.soldOutLabel}</span>
                         ) : row.ticketMode === 'venue' && !row.ticketUrl ? (
                           <span className="text-xs text-amber-100/60">{checkoutT.unavailableLabel}</span>
@@ -769,7 +809,7 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                             onClick={() => openCheckout(row)}
                             className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
                           >
-                            {checkoutT.buyButton}
+                            {isFreeEntry(row) ? checkoutT.registerButton : checkoutT.buyButton}
                           </button>
                         )}
                       </div>
@@ -816,8 +856,6 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                               <span className="text-sm text-amber-100/60">{checkoutT.unavailableLabel}</span>
                             ) : isPastShowDate(row.dateIso) ? (
                               <span className="text-sm text-amber-100/60">{checkoutT.passedShowLabel}</span>
-                            ) : isFreeEntry(row) && row.ticketMode === 'self' ? (
-                              <span className="text-sm text-amber-100/85">{checkoutT.freeEntryLabel}</span>
                             ) : isSoldOut(row.id) ? (
                               <span className="text-sm text-amber-100/60">{checkoutT.soldOutLabel}</span>
                             ) : row.ticketMode === 'venue' && !row.ticketUrl ? (
@@ -841,14 +879,16 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                             ) : (
                               <div className={`inline-flex flex-col gap-2 ${buyCellItemsClass}`}>
                                 {typeof row.priceIls === 'number' && (
-                                  <span className="text-sm text-amber-100/85">₪ {formatIlsAmount(row.priceIls)}</span>
+                                  <span className="text-sm text-amber-100/85">
+                                    {isFreeEntry(row) ? checkoutT.freeEntryLabel : `₪ ${formatIlsAmount(row.priceIls)}`}
+                                  </span>
                                 )}
                                 <button
                                   type="button"
                                   onClick={() => openCheckout(row)}
                                   className={`inline-flex rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-sm font-medium px-3 py-2 shadow-md shadow-black/40 transition whitespace-nowrap cursor-pointer`}
                                 >
-                                  {checkoutT.buyButton}
+                                  {isFreeEntry(row) ? checkoutT.registerButton : checkoutT.buyButton}
                                 </button>
                               </div>
                             )}
@@ -957,7 +997,9 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
       {selectedRow && (
         <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4 py-4 overflow-y-auto">
           <div className={`w-full max-w-md ${darkCardBg} border border-amber-100/20 rounded-2xl p-5 space-y-4 my-auto`}>
-            <h3 className="text-xl font-semibold text-amber-100">{checkoutT.modalTitle}</h3>
+            <h3 className="text-xl font-semibold text-amber-100">
+              {isFreeEntry(selectedRow) ? checkoutT.registerModalTitle : checkoutT.modalTitle}
+            </h3>
             <div className="text-xs md:text-sm text-amber-100/85 space-y-1 rounded-xl border border-amber-100/20 bg-black/30 px-3 py-3">
               <p>
                 <span className="text-amber-100/60">{checkoutT.showLabel}: </span>
@@ -973,7 +1015,11 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
               </p>
               <p>
                 <span className="text-amber-100/60">{checkoutT.unitPriceLabel}: </span>
-                {selectedRow.priceIls !== null ? `₪ ${formatIlsAmount(selectedRow.priceIls)}` : '—'}
+                {isFreeEntry(selectedRow)
+                  ? checkoutT.freeEntryLabel
+                  : selectedRow.priceIls !== null
+                    ? `₪ ${formatIlsAmount(selectedRow.priceIls)}`
+                    : '—'}
               </p>
             </div>
 
@@ -1027,10 +1073,23 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                     className="w-full rounded-xl bg-black/40 border border-amber-100/20 px-3 py-2 text-amber-50 outline-none focus:border-amber-300/60"
                   />
                 </label>
-                <div className="rounded-xl border border-amber-100/20 bg-black/30 px-3 py-2 text-sm text-amber-100/90">
-                  <span className="text-amber-100/70">{checkoutT.totalLabel}: </span>
-                  {selectedTotalPrice !== null ? `₪ ${formatIlsAmount(selectedTotalPrice)}` : '—'}
-                </div>
+                {!isFreeEntry(selectedRow) && (
+                  <div className="rounded-xl border border-amber-100/20 bg-black/30 px-3 py-2 text-sm text-amber-100/90">
+                    <span className="text-amber-100/70">{checkoutT.totalLabel}: </span>
+                    {selectedTotalPrice !== null ? `₪ ${formatIlsAmount(selectedTotalPrice)}` : '—'}
+                  </div>
+                )}
+                {/* Ловушка для ботов: скрыта от людей и скринридеров. */}
+                <input
+                  type="text"
+                  name="website"
+                  value={honeypot}
+                  onChange={(event) => setHoneypot(event.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  className="sr-only"
+                />
                 <label className="flex items-start gap-2 text-xs md:text-sm text-amber-100/85">
                   <input
                     type="checkbox"
@@ -1073,7 +1132,13 @@ export default function ShowLandingClient({ show }: { show: ShowConfig }) {
                     type="submit"
                     className={`inline-flex justify-center rounded-full ${buttonBg} ${buttonHover} ${buttonText} text-xs md:text-sm font-medium px-4 py-2 shadow-md shadow-black/40 transition disabled:opacity-60`}
                   >
-                    {checkoutLoading ? checkoutT.submittingLabel : checkoutT.submitLabel}
+                    {isFreeEntry(selectedRow)
+                      ? checkoutLoading
+                        ? checkoutT.registerSubmittingLabel
+                        : checkoutT.registerSubmitLabel
+                      : checkoutLoading
+                        ? checkoutT.submittingLabel
+                        : checkoutT.submitLabel}
                   </button>
                 </div>
               </form>

@@ -49,6 +49,41 @@ const SUCCESS_CONTENT: Record<SuccessLang, SuccessContent> = {
   },
 };
 
+// Бесплатный показ (цена 0): регистрация без оплаты.
+const FREE_REGISTRATION_CONTENT: Record<SuccessLang, SuccessContent> = {
+  ru: {
+    title: 'Регистрация прошла успешно',
+    paragraphs: [
+      'Спасибо, вы зарегистрированы на спектакль!',
+      'Ваши билеты отправлены на указанный вами e-mail.\nЕсли письмо не отображается во входящих — пожалуйста, проверьте папку «Спам» или «Нежелательная почта».',
+      'Если письмо не пришло в течение 5–10 минут, свяжитесь с нами через форму обратной связи на сайте.',
+      'До встречи на спектакле!',
+    ],
+    button: 'Вернуться на сайт',
+  },
+  en: {
+    title: 'Registration Successful',
+    paragraphs: [
+      'Thank you, you are registered for the performance!',
+      'Your tickets have been sent to the email address you provided.\nIf you don’t see the message in your inbox, please check your Spam or Junk folder.',
+      'If you have not received the email within 5–10 minutes, please contact us using the contact form on our website.',
+      'We look forward to seeing you at the performance!',
+    ],
+    button: 'Back to website',
+  },
+  he: {
+    title: 'ההרשמה בוצעה בהצלחה',
+    paragraphs: [
+      'תודה, נרשמתם להצגה!',
+      'הכרטיסים נשלחו לכתובת הדוא"ל שהזנתם.\nאם אינכם רואים את ההודעה בתיבת הדואר הנכנס, אנא בדקו גם את תיקיית הספאם או הדואר הזבל.',
+      'אם לא קיבלתם את המייל בתוך 5–10 דקות, אנא פנו אלינו באמצעות טופס יצירת הקשר באתר.',
+      'נתראה בהצגה!',
+    ],
+    button: 'חזרה לאתר',
+    dir: 'rtl',
+  },
+};
+
 function normalizeLang(value: string | null): SuccessLang | null {
   if (value === 'ru' || value === 'en' || value === 'he') return value;
   return null;
@@ -77,7 +112,8 @@ async function loadOrderForTracking(orderId: string | undefined): Promise<Stored
   if (!orderId) return null;
   try {
     const order = await getOrderByOrderId(orderId);
-    if (!order || order.status === 'failed' || order.amount == null) return null;
+    // Бесплатные регистрации (сумма 0) не считаем покупкой.
+    if (!order || order.status === 'failed' || order.amount == null || Number(order.amount) <= 0) return null;
     return order;
   } catch (error) {
     console.error('[payment-success] failed to load order for tracking', { orderId, error });
@@ -98,7 +134,7 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
   // debug: returnUrl resolved from returnParam, showSlug
   const trackedOrder = await loadOrderForTracking(getQueryParam(params, 'order'));
 
-  const content = SUCCESS_CONTENT[lang];
+  const content = getQueryParam(params, 'free') === '1' ? FREE_REGISTRATION_CONTENT[lang] : SUCCESS_CONTENT[lang];
   const rtl = content.dir === 'rtl';
 
   return (
